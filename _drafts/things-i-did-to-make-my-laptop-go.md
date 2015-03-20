@@ -1,3 +1,9 @@
+# Useful sites:
+- Trackpoint stuff
+  - http://askubuntu.com/a/590676
+  - http://askubuntu.com/a/590926
+- Backlight / volume / power management stuff:
+  - http://www.function.fr/advanced-linux-configuration-for-lenovo-thinkpad-x240/
 # Partitions
 - two physical partitions
   - 1 GB FAT32 -> /esp
@@ -31,4 +37,12 @@
   - install xbacklight and use sxhkd
 - trackpoint buttons do not work
   - compiled a kernel, but will not use it
-  - about to attempt some STUFF
+  - buttons but not middle click scrolling work after
+    - while running:
+      - sudo modprobe -r psmouse
+      - sudo modprobe psmouse proto=imps
+    - in kernel options:
+      - psmouse.proto=imps
+  - middle click scroll after some xorg.conf.d changes
+    - this seems to break the touchpad somewhat; need to see if I care
+  - source: http://askubuntu.com/a/590676
