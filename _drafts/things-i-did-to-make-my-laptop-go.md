@@ -18,6 +18,14 @@
         - two keys
           - passphrase
           - /root/keyfile (root:root 0400!!!)
+            - set up in /etc/crypttab
+
+# Swap
+- /swapfile
+  - 8GB, I used dd, but could have used fallocate
+  - chmod 0600
+  - sudo sysctl -w vm.swappiness=1 for SSD
+  - added it to /etc/fstab
 
 # Boot
 - Using gummiboot as default EFI boot manager
@@ -46,3 +54,5 @@
   - middle click scroll after some xorg.conf.d changes
     - this seems to break the touchpad somewhat; need to see if I care
   - source: http://askubuntu.com/a/590676
+- Power stuff: tlp
+  - http://linrunner.de/en/tlp/docs/tlp-linux-advanced-power-management.html
