@@ -5,6 +5,7 @@ email: kamal@marhubi.com
 #  Here is a description, we might find out what to do with it later.
 baseurl: "" # the subpath of your site, e.g. /blog/
 url: "http://kamalmarhubi.com" # the base hostname & protocol for your site
+exclude: [Gemfile, Gemfile.lock]
 twitter_username: kamalmarhubi
 github_username:  kamalmarhubi
 
