@@ -3,10 +3,19 @@ title: Kamal Marhubi
 email: kamal@marhubi.com
 #description: > # this means to ignore newlines until "baseurl:"
 #  Here is a description, we might find out what to do with it later.
-baseurl: "/blog" # the subpath of your site, e.g. /blog/
+baseurl: "" # the subpath of your site, e.g. /blog/
 url: "http://kamalmarhubi.com" # the base hostname & protocol for your site
 twitter_username: kamalmarhubi
 github_username:  kamalmarhubi
 
 # Build settings
 markdown: kramdown
+
+defaults:
+  -
+    scope:
+      path: "" # all files
+      type: "posts"
+    values:
+      layout: default
+      permalink: /blog/:year/:month/:day/:title/
