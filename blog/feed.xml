@@ -5,9 +5,52 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 26 May 2015 12:55:16 -0400</pubDate>
-    <lastBuildDate>Tue, 26 May 2015 12:55:16 -0400</lastBuildDate>
+    <pubDate>Wed, 27 May 2015 01:10:04 -0400</pubDate>
+    <lastBuildDate>Wed, 27 May 2015 01:10:04 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Avoiding distractions</title>
+        <description>&lt;p&gt;This morning, as part of the Recurse Center’s welcome talks, &lt;a href=&quot;http://maryrosecook.com/&quot;&gt;Mary Rose
+Cook&lt;/a&gt; gave some advice on how to spend twelve weeks of unstrucutred time.
+The advice was much the same as manual’s &lt;a href=&quot;https://www.recurse.com/manual#sec-advice&quot;&gt;advice section&lt;/a&gt;, where
+they are divided up by level of experience: relatively new to programming;
+already have good grasp of one language; and really experienced.&lt;/p&gt;
+
+&lt;p&gt;There is one item that appears on all three lists: ‘avoid distractions’.&lt;/p&gt;
+
+&lt;p&gt;Aside from a delightful pairing experience&lt;sup id=&quot;fnref:ann-pairing&quot;&gt;&lt;a href=&quot;#fn:ann-pairing&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; with &lt;a href=&quot;http://www.annharter.com/&quot;&gt;Ann&lt;/a&gt;, my only
+technical work today was on the one thing I had decided not to work
+on&lt;sup id=&quot;fnref:non-project&quot;&gt;&lt;a href=&quot;#fn:non-project&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt; at the Recurse Center. While today was the first day, and it started
+later and ended earlier than most days will, I’ll still need to keep a close watch.&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:ann-pairing&quot;&gt;
+
+      &lt;p&gt;I learned some Ruby syntax and we refactored a
+guess-the-number-from-0-to-99 game. The absolute best part was where we wanted
+to test something about the iteration, but won with 50 on the first try. The
+program very accurately told us that we were ‘the best at this!’ &lt;a href=&quot;#fnref:ann-pairing&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:non-project&quot;&gt;
+
+      &lt;p&gt;On the bright side, I finally got my 3-node &lt;a href=&quot;https://github.com/coreos/etcd&quot;&gt;etcd&lt;/a&gt; cluster running etcd2,
+which was blocking further progress on that project. &lt;a href=&quot;#fnref:non-project&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Tue, 26 May 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/05/26/avoiding-distractions/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/05/26/avoiding-distractions/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center OMG</title>
