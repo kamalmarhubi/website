@@ -31,6 +31,8 @@ later and ended earlier than most days will, I'll still need to keep a close wat
     guess-the-number-from-0-to-99 game. The absolute best part was where we wanted
     to test something about the iteration, but won with 50 on the first try. The
     program very accurately told us that we were ‘the best at this!’
+    <blockquote class="twitter-tweet" lang="en"><p lang="und" dir="ltr">🏆 <a href="http://t.co/PZVQRuX9bH">pic.twitter.com/PZVQRuX9bH</a></p>&mdash; figuratively dying (@anyharder) <a href="https://twitter.com/anyharder/status/603273545091817472">May 26, 2015</a></blockquote>
+    <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 [^non-project]:
     On the bright side, I finally got my 3-node [etcd] cluster running etcd2,
