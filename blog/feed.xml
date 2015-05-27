@@ -5,17 +5,18 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 27 May 2015 01:10:04 -0400</pubDate>
-    <lastBuildDate>Wed, 27 May 2015 01:10:04 -0400</lastBuildDate>
+    <pubDate>Wed, 27 May 2015 01:17:52 -0400</pubDate>
+    <lastBuildDate>Wed, 27 May 2015 01:17:52 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
         <title>Avoiding distractions</title>
         <description>&lt;p&gt;This morning, as part of the Recurse Center’s welcome talks, &lt;a href=&quot;http://maryrosecook.com/&quot;&gt;Mary Rose
 Cook&lt;/a&gt; gave some advice on how to spend twelve weeks of unstrucutred time.
-The advice was much the same as manual’s &lt;a href=&quot;https://www.recurse.com/manual#sec-advice&quot;&gt;advice section&lt;/a&gt;, where
-they are divided up by level of experience: relatively new to programming;
-already have good grasp of one language; and really experienced.&lt;/p&gt;
+You can see similar advice in the Recurse Center  manual’s &lt;a href=&quot;https://www.recurse.com/manual#sec-advice&quot;&gt;advice
+section&lt;/a&gt;, where they are divided up by level of experience:
+relatively new to programming; already have good grasp of one language; and
+really experienced.&lt;/p&gt;
 
 &lt;p&gt;There is one item that appears on all three lists: ‘avoid distractions’.&lt;/p&gt;
 
