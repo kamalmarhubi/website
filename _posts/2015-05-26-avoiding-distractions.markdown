@@ -6,9 +6,10 @@ type: post
 
 This morning, as part of the Recurse Center's welcome talks, [Mary Rose
 Cook][mary] gave some advice on how to spend twelve weeks of unstrucutred time.
-The advice was much the same as manual's [advice section][rc-advice], where
-they are divided up by level of experience: relatively new to programming;
-already have good grasp of one language; and really experienced.
+You can see similar advice in the Recurse Center  manual's [advice
+section][rc-advice], where they are divided up by level of experience:
+relatively new to programming; already have good grasp of one language; and
+really experienced.
 
 There is one item that appears on all three lists: ‘avoid distractions’.
 
