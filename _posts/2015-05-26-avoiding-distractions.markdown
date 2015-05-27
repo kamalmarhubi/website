@@ -15,7 +15,7 @@ There is one item that appears on all three lists: ‘avoid distractions’.
 
 Aside from a delightful pairing experience[^ann-pairing] with [Ann], my only
 technical work today was on the one thing I had decided not to work
-on[^non-project] at the Recurse Center. While today was the first day, and it started
+on at the Recurse Center.[^non-project] While today was the first day, and it started
 later and ended earlier than most days will, I'll still need to keep a close watch.
 
 [ann]: http://www.annharter.com/
