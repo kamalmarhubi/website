@@ -5,9 +5,60 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 27 May 2015 01:45:52 -0400</pubDate>
-    <lastBuildDate>Wed, 27 May 2015 01:45:52 -0400</lastBuildDate>
+    <pubDate>Thu, 28 May 2015 00:23:35 -0400</pubDate>
+    <lastBuildDate>Thu, 28 May 2015 00:23:35 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Controlling the yak stack</title>
+        <description>&lt;blockquote class=&quot;twitter-tweet&quot; lang=&quot;en&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;A-yak-shaving I will go, a-yak-shaving I will go&amp;#10;I&amp;#39;ll update the CI and then the build&amp;#10;Then implement my feature and push to the source repo&lt;/p&gt;&amp;mdash; Kamal Marhubi (@kamalmarhubi) &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/603663049313132545&quot;&gt;May 27, 2015&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;Today, I was trying to make a &lt;a href=&quot;https://github.com/jparyani/pycapnp/issues/66&quot;&gt;small improvement&lt;/a&gt; to
+&lt;a href=&quot;https://github.com/jparyani/pycapnp&quot;&gt;pycapnp&lt;/a&gt;, the Python implementation of &lt;a href=&quot;https://capnproto.org/&quot;&gt;Cap’n Proto&lt;/a&gt;. This isn’t
+a very big change: it’s mostly adding a few lines at the end of a big
+conditional to make the library a better Python citizen.&lt;/p&gt;
+
+&lt;p&gt;But the library has &lt;a href=&quot;https://github.com/jparyani/pycapnp/tree/develop/test&quot;&gt;tests&lt;/a&gt; and &lt;a href=&quot;https://travis-ci.org/jparyani/pycapnp&quot;&gt;continuous integration&lt;/a&gt; set up.
+These are both awesome things to have, except for the part where they
+don’t work for me. Here is my current yak stack&lt;sup id=&quot;fnref:yak-stack&quot;&gt;&lt;a href=&quot;#fn:yak-stack&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;the &lt;a href=&quot;http://tox.testrun.org/&quot;&gt;tox&lt;/a&gt; tests don’t run properly on Linux, so &lt;a href=&quot;https://github.com/kamalmarhubi/pycapnp/commit/965301e9b42e664d43de5f8ea7f7f69648e0b7da&quot;&gt;I
+modified&lt;/a&gt; the &lt;code&gt;tox.ini&lt;/code&gt; to remove a setting I think is
+OS X specific, fixing tox on my machine&lt;/li&gt;
+  &lt;li&gt;I need to make sure the CI passes, so I fork the repo on GitHub, sign
+up for Travis CI, and add my fork to Travis&lt;/li&gt;
+  &lt;li&gt;the &lt;a href=&quot;https://travis-ci.org/kamalmarhubi/pycapnp/jobs/64316653&quot;&gt;Travis build fails&lt;/a&gt; because my build is using the new container
+based infrastructure, which doesn’t allow setuid programs like &lt;code&gt;sudo&lt;/code&gt;
+to run, so I started trying to port the CI build to the new
+infrastructure&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I think the third step was where I could have stopped. If I’d tried
+finding out how to opt out of the container infrastructure, I might have
+been able to move on.&lt;/p&gt;
+
+&lt;p&gt;At least that is a good starting point for tomorrow.&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:yak-stack&quot;&gt;
+      &lt;p&gt;Remember: yak stacks, like x86 stacks, grow down. &lt;a href=&quot;#fnref:yak-stack&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Wed, 27 May 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/05/27/controlling-the-yak-stack/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/05/27/controlling-the-yak-stack/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Avoiding distractions</title>
