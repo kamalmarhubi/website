@@ -5,9 +5,85 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 28 May 2015 01:21:54 -0400</pubDate>
-    <lastBuildDate>Thu, 28 May 2015 01:21:54 -0400</lastBuildDate>
+    <pubDate>Fri, 29 May 2015 00:06:40 -0400</pubDate>
+    <lastBuildDate>Fri, 29 May 2015 00:06:40 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>The excellence of uniform build and test infrastructure</title>
+        <description>&lt;p&gt;I made some small amount of progress on &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/05/27/controlling-the-yak-stack/&quot;&gt;yesterday’s yaks&lt;/a&gt;. I have
+almost got to the point where think that the tests work on both OS X
+and Linux; I just need to get some time on a Mac to be sure.&lt;/p&gt;
+
+&lt;p&gt;The experience so far has made me realise how powerful it is to have
+uniform build and test infrastructure. At Google, an improvement as
+small as I’m making would take not much longer than it takes to write
+the code. Everything is in &lt;a href=&quot;http://danluu.com/monorepo/&quot;&gt;one reository&lt;/a&gt;, and all tests are
+run with the same &lt;a href=&quot;http://bazel.io/&quot;&gt;tool&lt;/a&gt;. As a result, you simply make your
+change, run the tests, and then send it for review.&lt;/p&gt;
+
+&lt;p&gt;The &lt;a href=&quot;https://github.com/jparyani/pycapnp&quot;&gt;project&lt;/a&gt; I’m changing has a test suite. For local testing,
+you run either &lt;code&gt;py.test&lt;/code&gt; to run with the current Python environment, or
+&lt;code&gt;tox&lt;/code&gt; to run a &lt;a href=&quot;https://github.com/jparyani/pycapnp/blob/790bdce72ab3f2b6c203f00eaf07e6d605aa631a/tox.ini#L2&quot;&gt;collection of environments&lt;/a&gt;. In the CI build,
+the tests are run with &lt;code&gt;py.test&lt;/code&gt; under a &lt;a href=&quot;https://github.com/jparyani/pycapnp/blob/790bdce72ab3f2b6c203f00eaf07e6d605aa631a/.travis.yml#L6-11&quot;&gt;set of environments&lt;/a&gt; which defined by Travis CI’s infrastructure.&lt;/p&gt;
+
+&lt;p&gt;This difference between local tests and tests under CI is quite
+frustrating, especially given that the CI runs take many minutes to get
+scheduled and run. I can get to the Works On My Machine™ state, but have
+the CI build fail because the environment is different. To say I spent
+most of yesterday and today refreshing CI build pages wouldn’t be too
+inaccurate!&lt;/p&gt;
+
+&lt;p&gt;Even more, Travis CI recently changed its default from virtualized
+infrastructure to containerized infrastructure. The differences seem to
+be:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;containerized infrastructure schedules and runs quicker&lt;/li&gt;
+  &lt;li&gt;containerized infrastructure won’t run setuid programs such as
+sudo, which is used in this project’s &lt;a href=&quot;https://github.com/jparyani/pycapnp/blob/aa7d5303193b13880728035c298c635e4fdcbe1c/buildutils/setup_travis.sh#L7-11&quot;&gt;environment set up&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;However, they only applied this new default to repositories created
+after some &lt;a href=&quot;https://github.com/travis-ci/travis-core/blob/7a360299c19011cbd3c0f2bf099a16600048e210/lib/travis/model/job/queue.rb#L88&quot;&gt;cutoff date&lt;/a&gt;.&lt;sup id=&quot;fnref:sudo-detection&quot;&gt;&lt;a href=&quot;#fn:sudo-detection&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; This meant that the
+exact same commit that &lt;a href=&quot;https://travis-ci.org/jparyani/pycapnp/builds/61183652&quot;&gt;passes&lt;/a&gt; in the upstream CI build &lt;a href=&quot;https://travis-ci.org/kamalmarhubi/pycapnp/builds/64316652&quot;&gt;would
+fail&lt;/a&gt; in a new clone.&lt;sup id=&quot;fnref:refactor&quot;&gt;&lt;a href=&quot;#fn:refactor&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt; Certainly not intuitive!&lt;/p&gt;
+
+&lt;p&gt;I’m really interested to see how different projects approach this
+problem. Having such a uniform infrastructure is a luxury that not many
+can afford!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:sudo-detection&quot;&gt;
+
+      &lt;p&gt;The attentive reader may wonder about the &lt;code&gt;sudo_detected&lt;/code&gt; method
+call there: shouldn’t that have prevented this from being a
+problem?  Sadly, it looks as though this detection simply looks at
+invocations directly specified in &lt;code&gt;.travis.yml&lt;/code&gt;, and makes no
+attempt to find indirect invocations. &lt;a href=&quot;#fnref:sudo-detection&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:refactor&quot;&gt;
+
+      &lt;p&gt;I’m not even going into how at Google, all projects would
+have been tested with and without the new configuration. It would
+then be &lt;a href=&quot;http://danluu.com/monorepo/#cross-project-changes&quot;&gt;fairly easy&lt;/a&gt; to send an automated change
+&lt;a href=&quot;https://github.com/jparyani/pycapnp/commit/790bdce72ab3f2b6c203f00eaf07e6d605aa631a&quot;&gt;updating the configuration&lt;/a&gt; to any project that was
+newly failing with the new CI configuration. &lt;a href=&quot;#fnref:refactor&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Thu, 28 May 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Controlling the yak stack</title>
