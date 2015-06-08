@@ -1,0 +1,66 @@
+---
+title: "Recurse Center lab notes: 2015-06-03–2015-06-07"
+date: 2015-06-07
+tyoe: post
+permalink: /blog/2015/06/07/recurse-center-lab-notes
+---
+
+I had a busy week with my parents visiting. I was leaving RC a bit earlier than
+I would have otherwise, and also getting to bed later—they were staying in
+midtown, and I'm in Flatbush. As a result, I let my posting slide a bit, and
+this is me catching up. I'll also plan to write lab notes such as these each
+normal RC day, ie Monday through Thursday.
+
+# Linux IPC
+Ostensibly, the main project I'm working on right now is investigating Linux
+IPC. The eventual plan is to try and implement a share memory transport for
+[Cap'n Proto][capnp].
+
+As a start, I implemented a couple of small programs to measure latency for
+[pipes] and [eventfd]. It looks like the round trip time on my machine is on
+the order of a couple of microseconds. It varies a little depending on if I pin
+the communicating processes to the same core or not. This was nice to see,
+since it would require going over the L3 cache. However, the difference was on
+the order of a couple of hundred nanoseconds, which is more than I expected.
+I'll aim to get some data and draw some histograms early this coming week.
+
+[capnp]: http://capnproto.org/
+[pipes]: http://man7.org/linux/man-pages/man2/pipe.2.html
+[eventfd]: http://man7.org/linux/man-pages/man2/eventfd.2.html
+
+# JavaScript distraction
+Somehow I ended up with a bunch of JavaScript related tabs open. I think I
+blame Monica for it, as I was catching up on Twitter and saw her post about
+[Polymer] 1.0:
+<blockquote class="twitter-tweet" lang="en"><p lang="en" dir="ltr">🎉🚀<a href="https://twitter.com/polymer">@polymer</a> turns 1! SO excited to be part of this release — everything is faster and  the elements are shinier! 👏❤️&#10;&#10;<a href="http://t.co/fSzBi1s8bD">http://t.co/fSzBi1s8bD</a></p>&mdash; Monica Dinosaurescu (@notwaldorf) <a href="https://twitter.com/notwaldorf/status/604324257460453376">May 29, 2015</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+Eventually (or maybe soon?) I want to start learning JS. Or ECMAScript 2015 to
+be more specific. Or maybe even some ES7 features, like `async` and `await`. I
+was planning to learn React for some nifty front-end isomorphic buzzword
+compliance, but I'm not sure now. Maybe Polymer? Maybe some other [virtual DOM
+thingamy][vdom-benchmark] thing?
+
+[polymer]: http://polymer-project.org/
+[vdom-benchmark]: http://vdom-benchmark.github.io/vdom-benchmark/
+
+# make distraction
+
+I did a [refactor] of my IPC programs to allow them to share a `main` that
+handled command line arguments and other stuff. This required me to rejigger
+the `Makefile` to have both programs depend on the new source file, and to link
+it in. I asked Twitter the wrong question:
+
+<blockquote class="twitter-tweet" lang="en"><p lang="en" dir="ltr">is actually learning make a worthwhile pursuit?</p>&mdash; Kamal Marhubi (@kamalmarhubi) <a href="https://twitter.com/kamalmarhubi/status/607295232821075969">June 6, 2015</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+[refactor]: https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/20cdb2e254a02de85180c1d4708ecfb7faa9812e
+
+The responses lead me to expend small but non-zero time on this. I learned that
+`$@`' and `$<` are [meaningful variable names][make-vars]. Also that it's
+possible to build a static site generator driven by `make`.
+
+<blockquote class="twitter-tweet" data-conversation="none" lang="en"><p lang="en" dir="ltr"><a href="https://twitter.com/kamalmarhubi">@kamalmarhubi</a> I love make! It saved my life so many times. I&#39;m writing a static site generator in a Makefile.</p>&mdash; linse   (@linse) <a href="https://twitter.com/linse/status/607315482107117568">June 6, 2015</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+[make-vars]: https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html#Automatic-Variables
