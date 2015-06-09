@@ -5,9 +5,116 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 08 Jun 2015 11:28:08 -0400</pubDate>
-    <lastBuildDate>Mon, 08 Jun 2015 11:28:08 -0400</lastBuildDate>
+    <pubDate>Mon, 08 Jun 2015 23:59:38 -0400</pubDate>
+    <lastBuildDate>Mon, 08 Jun 2015 23:59:38 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes: 2015-06-08</title>
+        <description>&lt;h1 id=&quot;linux-ipc-stuff&quot;&gt;Linux IPC stuff&lt;/h1&gt;
+&lt;p&gt;I’m getting closer to having some data on latencies for pipes and eventfds. I
+reworked the little programs to easily dump timings for multiple runs. Next
+step is to figure out how to visualise it. Likely I’ll use iPython Notebook and
+Pandas.&lt;/p&gt;
+
+&lt;p&gt;On the way, I found out a thing—one of those obvious-in-retrospect things. Both
+the pipes and eventfd programs I wrote have the same structure. They start a
+child process that acts as a server that responds as soon as it receives a
+message. The child just runs a loop like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;for (;;) {
+  char msg;
+  read(rx_fd, &amp;amp;msg, 1);
+  write(tx_fd, &quot;1&quot;, 1);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I implemented this for pipes first, and this works great. A &lt;code&gt;read&lt;/code&gt; on a pipe
+whose write end is closed will return 0 to signal end of file. A &lt;code&gt;write&lt;/code&gt; on a
+pipe whose read end is closed results in a &lt;code&gt;SIGPIPE&lt;/code&gt; signal. The result is that
+once the parent closes its pipes—whether explicitly or on exit—the child will
+die because the default action for &lt;code&gt;SIGPIPE&lt;/code&gt; is to terminate the process.&lt;/p&gt;
+
+&lt;p&gt;With eventfds, there is no analogous signal. It would actually be a bit odd.
+Pipes have two ends, and each gets its own file descriptor. When the last file
+descriptor referring to one of the ends is closed, then the &lt;code&gt;EOF&lt;/code&gt; / &lt;code&gt;SIGPIPE&lt;/code&gt;
+behaviour kicks in. To get something similar to happen with eventfds, the
+special behaviour would have to kick in when only one file descriptor
+references the eventfd object. But right after the call to &lt;code&gt;eventfd&lt;/code&gt;, there is
+just one file descriptor referencing it. I suppose it could be special cased to
+trigger when the number of open file descriptors goes &lt;em&gt;down&lt;/em&gt; to one, but it’s
+also completely reasonable that it wouldn’t.&lt;/p&gt;
+
+&lt;p&gt;All that is to say, the child doesn’t terminate when the parent does, and I ended up with this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ pgrep eventfd | head
+6123
+6131
+6138
+6145
+6153
+6160
+6531
+6538
+6545
+6553
+$ pgrep eventfd | wc -l
+172
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;That’s a lot of zombies! Don’t worry, I killed them. With FIRE^W &lt;code&gt;pkill&lt;/code&gt;. I
+still have to fix the problem, but the solution is pretty easy: kill the child
+before the parent exits.&lt;/p&gt;
+
+&lt;h1 id=&quot;other-stuff&quot;&gt;Other stuff&lt;/h1&gt;
+&lt;p&gt;The internet went down for a bit at RC today. I used the time to add an index
+page to this blog, &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/607967764620431361&quot;&gt;making some people happy&lt;/a&gt;. It felt silly to
+use lack of internet to make internet, but there you go.&lt;/p&gt;
+
+&lt;p&gt;During the internet outage, I also brainstormed with &lt;a href=&quot;https://twitter.com/SimplyAhmaz1ng&quot;&gt;Ahmed&lt;/a&gt; a bit on grammar
+ideas for his Arabic programming language. I was thinking it would be cool to
+integrate some Arabic grammar into the language. For example, use the
+possessive for property access, and allow the &lt;a href=&quot;https://en.wikipedia.org/wiki/Arabic_grammar#Enclitic_pronouns&quot;&gt;attached pronouns&lt;/a&gt; to
+be a default argument like Perl’s &lt;code&gt;$_&lt;/code&gt;. We decided they wouldn’t be a great
+idea because it could end up in a sort of uncanny valley where something it
+looks like should work but it doesn’t.&lt;/p&gt;
+
+&lt;p&gt;I paired with &lt;a href=&quot;https://twitter.com/optimistsinc&quot;&gt;Jess&lt;/a&gt; who is learning Haskell to do some lattice-based
+cryptography stuff. But step 1 is tic-tac-toe. We did some refactoring, and I
+pointed out a couple of useful things like using &lt;code&gt;@&lt;/code&gt; in a pattern to name the
+whole match. Somehow I’m pretty happy helping people with Haskell, even though
+I’m not really that interested in it anymore myself. Maybe it’s just because
+it’s something I know and so can help with.&lt;/p&gt;
+
+&lt;p&gt;Allison Parish is a resident for the next two weeks. She gave a talk in the
+evening on &lt;a href=&quot;http://www.decontextualize.com/projects/nite/&quot;&gt;new interfaces for textual expression&lt;/a&gt;. Do take a look at
+that link, her projects are really cool! She’s aiming to put together a bunch
+of prototypes while at RC, and I’m really excited to see what she gets up to.&lt;/p&gt;
+
+&lt;h1 id=&quot;random&quot;&gt;Random&lt;/h1&gt;
+
+&lt;p&gt;On the way to eBay for Allison’s talk, I stopped by Union Square to buy an
+apple. I also got a ‘cocktail’ of apple juices for free—I stopped to look at a
+stall that was packing up, and their demo bottles were mostly empty.  The
+person poured them into one bottle and just gave it to me.&lt;/p&gt;
+
+&lt;p&gt;I then took my apple and juice to a table on Broadway and sat down. Two people
+next to me were eating burgers and speaking Québecois French. I wasn’t going to
+insert myself until I heard ‘Rachel et Saint-Hubert’, which is an intersection
+close to where I live. They were discussing the burger, and so I asked (in
+French) if they were talking about L’Anecdote, a burger place at that corner. I
+think this was a fun surprise for them, and we had a little chat about what
+brought us to New York. Even more fun, I was wearing my ‘&lt;a href=&quot;https://en.wikipedia.org/wiki/Five_Roses_Flour&quot;&gt;Farine Five
+Roses&lt;/a&gt;’ t-shirt, marking me—in one of their words—as &lt;em&gt;vrai
+Montréalais&lt;/em&gt;!&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 08 Jun 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/06/08/recurse-center-lab-notes</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/08/recurse-center-lab-notes</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center lab notes: 2015-06-03–2015-06-07</title>
