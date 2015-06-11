@@ -53,11 +53,11 @@
       <div class="wrapper">
         <p>I’ve <a href="https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/e06c93b54b4d13e1f78c64add9ac8a5cdf19b9ff">added</a> <a href="https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/8f9094522465db54003f08da4d5b797e2944f47e">benchmarks</a> for UNIX domain
 sockets and TCP sockets over the loopback interface. UNIX domain sockets were
-super easy to implement thanks to the handy <code>[socketpair]</code> function. It was not
-really any different from pipes. The difference is that since sockets are full
-duplex, you only need to create one pair.  If the processes were unrelated, or
-if I wanted to be able to accept multiple connections, it would be much more
-like TCP sockets—ie, a pain!</p>
+super easy to implement thanks to the handy <a href="http://man7.org/linux/man-pages/man2/socketpair.2.html"><code>socketpair</code></a>
+function. It was not really any different from pipes. The difference is that
+since sockets are full duplex, you only need to create one pair.  If the
+processes were unrelated, or if I wanted to be able to accept multiple
+connections, it would be much more like TCP sockets—ie, a pain!</p>
 
 <p>I say a pain because, in doing this, I ‘found out’ that, despite having written
 a non-zero number of server applications, I’ve never done socket programming
