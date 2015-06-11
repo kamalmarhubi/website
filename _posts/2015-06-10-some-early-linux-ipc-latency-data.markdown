@@ -5,11 +5,11 @@ date: 2015-06-10
 
 I've [added][af-unix-commit] [benchmarks][af-inet-commit] for UNIX domain
 sockets and TCP sockets over the loopback interface. UNIX domain sockets were
-super easy to implement thanks to the handy `[socketpair]` function. It was not
-really any different from pipes. The difference is that since sockets are full
-duplex, you only need to create one pair.  If the processes were unrelated, or
-if I wanted to be able to accept multiple connections, it would be much more
-like TCP sockets—ie, a pain!
+super easy to implement thanks to the handy [`socketpair`][socketpair]
+function. It was not really any different from pipes. The difference is that
+since sockets are full duplex, you only need to create one pair.  If the
+processes were unrelated, or if I wanted to be able to accept multiple
+connections, it would be much more like TCP sockets—ie, a pain!
 
 [af-unix-commit]: https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/e06c93b54b4d13e1f78c64add9ac8a5cdf19b9ff
 [af-inet-commit]: https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/8f9094522465db54003f08da4d5b797e2944f47e
