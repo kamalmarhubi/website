@@ -18,5 +18,5 @@ defaults:
       path: "" # all files
       type: "posts"
     values:
-      layout: default
+      layout: post
       permalink: /blog/:year/:month/:day/:title/
