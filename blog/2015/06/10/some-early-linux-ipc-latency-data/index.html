@@ -51,7 +51,15 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <p>I’ve <a href="https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/e06c93b54b4d13e1f78c64add9ac8a5cdf19b9ff">added</a> <a href="https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/8f9094522465db54003f08da4d5b797e2944f47e">benchmarks</a> for UNIX domain
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Some early Linux IPC latency data</h1>
+    <p class="post-meta">Jun 10, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p>I’ve <a href="https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/e06c93b54b4d13e1f78c64add9ac8a5cdf19b9ff">added</a> <a href="https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/8f9094522465db54003f08da4d5b797e2944f47e">benchmarks</a> for UNIX domain
 sockets and TCP sockets over the loopback interface. UNIX domain sockets were
 super easy to implement thanks to the handy <a href="http://man7.org/linux/man-pages/man2/socketpair.2.html"><code>socketpair</code></a>
 function. It was not really any different from pipes. The difference is that
@@ -281,6 +289,10 @@ case means a <code>uint32_t</code> because <code>long</code>s used to be shorter
 for <code>short</code> which have stayed short at 16 bits long). <a href="#fnref:htonl" class="reversefootnote">&#8617;</a></p>
     </li>
   </ol>
+</div>
+
+  </article>
+
 </div>
 
       </div>

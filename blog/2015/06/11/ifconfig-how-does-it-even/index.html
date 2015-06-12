@@ -51,7 +51,15 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <p>I can already <a href="/blog/2015/06/10/some-early-linux-ipc-latency-data/">measure the latency</a> of TCP sockets over the
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">ifconfig: how does it even?</h1>
+    <p class="post-meta">Jun 11, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p>I can already <a href="/blog/2015/06/10/some-early-linux-ipc-latency-data/">measure the latency</a> of TCP sockets over the
 loopback interface. I want to compare this to TCP sockets connecting to one of
 the ‘real’ addresses the machine has, to see if it’s any different. I could see
 this being either the same as the loopback interface, or being slower. I’m way
@@ -89,6 +97,10 @@ any</li>
 <p>To see in more detail, take a look at <a href="https://gist.github.com/kamalmarhubi/1dfc1fa302916e21975d">this gist</a> for an annotated
 <code>strace</code> of <code>ifconfig</code> and <code>ifconfig -s</code>.</p>
 
+
+  </article>
+
+</div>
 
       </div>
     </div>
