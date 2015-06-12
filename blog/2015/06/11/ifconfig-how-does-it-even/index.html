@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>Kamal Marhubi</title>
+    <title>ifconfig: how does it even?</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" href="/css/main.css">
-    <link rel="canonical" href="http://kamalmarhubi.com/blog/">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2015/06/11/ifconfig-how-does-it-even/">
 </head>
 
 
@@ -51,105 +51,44 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="home">
+        <p>I can already <a href="/blog/2015/06/10/some-early-linux-ipc-latency-data/">measure the latency</a> of TCP sockets over the
+loopback interface. I want to compare this to TCP sockets connecting to one of
+the ‘real’ addresses the machine has, to see if it’s any different. I could see
+this being either the same as the loopback interface, or being slower. I’m way
+below the level I have any real knowledge of at this point, so there’s only one
+way to find out.</p>
 
-  <h1 class="page-heading">Posts</h1>
-  <p class="rss-subscribe">subscribe <a href="feed.xml">via RSS</a></p>
+<p>But rather than hardcode in the IP addresses, or take them on the command line,
+I want the benchmark to find them itself. One thing I want out of these
+benchmarks is for them to build on any Linux system, and run without needing
+machine-specific arguments.  When <em>I</em> find out what IP addresses my machine
+has, I use <code>ifconfig</code>. But how does <code>ifconfig</code> do it? I was about to Google the
+answer when I realised this would be a perfect time use <code>strace</code>, and so I did!</p>
 
-  <ul class="post-list">
-    
-      <li>
-        <span class="post-meta">Jun 11, 2015</span>
+<blockquote class="twitter-tweet" lang="en"><p lang="en" dir="ltr">I just straced ifconfig to find out how it finds out which interfaces exist! /cc <a href="https://twitter.com/b0rk">@b0rk</a></p>&mdash; Kamal Marhubi (@kamalmarhubi) <a href="https://twitter.com/kamalmarhubi/status/608735834905415680">June 10, 2015</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/11/ifconfig-how-does-it-even/">ifconfig: how does it even?</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 10, 2015</span>
+<p>Here’s the quick summary of what happens:</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/10/some-early-linux-ipc-latency-data/">Some early Linux IPC latency data</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 8, 2015</span>
+<ol>
+  <li>create sockets of both <code>AF_INET</code> and <code>AF_INET6</code> families</li>
+  <li>read <code>/proc/net/dev</code> to get a complete list of interfaces; we’ll need this
+to get the addresses for <code>AF_INET6</code> socket, as well as to get the list of
+interfaces that don’t have an <code>AF_INET</code> address</li>
+  <li>use the <code>SIOCGIFCONF</code> <code>ioctl</code> to get a list of addresses for <code>AF_INET</code></li>
+  <li>loop through the interface names that came from <code>/proc/net/dev</code> and for each
+one
+    <ul>
+      <li>read <code>/proc/net/if_inet6</code> to get the IPv6 address for the interface, if
+any</li>
+      <li>use a series of <code>ioctl</code> calls to get data about the interface</li>
+    </ul>
+  </li>
+</ol>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/08/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-08</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 7, 2015</span>
+<p>To see in more detail, take a look at <a href="https://gist.github.com/kamalmarhubi/1dfc1fa302916e21975d">this gist</a> for an annotated
+<code>strace</code> of <code>ifconfig</code> and <code>ifconfig -s</code>.</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/07/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-03–2015-06-07</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 2, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/02/goals-non-goals-and-anti-goals/">Goals, non-goals, and anti-goals</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 1, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/01/a-list-of-linux-ipc-mechanisms/">A list of Linux IPC mechanisms</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 28, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/">The excellence of uniform build and test infrastructure</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/controlling-the-yak-stack/">Controlling the yak stack</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/a-touch-of-plain-bob-minor/">A touch of Plain Bob Minor</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 26, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/26/avoiding-distractions/">Avoiding distractions</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 25, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/25/recurse-center-omg/">Recurse Center OMG</a>
-        </h2>
-      </li>
-    
-  </ul>
-
-
-</div>
 
       </div>
     </div>
