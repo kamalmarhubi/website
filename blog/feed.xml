@@ -5,9 +5,94 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 12 Jun 2015 13:27:59 -0400</pubDate>
-    <lastBuildDate>Fri, 12 Jun 2015 13:27:59 -0400</lastBuildDate>
+    <pubDate>Tue, 16 Jun 2015 01:37:12 -0400</pubDate>
+    <lastBuildDate>Tue, 16 Jun 2015 01:37:12 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes 2015-06-15: shipping, IPC, NUMA, AsciiDoc</title>
+        <description>&lt;p&gt;Today I joined the ‘shipping’ checking group, instigated by &lt;a href=&quot;http://natwelch.com/&quot;&gt;Nat Welch&lt;/a&gt;.
+The idea is to work towards actually shipping something, which I really want to
+get better at while at RC.&lt;/p&gt;
+
+&lt;p&gt;I decided on a simple utility to list IP addresses. This came out of my writing
+on &lt;a href=&quot;/blog/2015/06/11/ifconfig-how-does-it-even/&quot;&gt;how &lt;code&gt;ifconfig&lt;/code&gt; works&lt;/a&gt;. &lt;a href=&quot;http://plover.com/~mjd/&quot;&gt;Mark Dominus&lt;/a&gt; said a
+utility that just listed IP addresses would be handy, and he’s never come
+across one. I did a little poking around the googles and stackoverflows, and
+most answers involved &lt;code&gt;ifconfig&lt;/code&gt;, &lt;code&gt;grep&lt;/code&gt;, and either &lt;code&gt;sed&lt;/code&gt; or &lt;code&gt;awk&lt;/code&gt;. A few
+listed the Linux only &lt;code&gt;ip addr show&lt;/code&gt; which still has a lot of cruft in its
+output. I also came across another Linux only option, &lt;code&gt;hostname
+--all-ip-addresses&lt;/code&gt;, which prints them one per line, ignoring loopback and link
+local addresses.&lt;/p&gt;
+
+&lt;p&gt;The last one is pretty close to what I would like, but it’s missing some handy
+flags to specify IPv4 or IPv6, which interface, or whether to include link
+local or loopback addresses. It’s also Linux only, which a standalone utility
+could work around. I’m aiming to have a fairly polished first version for Linux
+systems this week, possibly even dabbling in Debian packaging.&lt;/p&gt;
+
+&lt;p&gt;Of course, right after deciding that, I got distracted following up on some
+links &lt;a href=&quot;http://anil.recoil.org/&quot;&gt;Anil Madhavapeddy&lt;/a&gt; gave me last Thursday while he was at RC. It
+turns out the IPC performance is of a lot of interest to virtualization people,
+and he had this &lt;a href=&quot;https://github.com/avsm/ipc-bench&quot;&gt;big set of benchmarks&lt;/a&gt;. I also read through slides
+from his FOSDEM 2012 talk entitled &lt;em&gt;The Wild West of UNIX I/O&lt;/em&gt;. This goes into
+a lot of details around non-uniform memory architecture (NUMA) and how it
+affects latency and throughput between core in a many core machine. It’s
+incredibly fascinating that the interconnections between the cores can be
+inferred from measuring IPC performance.&lt;/p&gt;
+
+&lt;p&gt;Even more interesting to me was the little bit at the end on Fable I/O, an
+‘ongoing attempt at a “new” sockets API for high-performance data’. Sadly, the
+‘ongoing’ part of this no longer seems valid: the best I could find was a
+&lt;a href=&quot;https://github.com/ms705/libfable&quot;&gt;&lt;code&gt;libfable&lt;/code&gt;&lt;/a&gt; repository that hasn’t seen any updates in a couple of
+years. This got me a bit excited, and I started reading up a bit more on NUMA
+support in Linux. I came across a &lt;a href=&quot;http://lwn.net/Articles/486858/&quot;&gt;&lt;em&gt;Linux Weekly News&lt;/em&gt; article&lt;/a&gt;
+from 2012 on NUMA aware scheduling support. So many things to think about:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;the idea home NUMA nodes for processes&lt;/li&gt;
+  &lt;li&gt;moving physical pages between nodes while leaving virtual addresses intact&lt;/li&gt;
+  &lt;li&gt;grouping processes together into NUMA groups that will always share a home
+node&lt;/li&gt;
+  &lt;li&gt;the performance gains possible by understanding and exploiting hardware
+details&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;On the performance note, a quote from the LWN article stands out:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Without the NUMA balancing patches, over time, the benchmark ended up with
+just as many remote memory accesses as local accesses - allocated memory was
+spread across the system. With the NUMA balancer, 86% of the memory accesses
+were local, leading to a significant speedup.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;NUMA: serious business.&lt;/p&gt;
+
+&lt;p&gt;After a while I was able to settle down again from all this IPC excitement and
+think about how to approach the list-IP-addresses utility. I decided to go with
+some &lt;a href=&quot;http://tom.preston-werner.com/2010/08/23/readme-driven-development.html&quot;&gt;README-driven development&lt;/a&gt;, and drafted up a README. After a bit,
+I changed the aim to writing a manpage. This was driven by a secret desire to
+use &lt;a href=&quot;http://asciidoc.org/&quot;&gt;AsciiDoc&lt;/a&gt; (see also: &lt;a href=&quot;http://asciidoctor.org/&quot;&gt;AsciiDoctor&lt;/a&gt;), as I’ve been wanting to check it out as a Markdown alternative
+for a while. I knew it had good support for manpage generation. In fact, the
+&lt;a href=&quot;https://github.com/git/git/blob/master/Documentation/&quot;&gt;&lt;code&gt;git&lt;/code&gt; docs&lt;/a&gt; are in AsciiDoc.&lt;/p&gt;
+
+&lt;p&gt;So, current status:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;I have some flags being parsed&lt;/li&gt;
+  &lt;li&gt;can list IPv4 addresses&lt;/li&gt;
+  &lt;li&gt;manpage needs some rewording and reworking&lt;/li&gt;
+  &lt;li&gt;the tool needs a name. I had &lt;code&gt;lsip&lt;/code&gt;, after &lt;code&gt;lsof&lt;/code&gt;, but it looks wrong. I’m
+now thinking &lt;code&gt;lsaddr&lt;/code&gt;. I am bad at names.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 15 Jun 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/06/15/recurse-center-lab-notes</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/15/recurse-center-lab-notes</guid>
+        
+        
+      </item>
     
       <item>
         <title>ifconfig: how does it even?</title>
@@ -702,54 +787,6 @@ really excited about making some proper progress this summer!&lt;/p&gt;
         <pubDate>Wed, 27 May 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/05/27/a-touch-of-plain-bob-minor/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/05/27/a-touch-of-plain-bob-minor/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Avoiding distractions</title>
-        <description>&lt;p&gt;This morning, as part of the Recurse Center’s welcome talks, &lt;a href=&quot;http://maryrosecook.com/&quot;&gt;Mary Rose
-Cook&lt;/a&gt; gave some advice on how to spend twelve weeks of unstrucutred time.
-You can see similar advice in the Recurse Center  manual’s &lt;a href=&quot;https://www.recurse.com/manual#sec-advice&quot;&gt;advice
-section&lt;/a&gt;, where they are divided up by level of experience:
-relatively new to programming; already have good grasp of one language; and
-really experienced.&lt;/p&gt;
-
-&lt;p&gt;There is one item that appears on all three lists: ‘avoid distractions’.&lt;/p&gt;
-
-&lt;p&gt;Aside from a delightful pairing experience&lt;sup id=&quot;fnref:ann-pairing&quot;&gt;&lt;a href=&quot;#fn:ann-pairing&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; with &lt;a href=&quot;http://www.annharter.com/&quot;&gt;Ann&lt;/a&gt;, my only
-technical work today was on the one thing I had decided not to work
-on at the Recurse Center.&lt;sup id=&quot;fnref:non-project&quot;&gt;&lt;a href=&quot;#fn:non-project&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt; While today was the first day, and it started
-later and ended earlier than most days will, I’ll still need to keep a close watch.&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:ann-pairing&quot;&gt;
-
-      &lt;p&gt;I learned some Ruby syntax and we refactored a
-guess-the-number-from-0-to-99 game. The absolute best part was where we wanted
-to test something about the iteration, but won with 50 on the first try. The
-program very accurately told us that we were ‘the best at this!’&lt;/p&gt;
-      &lt;blockquote class=&quot;twitter-tweet&quot; lang=&quot;en&quot;&gt;&lt;p lang=&quot;und&quot; dir=&quot;ltr&quot;&gt;🏆 &lt;a href=&quot;http://t.co/PZVQRuX9bH&quot;&gt;pic.twitter.com/PZVQRuX9bH&lt;/a&gt;&lt;/p&gt;&amp;mdash; figuratively dying (@anyharder) &lt;a href=&quot;https://twitter.com/anyharder/status/603273545091817472&quot;&gt;May 26, 2015&lt;/a&gt;&lt;/blockquote&gt;
-      &lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-
-      &lt;p&gt;&lt;a href=&quot;#fnref:ann-pairing&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-    &lt;li id=&quot;fn:non-project&quot;&gt;
-
-      &lt;p&gt;On the bright side, I finally got my 3-node &lt;a href=&quot;https://github.com/coreos/etcd&quot;&gt;etcd&lt;/a&gt; cluster running etcd2,
-which was blocking further progress on that project. &lt;a href=&quot;#fnref:non-project&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Tue, 26 May 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/05/26/avoiding-distractions/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/05/26/avoiding-distractions/</guid>
         
         
       </item>

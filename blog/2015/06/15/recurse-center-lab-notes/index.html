@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Recurse Center lab notes 2015-06-15: shipping, IPC, NUMA, AsciiDoc</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2015/06/15/recurse-center-lab-notes">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Kamal Marhubi</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Recurse Center lab notes 2015-06-15: shipping, IPC, NUMA, AsciiDoc</h1>
+    <p class="post-meta">Jun 15, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p>Today I joined the ‘shipping’ checking group, instigated by <a href="http://natwelch.com/">Nat Welch</a>.
+The idea is to work towards actually shipping something, which I really want to
+get better at while at RC.</p>
+
+<p>I decided on a simple utility to list IP addresses. This came out of my writing
+on <a href="/blog/2015/06/11/ifconfig-how-does-it-even/">how <code>ifconfig</code> works</a>. <a href="http://plover.com/~mjd/">Mark Dominus</a> said a
+utility that just listed IP addresses would be handy, and he’s never come
+across one. I did a little poking around the googles and stackoverflows, and
+most answers involved <code>ifconfig</code>, <code>grep</code>, and either <code>sed</code> or <code>awk</code>. A few
+listed the Linux only <code>ip addr show</code> which still has a lot of cruft in its
+output. I also came across another Linux only option, <code>hostname
+--all-ip-addresses</code>, which prints them one per line, ignoring loopback and link
+local addresses.</p>
+
+<p>The last one is pretty close to what I would like, but it’s missing some handy
+flags to specify IPv4 or IPv6, which interface, or whether to include link
+local or loopback addresses. It’s also Linux only, which a standalone utility
+could work around. I’m aiming to have a fairly polished first version for Linux
+systems this week, possibly even dabbling in Debian packaging.</p>
+
+<p>Of course, right after deciding that, I got distracted following up on some
+links <a href="http://anil.recoil.org/">Anil Madhavapeddy</a> gave me last Thursday while he was at RC. It
+turns out the IPC performance is of a lot of interest to virtualization people,
+and he had this <a href="https://github.com/avsm/ipc-bench">big set of benchmarks</a>. I also read through slides
+from his FOSDEM 2012 talk entitled <em>The Wild West of UNIX I/O</em>. This goes into
+a lot of details around non-uniform memory architecture (NUMA) and how it
+affects latency and throughput between core in a many core machine. It’s
+incredibly fascinating that the interconnections between the cores can be
+inferred from measuring IPC performance.</p>
+
+<p>Even more interesting to me was the little bit at the end on Fable I/O, an
+‘ongoing attempt at a “new” sockets API for high-performance data’. Sadly, the
+‘ongoing’ part of this no longer seems valid: the best I could find was a
+<a href="https://github.com/ms705/libfable"><code>libfable</code></a> repository that hasn’t seen any updates in a couple of
+years. This got me a bit excited, and I started reading up a bit more on NUMA
+support in Linux. I came across a <a href="http://lwn.net/Articles/486858/"><em>Linux Weekly News</em> article</a>
+from 2012 on NUMA aware scheduling support. So many things to think about:</p>
+
+<ul>
+  <li>the idea home NUMA nodes for processes</li>
+  <li>moving physical pages between nodes while leaving virtual addresses intact</li>
+  <li>grouping processes together into NUMA groups that will always share a home
+node</li>
+  <li>the performance gains possible by understanding and exploiting hardware
+details</li>
+</ul>
+
+<p>On the performance note, a quote from the LWN article stands out:</p>
+
+<blockquote>
+  <p>Without the NUMA balancing patches, over time, the benchmark ended up with
+just as many remote memory accesses as local accesses - allocated memory was
+spread across the system. With the NUMA balancer, 86% of the memory accesses
+were local, leading to a significant speedup.</p>
+</blockquote>
+
+<p>NUMA: serious business.</p>
+
+<p>After a while I was able to settle down again from all this IPC excitement and
+think about how to approach the list-IP-addresses utility. I decided to go with
+some <a href="http://tom.preston-werner.com/2010/08/23/readme-driven-development.html">README-driven development</a>, and drafted up a README. After a bit,
+I changed the aim to writing a manpage. This was driven by a secret desire to
+use <a href="http://asciidoc.org/">AsciiDoc</a> (see also: <a href="http://asciidoctor.org/">AsciiDoctor</a>), as I’ve been wanting to check it out as a Markdown alternative
+for a while. I knew it had good support for manpage generation. In fact, the
+<a href="https://github.com/git/git/blob/master/Documentation/"><code>git</code> docs</a> are in AsciiDoc.</p>
+
+<p>So, current status:</p>
+
+<ul>
+  <li>I have some flags being parsed</li>
+  <li>can list IPv4 addresses</li>
+  <li>manpage needs some rewording and reworking</li>
+  <li>the tool needs a name. I had <code>lsip</code>, after <code>lsof</code>, but it looks wrong. I’m
+now thinking <code>lsaddr</code>. I am bad at names.</li>
+</ul>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:kamal@marhubi.com">kamal@marhubi.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/kamalmarhubi">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/kamalmarhubi">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text"></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
