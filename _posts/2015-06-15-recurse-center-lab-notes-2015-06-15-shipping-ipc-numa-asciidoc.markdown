@@ -50,7 +50,7 @@ years. This got me a bit excited, and I started reading up a bit more on NUMA
 support in Linux. I came across a [_Linux Weekly News_ article][lwn-numa-sched]
 from 2012 on NUMA aware scheduling support. So many things to think about:
 
-- the idea home NUMA nodes for processes
+- the idea of home NUMA nodes for processes
 - moving physical pages between nodes while leaving virtual addresses intact
 - grouping processes together into NUMA groups that will always share a home
   node
