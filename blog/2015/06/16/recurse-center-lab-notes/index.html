@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>Kamal Marhubi</title>
+    <title>Recurse Center lab notes 2015-06-16</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" href="/css/main.css">
-    <link rel="canonical" href="http://kamalmarhubi.com/blog/">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2015/06/16/recurse-center-lab-notes">
 </head>
 
 
@@ -51,119 +51,64 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="home">
+        <div class="post">
 
-  <h1 class="page-heading">Posts</h1>
-  <p class="rss-subscribe">subscribe <a href="feed.xml">via RSS</a></p>
+  <header class="post-header">
+    <h1 class="post-title">Recurse Center lab notes 2015-06-16</h1>
+    <p class="post-meta">Jun 16, 2015</p>
+  </header>
 
-  <ul class="post-list">
-    
-      <li>
-        <span class="post-meta">Jun 16, 2015</span>
+  <article class="post-content">
+    <p>Today I continued working on my <code>lsaddr</code> utility for listing IP addresses.
+Here’s a quick update:</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/16/recurse-center-lab-notes">Recurse Center lab notes 2015-06-16</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 15, 2015</span>
+<ul>
+  <li>there is now a <a href="https://github.com/kamalmarhubi/lsaddr">repository on GitHub</a></li>
+  <li>
+    <p>I have a <a href="https://github.com/kamalmarhubi/lsaddr/blob/master/lsaddr.adoc">man page</a> that I’m mostly pleased with; here’s the
+synopsis:</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/15/recurse-center-lab-notes">Recurse Center lab notes 2015-06-15: shipping, IPC, NUMA, AsciiDoc</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 11, 2015</span>
+    <p><code>
+lsaddr [ -46 ] [--include-loopback] [--include-ipv6-link-local] [ interface ... ]
+</code></p>
+  </li>
+  <li>I am checking that the supplied interfaces exist and reporting errors with
+<a href="http://linux.die.net/man/3/error"><code>error</code></a>, which I discovered was the done thing by using <code>ltrace</code> on
+<code>ls does-not-exist</code> :-)</li>
+  <li>I tried to use <a href="http://linux.die.net/man/3/lfind"><code>lfind</code></a> to determine if interfaces were listed as
+arguments, but wow what a mess that was<sup id="fnref:lfind-mess"><a href="#fn:lfind-mess" class="footnote">1</a></sup>; I scrapped that to come
+back to it another day</li>
+</ul>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/11/ifconfig-how-does-it-even/">ifconfig: how does it even?</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 10, 2015</span>
+<p>In other news, I read <a href="http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html">this exciting post</a> by Brendan Gregg on eBPF
+and tracing in the kernel. Apparently it will soon be possible to gather
+latency data from inside the kernel. I haven’t figured out if this could be
+interesting for IPC benchmarks.</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/10/some-early-linux-ipc-latency-data/">Some early Linux IPC latency data</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 8, 2015</span>
+<p><br /></p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/08/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-08</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 7, 2015</span>
+<hr />
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/07/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-03–2015-06-07</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 2, 2015</span>
+<div class="footnotes">
+  <ol>
+    <li id="fn:lfind-mess">
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/02/goals-non-goals-and-anti-goals/">Goals, non-goals, and anti-goals</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 1, 2015</span>
+      <p>the closest C comes to having generics / parametric polymorphism is
+<code>void *</code>. With things like <a href="http://linux.die.net/man/3/malloc"><code>malloc</code></a>, this is mostly fine. With algorithms
+like <code>lfind</code> and friends… well you’re going to have a bad time. Just look
+a this signature:</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/01/a-list-of-linux-ipc-mechanisms/">A list of Linux IPC mechanisms</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 28, 2015</span>
+      <p><code>
+void *lfind(const void *key, const void *base, size_t *nmemb,
+            size_t size, int(*compar)(const void *, const void *))
+</code></p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/">The excellence of uniform build and test infrastructure</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
+      <p>I find <a href="http://en.cppreference.com/w/cpp/algorithm/find"><code>std::find</code></a> unfriendly, but this is a whole other level. <a href="#fnref:lfind-mess" class="reversefootnote">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/controlling-the-yak-stack/">Controlling the yak stack</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/a-touch-of-plain-bob-minor/">A touch of Plain Bob Minor</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 26, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/26/avoiding-distractions/">Avoiding distractions</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 25, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/25/recurse-center-omg/">Recurse Center OMG</a>
-        </h2>
-      </li>
-    
-  </ul>
-
+  </article>
 
 </div>
 
