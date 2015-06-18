@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>Kamal Marhubi</title>
+    <title>Recurse Center lab notes 2015-06-17</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" href="/css/main.css">
-    <link rel="canonical" href="http://kamalmarhubi.com/blog/">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2015/06/17/recurse-center-lab-notes">
 </head>
 
 
@@ -51,127 +51,72 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="home">
+        <div class="post">
 
-  <h1 class="page-heading">Posts</h1>
-  <p class="rss-subscribe">subscribe <a href="feed.xml">via RSS</a></p>
+  <header class="post-header">
+    <h1 class="post-title">Recurse Center lab notes 2015-06-17</h1>
+    <p class="post-meta">Jun 17, 2015</p>
+  </header>
 
-  <ul class="post-list">
-    
-      <li>
-        <span class="post-meta">Jun 17, 2015</span>
+  <article class="post-content">
+    <p>Not a lot to report today: I overslept and only got in at 11, and then left at
+6 to go ringing. I did bring another recurser—Jess—along with me, so that was
+cool. I think she’ll be back, too! I left ringing early to go and checkout the
+<a href="http://www.keyboard.io/">Keyboardio Model 01</a> in midtown. It’s a very attractive piece of
+hardware, and has me tempted to order one. I’ll need a second keyboard at some
+point, right?</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/17/recurse-center-lab-notes">Recurse Center lab notes 2015-06-17</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 16, 2015</span>
+<p>On the <a href="https://github.com/kamalmarhubi/lsaddr"><code>lsaddr</code></a> front, I figured out how to make <code>lfind</code> go. I don’t understand
+why, but I’ll take my win for now. I’m also parsing <code>/proc/net/if_inet6</code> to get
+IPv6 addresses, though not yet including them in the output. I mostly pushed
+characters around in source files:</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/16/recurse-center-lab-notes">Recurse Center lab notes 2015-06-16</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 15, 2015</span>
+<pre><code>$ git log --since=yesterday --reverse --oneline
+a08386b Fix typo in manpage
+16fbff4 Change int to size_t in a couple of places
+69300ac Use designated initializers instead of statements
+614ef75 Rename ipv4_fd to sockfd and use AF_INET6
+8d9aacc Check interface arguments exist
+d21ecec Run clang-format
+8f9fb9c Properly handle user specified interfaces
+6d75545 Comment the repeated ioctl(SIOCGIFCONF)
+3f03089 Improve handling of unspecified arguments
+88a2eb5 Reformat struct initializer
+8ea9224 Properly handle the IP version flags (IPv4 only)
+bf08afa Move manpage doctype to a flag to a2x
+cef15c4 Change manpage source file suffix to .1.txt
+</code></pre>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/15/recurse-center-lab-notes">Recurse Center lab notes 2015-06-15: shipping, IPC, NUMA, AsciiDoc</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 11, 2015</span>
+<p>Tomorrow’s work on <code>lsaddr</code> will be to finish off IPv6 listing first thing in
+the morning, and then do some restructuring to make option handling easier:</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/11/ifconfig-how-does-it-even/">ifconfig: how does it even?</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 10, 2015</span>
+<ul>
+  <li>get list of interfaces from /proc/net/dev
+    <ul>
+      <li><code>int list_interfaces(char ***interfaces, size_t *num_interfaces);</code></li>
+    </ul>
+  </li>
+  <li>check against that list instead of using <code>ioctl</code></li>
+  <li>have a <code>struct address { char [ADDRESSBUFLEN] addr, char [IFNAMSIZ]
+interface, enum {ipv4 = 4, ipv6 = 6} ip_version }</code></li>
+  <li>have an array of <code>struct address</code> sorted by interface, version, addr</li>
+  <li>internal list of interfaces with pointers into list of <code>struct address</code></li>
+</ul>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/10/some-early-linux-ipc-latency-data/">Some early Linux IPC latency data</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 8, 2015</span>
+<p>Other random things:</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/08/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-08</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 7, 2015</span>
+<ul>
+  <li>I read <a href="https://docs.google.com/document/pub?id=1IC9yOXj7j6cdLLxWEBAGRL6wl97tFxgjLUEHIX3MSTs">Introducing the Journal</a>, the post introducing <code>journald</code>.
+I’m new to this <code>systemd</code> world so it was interesting to get some background.
+The ‘frequently asked questions’ are pretty terrible though, in that
+intending-to-be-funny-but-mostly-condescending way that’s a bit too common in
+tech.</li>
+  <li>I went to yoga in the early afternoon, which was a good idea. I need to go
+more often. Physical activity is good.</li>
+</ul>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/07/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-03–2015-06-07</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 2, 2015</span>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/02/goals-non-goals-and-anti-goals/">Goals, non-goals, and anti-goals</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 1, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/01/a-list-of-linux-ipc-mechanisms/">A list of Linux IPC mechanisms</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 28, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/">The excellence of uniform build and test infrastructure</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/controlling-the-yak-stack/">Controlling the yak stack</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/a-touch-of-plain-bob-minor/">A touch of Plain Bob Minor</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 26, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/26/avoiding-distractions/">Avoiding distractions</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 25, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/25/recurse-center-omg/">Recurse Center OMG</a>
-        </h2>
-      </li>
-    
-  </ul>
-
+  </article>
 
 </div>
 
