@@ -5,9 +5,86 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 17 Jun 2015 23:49:01 -0400</pubDate>
-    <lastBuildDate>Wed, 17 Jun 2015 23:49:01 -0400</lastBuildDate>
+    <pubDate>Fri, 19 Jun 2015 01:33:17 -0400</pubDate>
+    <lastBuildDate>Fri, 19 Jun 2015 01:33:17 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes 2015-06-18</title>
+        <description>&lt;p&gt;Lots of progress on &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr&quot;&gt;&lt;code&gt;lsaddr&lt;/code&gt;&lt;/a&gt; today! Unlike yesterday, most of these
+commits are writing code rather than poking at it:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ git log --since=yesterday --reverse --oneline
+0a695b0 Get IPv6 addresses from /proc/net/if_inet6
+683d9c2 Fix typo in Makefile
+8d61702 Add debug target to Makefile
+686995b Add --list-interfaces option
+8f2d3c4 Sort output of --list-interfaces
+db95d00 Comment why we replace colon with null
+ccf04d5 Introduce struct str_list to remove need for triple pointers
+2209807 Use struct str_list in struct args
+99cc8db Check interfaces exist using entries from /proc/net/dev
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Some highlights: I now feel like I’ve got this &lt;code&gt;lfind&lt;/code&gt; thing under control: I’m
+using it to filter non-existent interfaces from the user’s arguments, as well
+as to make sure I only output IP addresses for the specified interfaces. I also
+implemented a &lt;code&gt;--list-interfaces&lt;/code&gt; option that does what it says. All this
+information is pretty scattered and disorganised. Here are my sources:&lt;/p&gt;
+
+&lt;dl&gt;
+  &lt;dt&gt;&lt;code&gt;/proc/net/dev&lt;/code&gt;&lt;/dt&gt;
+  &lt;dd&gt;contains a list of interfaces and some other data in a fairly
+parse-unfriendly layout—two header rows, and the interface names have a colon
+appended&lt;/dd&gt;
+  &lt;dt&gt;&lt;code&gt;/proc/net/if_inet6&lt;/code&gt;&lt;/dt&gt;
+  &lt;dd&gt;contains a list of IPv6 addresses along with some other data in a more
+parse-friendly format, except that the IP addresses are given as 128-bits
+hex-encoded, no colons and no zero-contractions—not ready for human
+consumption&lt;/dd&gt;
+  &lt;dt&gt;&lt;code&gt;ioctl(SIOCGIFCONF)&lt;/code&gt;&lt;/dt&gt;
+  &lt;dd&gt;a system call that needs to be made on a socket file descriptor to get a list
+of interfaces with IPv4 addresses as &lt;code&gt;struct sockaddr_in&lt;/code&gt;&lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;p&gt;So far &lt;code&gt;--include-loopback&lt;/code&gt; and &lt;code&gt;--include-link-local&lt;/code&gt; don’t do anything. I
+started some refactoring to make them easier to impelment. I should be able to
+get this wrapped up pretty soon!&lt;/p&gt;
+
+&lt;p&gt;I also gave a presentation on writing manpages with &lt;a href=&quot;http://asciidoc.org/&quot;&gt;AsciiDoc&lt;/a&gt;. The tl;dr was
+that it’s really easy! Take a look at the &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr/blob/master/lsaddr.1.txt&quot;&gt;AsciiDoc source&lt;/a&gt; for
+the &lt;code&gt;lsaddr&lt;/code&gt; manpage. It starts off:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;lsaddr(1)
+=======
+
+NAME
+----
+lsaddr - list active IP addresses
+
+SYNOPSIS
+--------
+[verse]
+*lsaddr* [ *-46* ] [*--include-loopback*] [*--include-ipv6-link-local*] [ _interface_ ... ]
+*lsaddr --list-interfaces*
+
+DESCRIPTION
+-----------
+List IP addresses of the specified __interface__s. By default, lists all IPv4
+and IPv6 addresses, with the loopback interfaces and IPv6 link-local omitted.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And here’s a screenshot of the formatted output in my terminal:
+&lt;img src=&quot;/static/lsaddr-manpage.png&quot; alt=&quot;screenshot&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;That’s it for now. I should be getting back to IPC stuff soon!&lt;/p&gt;
+</description>
+        <pubDate>Thu, 18 Jun 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/06/18/recurse-center-lab-notes</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/18/recurse-center-lab-notes</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center lab notes 2015-06-17</title>
@@ -745,82 +822,6 @@ will be better than my last few for it!&lt;/em&gt;&lt;/p&gt;
         <pubDate>Mon, 01 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/01/a-list-of-linux-ipc-mechanisms/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/01/a-list-of-linux-ipc-mechanisms/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>The excellence of uniform build and test infrastructure</title>
-        <description>&lt;p&gt;I made some small amount of progress on &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/05/27/controlling-the-yak-stack/&quot;&gt;yesterday’s yaks&lt;/a&gt;. I have
-almost got to the point where think that the tests work on both OS X
-and Linux; I just need to get some time on a Mac to be sure.&lt;/p&gt;
-
-&lt;p&gt;The experience so far has made me realise how powerful it is to have
-uniform build and test infrastructure. At Google, an improvement as
-small as I’m making would take not much longer than it takes to write
-the code. Everything is in &lt;a href=&quot;http://danluu.com/monorepo/&quot;&gt;one reository&lt;/a&gt;, and all tests are
-run with the same &lt;a href=&quot;http://bazel.io/&quot;&gt;tool&lt;/a&gt;. As a result, you simply make your
-change, run the tests, and then send it for review.&lt;/p&gt;
-
-&lt;p&gt;The &lt;a href=&quot;https://github.com/jparyani/pycapnp&quot;&gt;project&lt;/a&gt; I’m changing has a test suite. For local testing,
-you run either &lt;code&gt;py.test&lt;/code&gt; to run with the current Python environment, or
-&lt;code&gt;tox&lt;/code&gt; to run a &lt;a href=&quot;https://github.com/jparyani/pycapnp/blob/790bdce72ab3f2b6c203f00eaf07e6d605aa631a/tox.ini#L2&quot;&gt;collection of environments&lt;/a&gt;. In the CI build,
-the tests are run with &lt;code&gt;py.test&lt;/code&gt; under a &lt;a href=&quot;https://github.com/jparyani/pycapnp/blob/790bdce72ab3f2b6c203f00eaf07e6d605aa631a/.travis.yml#L6-11&quot;&gt;set of environments&lt;/a&gt; which defined by Travis CI’s infrastructure.&lt;/p&gt;
-
-&lt;p&gt;This difference between local tests and tests under CI is quite
-frustrating, especially given that the CI runs take many minutes to get
-scheduled and run. I can get to the Works On My Machine™ state, but have
-the CI build fail because the environment is different. To say I spent
-most of yesterday and today refreshing CI build pages wouldn’t be too
-inaccurate!&lt;/p&gt;
-
-&lt;p&gt;Even more, Travis CI recently changed its default from virtualized
-infrastructure to containerized infrastructure. The differences seem to
-be:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;containerized infrastructure schedules and runs quicker&lt;/li&gt;
-  &lt;li&gt;containerized infrastructure won’t run setuid programs such as
-sudo, which is used in this project’s &lt;a href=&quot;https://github.com/jparyani/pycapnp/blob/aa7d5303193b13880728035c298c635e4fdcbe1c/buildutils/setup_travis.sh#L7-11&quot;&gt;environment set up&lt;/a&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;However, they only applied this new default to repositories created
-after some &lt;a href=&quot;https://github.com/travis-ci/travis-core/blob/7a360299c19011cbd3c0f2bf099a16600048e210/lib/travis/model/job/queue.rb#L88&quot;&gt;cutoff date&lt;/a&gt;.&lt;sup id=&quot;fnref:sudo-detection&quot;&gt;&lt;a href=&quot;#fn:sudo-detection&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; This meant that the
-exact same commit that &lt;a href=&quot;https://travis-ci.org/jparyani/pycapnp/builds/61183652&quot;&gt;passes&lt;/a&gt; in the upstream CI build &lt;a href=&quot;https://travis-ci.org/kamalmarhubi/pycapnp/builds/64316652&quot;&gt;would
-fail&lt;/a&gt; in a new clone.&lt;sup id=&quot;fnref:refactor&quot;&gt;&lt;a href=&quot;#fn:refactor&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt; Certainly not intuitive!&lt;/p&gt;
-
-&lt;p&gt;I’m really interested to see how different projects approach this
-problem. Having such a uniform infrastructure is a luxury that not many
-can afford!&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:sudo-detection&quot;&gt;
-
-      &lt;p&gt;The attentive reader may wonder about the &lt;code&gt;sudo_detected&lt;/code&gt; method
-call there: shouldn’t that have prevented this from being a
-problem?  Sadly, it looks as though this detection simply looks at
-invocations directly specified in &lt;code&gt;.travis.yml&lt;/code&gt;, and makes no
-attempt to find indirect invocations. &lt;a href=&quot;#fnref:sudo-detection&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-    &lt;li id=&quot;fn:refactor&quot;&gt;
-
-      &lt;p&gt;I’m not even going into how at Google, all projects would
-have been tested with and without the new configuration. It would
-then be &lt;a href=&quot;http://danluu.com/monorepo/#cross-project-changes&quot;&gt;fairly easy&lt;/a&gt; to send an automated change
-&lt;a href=&quot;https://github.com/jparyani/pycapnp/commit/790bdce72ab3f2b6c203f00eaf07e6d605aa631a&quot;&gt;updating the configuration&lt;/a&gt; to any project that was
-newly failing with the new CI configuration. &lt;a href=&quot;#fnref:refactor&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Thu, 28 May 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/</guid>
         
         
       </item>
