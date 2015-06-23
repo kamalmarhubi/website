@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>Kamal Marhubi</title>
+    <title>Recurse Center lab notes 2015-06-22</title>
     <meta name="description" content="">
 
     <link rel="stylesheet" href="/css/main.css">
-    <link rel="canonical" href="http://kamalmarhubi.com/blog/">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2015/06/22/recurse-center-lab-notes">
 </head>
 
 
@@ -51,143 +51,39 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="home">
+        <div class="post">
 
-  <h1 class="page-heading">Posts</h1>
-  <p class="rss-subscribe">subscribe <a href="feed.xml">via RSS</a></p>
+  <header class="post-header">
+    <h1 class="post-title">Recurse Center lab notes 2015-06-22</h1>
+    <p class="post-meta">Jun 22, 2015</p>
+  </header>
 
-  <ul class="post-list">
-    
-      <li>
-        <span class="post-meta">Jun 22, 2015</span>
+  <article class="post-content">
+    <p>Today was slightly slow. I re-remembered why it’s a good idea to leave
+things incomplete at the end of the day or week: it gives you somewhere
+to start. I consider <a href="https://github.com/kamalmarhubi/lsaddr"><code>lsaddr</code></a> to be more or less feature
+complete at this point, at least for a ‘1.0’. That was the state on
+Friday, and is still the state today. If something was left, I would
+have had an immediate place to start this morning.</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/22/recurse-center-lab-notes">Recurse Center lab notes 2015-06-22</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 18, 2015</span>
+<p>I wasn’t feeling like going back to IPC benchmarking immediately, so I
+ended up deciding to run a version of my <a href="https://github.com/kamalmarhubi/shell-workshop">Let’s Build a
+Shell!</a> workshop. I’ve been wanting to do this for a while,
+since I think it’s a pretty good way to get a deeper understanding of
+how our programs are run. I need to file some issues to improve the
+documentation a little, but I remain pretty pleased with how it’s set
+up. Good job past me!</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/18/recurse-center-lab-notes">Recurse Center lab notes 2015-06-18</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 17, 2015</span>
+<p>After the workshop, I spent a bit of time deciding what to do next. I
+think I’ve settled on adding a memory mapped message builder to <a href="https://capnproto.org/">Cap’n
+Proto</a>’s C++ library. This was requested in a <a href="https://groups.google.com/d/topic/capnproto/kLQOsxjkjxM/discussion">recent mailing
+list posting</a>. It’ll get me poking at the innards of
+Cap’n Proto a little, which would be good for one of my potential bigger
+project ideas for my time at RC: a shared memory transport for <a href="https://capnproto.org/rpc.html">Cap’n
+Proto RPC</a>.</p>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/17/recurse-center-lab-notes">Recurse Center lab notes 2015-06-17</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 16, 2015</span>
 
-        <h2>
-          <a class="post-link" href="/blog/2015/06/16/recurse-center-lab-notes">Recurse Center lab notes 2015-06-16</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 15, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/15/recurse-center-lab-notes">Recurse Center lab notes 2015-06-15: shipping, IPC, NUMA, AsciiDoc</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 11, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/11/ifconfig-how-does-it-even/">ifconfig: how does it even?</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 10, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/10/some-early-linux-ipc-latency-data/">Some early Linux IPC latency data</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 8, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/08/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-08</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 7, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/07/recurse-center-lab-notes">Recurse Center lab notes: 2015-06-03–2015-06-07</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 2, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/02/goals-non-goals-and-anti-goals/">Goals, non-goals, and anti-goals</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 1, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/06/01/a-list-of-linux-ipc-mechanisms/">A list of Linux IPC mechanisms</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 28, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/28/the-excellence-uniform-build-and-test-infrastructure/">The excellence of uniform build and test infrastructure</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/controlling-the-yak-stack/">Controlling the yak stack</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 27, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/27/a-touch-of-plain-bob-minor/">A touch of Plain Bob Minor</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 26, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/26/avoiding-distractions/">Avoiding distractions</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 25, 2015</span>
-
-        <h2>
-          <a class="post-link" href="/blog/2015/05/25/recurse-center-omg/">Recurse Center OMG</a>
-        </h2>
-      </li>
-    
-  </ul>
-
+  </article>
 
 </div>
 
