@@ -5,16 +5,17 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 24 Jun 2015 00:01:43 -0400</pubDate>
-    <lastBuildDate>Wed, 24 Jun 2015 00:01:43 -0400</lastBuildDate>
+    <pubDate>Wed, 24 Jun 2015 00:04:48 -0400</pubDate>
+    <lastBuildDate>Wed, 24 Jun 2015 00:04:48 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
         <title>Recurse Center lab notes 2015-06-23</title>
-        <description>&lt;p&gt;My output today was to write [an email][email]. I did a whole bunch of reading
+        <description>&lt;p&gt;My output today was to write &lt;a href=&quot;https://groups.google.com/d/msg/capnproto/kLQOsxjkjxM/ngbJYer52OwJ&quot;&gt;an email&lt;/a&gt;. I did a whole bunch of reading
 up on memory mapped files and handling page faults to get to that point, so I
 wasn’t exactly idle—just outputless. I need to remember that it still counts
 and being productive, and making good use of time!&lt;/p&gt;
+
 </description>
         <pubDate>Tue, 23 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/23/recurse-center-lab-notes</link>
