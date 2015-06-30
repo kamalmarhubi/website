@@ -5,9 +5,128 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 25 Jun 2015 01:44:10 -0400</pubDate>
-    <lastBuildDate>Thu, 25 Jun 2015 01:44:10 -0400</lastBuildDate>
+    <pubDate>Tue, 30 Jun 2015 02:12:44 -0400</pubDate>
+    <lastBuildDate>Tue, 30 Jun 2015 02:12:44 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes 2015-06-29: fun with signals; confusing shell-writing</title>
+        <description>&lt;h1 id=&quot;signals&quot;&gt;Signals&lt;/h1&gt;
+
+&lt;p&gt;I finished skimming the chapter on signals in &lt;a href=&quot;http://www.apuebook.com/about3e.html&quot;&gt;Advanced Programming in the UNIX
+Environmnent&lt;/a&gt;. This took me a few attempts over the last few days, and I
+fell asleep reading it at least once. One big takeaway for me was the
+distinction between synchronous and asynchronous signals. In a nutshell:&lt;/p&gt;
+
+&lt;dl&gt;
+  &lt;dt&gt;&lt;strong&gt;synchronous signals&lt;/strong&gt;&lt;/dt&gt;
+  &lt;dd&gt;these signals are a direct result of execution; examples include
+
+    &lt;ul&gt;
+      &lt;li&gt;&lt;code&gt;SIGFPE&lt;/code&gt; (stands for &lt;em&gt;f&lt;/em&gt;loating &lt;em&gt;p&lt;/em&gt;point &lt;em&gt;e&lt;/em&gt;xception), which is sent on
+various errors in mathematical functions, such as dividing by zero&lt;/li&gt;
+      &lt;li&gt;&lt;code&gt;SIGPIPE&lt;/code&gt; (stands for… &lt;em&gt;pipe&lt;/em&gt;), which is sent if there’s a write to a pipe
+with no readers&lt;/li&gt;
+      &lt;li&gt;&lt;code&gt;SIGSEGV&lt;/code&gt; (stands for &lt;em&gt;seg&lt;/em&gt;mentation &lt;em&gt;v&lt;/em&gt;iolation), which is sent
+to a thread if it tries to access memory in a way it’s not allowed to, eg,
+dereferencing a null pointer, reading read-protected memory like kernel memory&lt;/li&gt;
+      &lt;li&gt;&lt;code&gt;SIGBUS&lt;/code&gt; (&lt;em&gt;bus&lt;/em&gt; error, whatever that is meant to mean&lt;sup id=&quot;fnref:sigbus&quot;&gt;&lt;a href=&quot;#fn:sigbus&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;!), which is sent on
+some types of memory access issues, eg, improper alignment, or—the one
+that’s exciting to me—attempting to access memory mapped beyond the end of a
+memory mapped file&lt;sup id=&quot;fnref:sigbus-openbsd&quot;&gt;&lt;a href=&quot;#fn:sigbus-openbsd&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;dl&gt;
+  &lt;dt&gt;&lt;strong&gt;asynchronous signals&lt;/strong&gt;&lt;/dt&gt;
+  &lt;dd&gt;
+    &lt;p&gt;these signals can get sent independently of the running process or thread;
+they just show up. Examples include:
+- &lt;code&gt;SIGINT&lt;/code&gt; (&lt;em&gt;interrupt&lt;/em&gt;), which is sent when you interrupt a process from the
+  keyboard with &lt;code&gt;^C&lt;/code&gt; at the terminal
+- &lt;code&gt;SIGKILL&lt;/code&gt;, which is sent when you &lt;code&gt;kill -9&lt;/code&gt; something to kill it with fire;
+  the process terminates, and the signal cannot be caught, blocked or ignored
+- &lt;code&gt;SIGSTOP&lt;/code&gt;, which is sent when you stop a process with &lt;code&gt;^Z&lt;/code&gt; at the terminal;
+  the process is stopped, and will continue when it’s sent a &lt;code&gt;SIGCONT&lt;/code&gt;
+  (&lt;em&gt;cont&lt;/em&gt;inue)
+- &lt;code&gt;SIGHUP&lt;/code&gt; (&lt;em&gt;h&lt;/em&gt;ang&lt;em&gt;up&lt;/em&gt;), which is sent if the controlling terminal ‘hangs up’,
+  ie, is closed—this one is a fun anachronism which serves to us that we’re
+  still using &lt;a href=&quot;https://en.wikipedia.org/wiki/Terminal_emulator&quot;&gt;programs that pretend to be terminals&lt;/a&gt;,
+  which are in turn mostly pretending to be &lt;a href=&quot;https://en.wikipedia.org/wiki/Teleprinter&quot;&gt;teletype machines&lt;/a&gt;, and that
+  everything sort of pretends to be connected over a phone line&lt;/p&gt;
+  &lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;h1 id=&quot;python-shell-writing-weirdness&quot;&gt;Python shell writing weirdness&lt;/h1&gt;
+
+&lt;p&gt;Sophie asked me for some help with the mental model for file descriptors and
+pipes and &lt;code&gt;dup2&lt;/code&gt; and what happens when you fork and other such fun things. There
+is a really strange bug we couldn’t figure out: &lt;code&gt;ls | wc&lt;/code&gt; or &lt;code&gt;ls | head&lt;/code&gt; would
+terminate as expected, but &lt;code&gt;yes | wc&lt;/code&gt; or &lt;code&gt;yes | head&lt;/code&gt; would not; &lt;code&gt;yes&lt;/code&gt; would
+just keep on running and use loads of CPU, so it was not idle. On OS X only (2
+machines tested). On Linux, it worked as expected, with &lt;code&gt;yes&lt;/code&gt; terminating and
+complaining about the broken pipe. We gave up eventually, and I still haven’t
+got any idea what’s wrong. I really wish &lt;a href=&quot;http://man7.org/linux/man-pages/man5/procfs.5.html&quot;&gt;&lt;code&gt;procfs&lt;/code&gt;&lt;/a&gt; existed on OS X!&lt;/p&gt;
+
+&lt;p&gt;I wrote a minimized equivalent of our code. Please run it and let me know what
+happens! On my machine:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl https://gist.githubusercontent.com/kamalmarhubi/65c2ea1063e479f0c16b/raw/2459725829891b156f61ec5fc808587846ec07be/pipe_weirdness.py &amp;gt; pipe_weirdness.py
+$ chmod +x pipe_weirdness.py
+$ ./pipe_weirdness yes head
+y
+y
+y
+y
+y
+y
+y
+y
+y
+y
+yes: standard output: Broken pipe
+yes: write error
+$ █
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I’m really interested in ideas on why &lt;code&gt;yes&lt;/code&gt; wouldn’t terminate!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:sigbus&quot;&gt;
+
+      &lt;p&gt;I think this is meant to be related to the memory bus, which makes sense for
+unaligned accesses, but not for the memory mapped file situtuation. &lt;a href=&quot;#fnref:sigbus&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:sigbus-openbsd&quot;&gt;
+
+      &lt;p&gt;From man pages and some experimentation, &lt;code&gt;SIGBUS&lt;/code&gt; is sent for this
+situation on Linux, FreeBSD, OS X, and NetBSD; OpenBSD’s documentation says a
+&lt;code&gt;SIGSEGV&lt;/code&gt; is sent instead. Feel free to &lt;a href=&quot;https://gist.github.com/kamalmarhubi/d8a3b3754bc2f4f62899&quot;&gt;test it out&lt;/a&gt; on your system! On mine:&lt;/p&gt;
+
+      &lt;pre&gt;&lt;code&gt;$ curl https://gist.githubusercontent.com/kamalmarhubi/d8a3b3754bc2f4f62899/raw/333a1c8ebce4a3c7718e740ea4d175d22ca206fd/mmap_signal_test.c | cc -xc -o mmap_signal_test -
+$ ./mmap_signal_test
+Received signal while accessing 0x7facd3268000: Bus error
+Going to ftruncate
+Read: 0
+Wrote and read: 1
+$ █
+&lt;/code&gt;&lt;/pre&gt;
+      &lt;p&gt;&lt;a href=&quot;#fnref:sigbus-openbsd&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Mon, 29 Jun 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/06/29/recurse-center-lab-notes</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/29/recurse-center-lab-notes</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center lab notes 2015-06-24: playing with mmap</title>
@@ -705,113 +824,6 @@ for &lt;code&gt;short&lt;/code&gt; which have stayed short at 16 bits long). &lt
         <pubDate>Wed, 10 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/10/some-early-linux-ipc-latency-data/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/10/some-early-linux-ipc-latency-data/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes: 2015-06-08</title>
-        <description>&lt;h1 id=&quot;linux-ipc-stuff&quot;&gt;Linux IPC stuff&lt;/h1&gt;
-&lt;p&gt;I’m getting closer to having some data on latencies for pipes and eventfds. I
-reworked the little programs to easily dump timings for multiple runs. Next
-step is to figure out how to visualise it. Likely I’ll use iPython Notebook and
-Pandas.&lt;/p&gt;
-
-&lt;p&gt;On the way, I found out a thing—one of those obvious-in-retrospect things. Both
-the pipes and eventfd programs I wrote have the same structure. They start a
-child process that acts as a server that responds as soon as it receives a
-message. The child just runs a loop like this:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-C&quot;&gt;for (;;) {
-  char msg;
-  read(rx_fd, &amp;amp;msg, 1);
-  write(tx_fd, &quot;1&quot;, 1);
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I implemented this for pipes first, and this works great. A &lt;code&gt;read&lt;/code&gt; on a pipe
-whose write end is closed will return 0 to signal end of file. A &lt;code&gt;write&lt;/code&gt; on a
-pipe whose read end is closed results in a &lt;code&gt;SIGPIPE&lt;/code&gt; signal. The result is that
-once the parent closes its pipes—whether explicitly or on exit—the child will
-die because the default action for &lt;code&gt;SIGPIPE&lt;/code&gt; is to terminate the process.&lt;/p&gt;
-
-&lt;p&gt;With eventfds, there is no analogous signal. It would actually be a bit odd.
-Pipes have two ends, and each gets its own file descriptor. When the last file
-descriptor referring to one of the ends is closed, then the &lt;code&gt;EOF&lt;/code&gt; / &lt;code&gt;SIGPIPE&lt;/code&gt;
-behaviour kicks in. To get something similar to happen with eventfds, the
-special behaviour would have to kick in when only one file descriptor
-references the eventfd object. But right after the call to &lt;code&gt;eventfd&lt;/code&gt;, there is
-just one file descriptor referencing it. I suppose it could be special cased to
-trigger when the number of open file descriptors goes &lt;em&gt;down&lt;/em&gt; to one, but it’s
-also completely reasonable that it wouldn’t.&lt;/p&gt;
-
-&lt;p&gt;All that is to say, the child doesn’t terminate when the parent does, and I ended up with this:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ pgrep eventfd | head
-6123
-6131
-6138
-6145
-6153
-6160
-6531
-6538
-6545
-6553
-$ pgrep eventfd | wc -l
-172
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;That’s a lot of zombies! Don’t worry, I killed them. With FIRE^W &lt;code&gt;pkill&lt;/code&gt;. I
-still have to fix the problem, but the solution is pretty easy: kill the child
-before the parent exits.&lt;/p&gt;
-
-&lt;h1 id=&quot;other-stuff&quot;&gt;Other stuff&lt;/h1&gt;
-&lt;p&gt;The internet went down for a bit at RC today. I used the time to add an index
-page to this blog, &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/607967764620431361&quot;&gt;making some people happy&lt;/a&gt;. It felt silly to
-use lack of internet to make internet, but there you go.&lt;/p&gt;
-
-&lt;p&gt;During the internet outage, I also brainstormed with &lt;a href=&quot;https://twitter.com/SimplyAhmaz1ng&quot;&gt;Ahmed&lt;/a&gt; a bit on grammar
-ideas for his Arabic programming language. I was thinking it would be cool to
-integrate some Arabic grammar into the language. For example, use the
-possessive for property access, and allow the &lt;a href=&quot;https://en.wikipedia.org/wiki/Arabic_grammar#Enclitic_pronouns&quot;&gt;attached pronouns&lt;/a&gt; to
-be a default argument like Perl’s &lt;code&gt;$_&lt;/code&gt;. We decided they wouldn’t be a great
-idea because it could end up in a sort of uncanny valley where something it
-looks like should work but it doesn’t.&lt;/p&gt;
-
-&lt;p&gt;I paired with &lt;a href=&quot;https://twitter.com/optimistsinc&quot;&gt;Jess&lt;/a&gt; who is learning Haskell to do some lattice-based
-cryptography stuff. But step 1 is tic-tac-toe. We did some refactoring, and I
-pointed out a couple of useful things like using &lt;code&gt;@&lt;/code&gt; in a pattern to name the
-whole match. Somehow I’m pretty happy helping people with Haskell, even though
-I’m not really that interested in it anymore myself. Maybe it’s just because
-it’s something I know and so can help with.&lt;/p&gt;
-
-&lt;p&gt;Allison Parish is a resident for the next two weeks. She gave a talk in the
-evening on &lt;a href=&quot;http://www.decontextualize.com/projects/nite/&quot;&gt;new interfaces for textual expression&lt;/a&gt;. Do take a look at
-that link, her projects are really cool! She’s aiming to put together a bunch
-of prototypes while at RC, and I’m really excited to see what she gets up to.&lt;/p&gt;
-
-&lt;h1 id=&quot;random&quot;&gt;Random&lt;/h1&gt;
-
-&lt;p&gt;On the way to eBay for Allison’s talk, I stopped by Union Square to buy an
-apple. I also got a ‘cocktail’ of apple juices for free—I stopped to look at a
-stall that was packing up, and their demo bottles were mostly empty.  The
-person poured them into one bottle and just gave it to me.&lt;/p&gt;
-
-&lt;p&gt;I then took my apple and juice to a table on Broadway and sat down. Two people
-next to me were eating burgers and speaking Québecois French. I wasn’t going to
-insert myself until I heard ‘Rachel et Saint-Hubert’, which is an intersection
-close to where I live. They were discussing the burger, and so I asked (in
-French) if they were talking about L’Anecdote, a burger place at that corner. I
-think this was a fun surprise for them, and we had a little chat about what
-brought us to New York. Even more fun, I was wearing my ‘&lt;a href=&quot;https://en.wikipedia.org/wiki/Five_Roses_Flour&quot;&gt;Farine Five
-Roses&lt;/a&gt;’ t-shirt, marking me—in one of their words—as &lt;em&gt;vrai
-Montréalais&lt;/em&gt;!&lt;/p&gt;
-
-</description>
-        <pubDate>Mon, 08 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/08/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/08/recurse-center-lab-notes</guid>
         
         
       </item>
