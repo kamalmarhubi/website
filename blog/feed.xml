@@ -5,8 +5,8 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 01 Jul 2015 00:42:44 -0400</pubDate>
-    <lastBuildDate>Wed, 01 Jul 2015 00:42:44 -0400</lastBuildDate>
+    <pubDate>Wed, 01 Jul 2015 09:52:14 -0400</pubDate>
+    <lastBuildDate>Wed, 01 Jul 2015 09:52:14 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -166,6 +166,9 @@ had been using Linux, we never would have encountered this!&lt;/p&gt;
 idiosyncrasies in our platform. The fact that there’s an acknowledged bug in
 Python doesn’t mean we can just throw up our hands in a big ¯\_(ツ)_/¯.&lt;/p&gt;
 
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
 &lt;div class=&quot;footnotes&quot;&gt;
   &lt;ol&gt;
     &lt;li id=&quot;fn:wc-head-stdout&quot;&gt;
