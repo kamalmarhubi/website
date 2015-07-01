@@ -5,9 +5,184 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 30 Jun 2015 02:12:44 -0400</pubDate>
-    <lastBuildDate>Tue, 30 Jun 2015 02:12:44 -0400</lastBuildDate>
+    <pubDate>Wed, 01 Jul 2015 00:42:44 -0400</pubDate>
+    <lastBuildDate>Wed, 01 Jul 2015 00:42:44 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>My favourite bug so far at the Recurse Center!</title>
+        <description>&lt;p&gt;&lt;a href=&quot;http://kamalmarhubi.com/blog/2015/06/29/recurse-center-lab-notes/#python-shell-writing-weirdness&quot;&gt;Yesterday’s shell weirdness mystery&lt;/a&gt;: solved! This was definitely my favourite
+bug so far here at &lt;a href=&quot;https://www.recurse.com/&quot;&gt;RC&lt;/a&gt;, so it gets its own post!&lt;/p&gt;
+
+&lt;p&gt;As a quick recap, &lt;a href=&quot;http://sfrapoport.github.io/&quot;&gt;Sophie&lt;/a&gt; and I were trying to get pipes to work in the shell
+she was writing in Python. We ended up in a situation where &lt;code&gt;ls | head&lt;/code&gt; and &lt;code&gt;ls
+| wc&lt;/code&gt; worked, but &lt;code&gt;yes | head&lt;/code&gt; did not. &lt;code&gt;head&lt;/code&gt; would terminate just fine, and
+only ten lines of &lt;code&gt;y&lt;/code&gt; were printed, but &lt;code&gt;yes&lt;/code&gt; continued to run and consume lots
+of CPU.&lt;/p&gt;
+
+&lt;p&gt;Oh, and this happened on Sophie’s OS X machine, but not on my Linux one. Both were
+running Python 2.7.10.&lt;/p&gt;
+
+&lt;p&gt;To break this down a bit more, we’ve got four commands we’re dealing with: two
+which produce data on standard output—&lt;code&gt;ls&lt;/code&gt; and &lt;code&gt;yes&lt;/code&gt;—and two which consume
+data on standard input—&lt;code&gt;wc&lt;/code&gt; and &lt;code&gt;head&lt;/code&gt; &lt;sup id=&quot;fnref:wc-head-stdout&quot;&gt;&lt;a href=&quot;#fn:wc-head-stdout&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;. We can divide these
+by whether they produce or consume a bounded or unbounded amount of data:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;producers
+    &lt;ul&gt;
+      &lt;li&gt;&lt;code&gt;ls&lt;/code&gt;: bounded&lt;/li&gt;
+      &lt;li&gt;&lt;code&gt;yes&lt;/code&gt;: unbounded&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;consumers:
+    &lt;ul&gt;
+      &lt;li&gt;&lt;code&gt;head&lt;/code&gt;: bounded&lt;/li&gt;
+      &lt;li&gt;&lt;code&gt;wc&lt;/code&gt;: unbounded&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Now let’s look at the pipelines we were running again:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;producer&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;consumer&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;ls | head&lt;/code&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;ls | wc&lt;/code&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;unbounded&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;yes | head&lt;/code&gt;&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;unbounded&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Our issue comes up when we have an unbounded producer with a bounded consumer.
+But only on OS X.&lt;/p&gt;
+
+&lt;p&gt;So now we’re all caught up, here’s what happened today. Sophie messaged me this
+morning saying:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;I think I found something that will help us:
+&lt;a href=&quot;http://www.chiark.greenend.org.uk/~cjwatson/blog/python-sigpipe.html&quot;&gt;http://www.chiark.greenend.org.uk/~cjwatson/blog/python-sigpipe.html&lt;/a&gt;&lt;/p&gt;
+
+  &lt;p&gt;PS: I wouldn’t have found this if you hadn’t mentioned exploring SIGPIPE in
+your blog post. I read about it and said, ‘I think we have a problem with
+SIGPIPE on OSX/Python!’&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;I &lt;em&gt;love&lt;/em&gt; this because that wasn’t in the part of the post about our shell bug:
+it was just pure coincidence!&lt;/p&gt;
+
+&lt;p&gt;That page links to a &lt;a href=&quot;http://bugs.python.org/issue1615376&quot;&gt;bug against Python 3.2&lt;/a&gt;. She did some further
+investigation and turned up a &lt;a href=&quot;http://bugs.python.org/issue1652&quot;&gt;bug against Python 2.7&lt;/a&gt; about this.
+Sadly, this was closed as wontfix ‘because it is too late to backport this to 2.7.’&lt;/p&gt;
+
+&lt;p&gt;The gist of the bugs is this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Python sets the disposition for &lt;code&gt;SIGPIPE&lt;/code&gt; to ignore, and instead checks the
+return value of all its writes for errors; this allows raising exceptions in
+Python code instead of requiring installation of a signal handler&lt;/li&gt;
+  &lt;li&gt;signal dispositions and handlers are inherited by the child after &lt;code&gt;fork&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;execve&lt;/code&gt; resets signals with handlers to their default dispositions;
+otherwise it leaves their dispositions alone&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This results in a process &lt;code&gt;execve&lt;/code&gt;‘d from Python starting off ignoring
+&lt;code&gt;SIGPIPE&lt;/code&gt;. Unless it resets its signal dispositions to the default, it will
+receive errors instead of signals on writes to broken pipes. There are a couple
+of fixes suggested in the bugs, but neither are applied in Python 2.7. Our
+shell launches programs which ignore &lt;code&gt;SIGPIPE&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;We’re getting closer!  All this sounds great, but it doesn’t explain the
+works-on-Linux-but-not-on-OS X part. This is where it gets really fun. To quote
+myself, just a few sentences ago: ‘Python sets the disposition for &lt;code&gt;SIGPIPE&lt;/code&gt; to
+ignore, and &lt;em&gt;instead checks the return value of all its writes for errors&lt;/em&gt;’.
+That last part is really important.&lt;/p&gt;
+
+&lt;p&gt;At this point we realised we needed to check what &lt;code&gt;yes&lt;/code&gt; was actually doing. The
+version on my machine comes from GNU coreutils. We can take a look at &lt;a href=&quot;https://sources.debian.net/src/coreutils/8.23-4/src/yes.c/#L80&quot;&gt;the loop
+where it writes its output&lt;/a&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-c&quot;&gt;  while (true)
+    {
+      int i;
+      for (i = optind; i &amp;lt; argc; i++)
+        if (fputs (argv[i], stdout) == EOF
+            || putchar (i == argc - 1 ? &#39;\n&#39; : &#39; &#39;) == EOF)
+          error (EXIT_FAILURE, errno, _(&quot;standard output&quot;));
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Look at all that error checking! From &lt;a href=&quot;http://man7.org/linux/man-pages/man3/puts.3.html#RETURN_VALUE&quot;&gt;&lt;code&gt;man 3 puts&lt;/code&gt;&lt;/a&gt;, which
+covers both &lt;code&gt;fputs&lt;/code&gt; and &lt;code&gt;putchar&lt;/code&gt;, we can see that they return &lt;code&gt;EOF&lt;/code&gt; on error;
+and &lt;a href=&quot;http://man7.org/linux/man-pages/man3/error.3.html&quot;&gt;&lt;code&gt;error(3)&lt;/code&gt;&lt;/a&gt; prints out a nice error message.&lt;/p&gt;
+
+&lt;p&gt;The &lt;a href=&quot;http://www.opensource.apple.com/source/shell_cmds/shell_cmds-170/yes/yes.c&quot;&gt;implementation of &lt;code&gt;yes&lt;/code&gt; on OS X&lt;/a&gt; is short enough that I can excerpt its entire &lt;code&gt;main&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-c&quot;&gt;int
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    if (argc &amp;gt; 1)
+        for(;;)
+            (void)puts(argv[1]);
+    else for (;;)
+        (void)puts(&quot;y&quot;);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Look at those unchecked calls to &lt;code&gt;puts&lt;/code&gt;! At last we have our answer! And to be
+sure, I compiled the OS X version on my machine, and we got the same behaviour!
+Mystery solved!&lt;/p&gt;
+
+&lt;p&gt;I love this bug for so many reasons. In particular, I love that it involves so
+many parties. There’s the Python bug. There’s the OS X &lt;code&gt;yes&lt;/code&gt; implementation
+that doesn’t check its &lt;code&gt;puts&lt;/code&gt; calls’ return values. And it shouldn’t have to
+for the pipe case since it can reasonably expect &lt;code&gt;SIGPIPE&lt;/code&gt; to have its default
+action of terminating the process. Where this got confusing is that the GNU
+implementation &lt;em&gt;does&lt;/em&gt; check for errors, so we got the OS difference. If Sophie
+had been using Linux, we never would have encountered this!&lt;/p&gt;
+
+&lt;p&gt;A big takeaway for me here is that it’s up to us as developers to deal with
+idiosyncrasies in our platform. The fact that there’s an acknowledged bug in
+Python doesn’t mean we can just throw up our hands in a big ¯\_(ツ)_/¯.&lt;/p&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:wc-head-stdout&quot;&gt;
+
+      &lt;p&gt;&lt;code&gt;wc&lt;/code&gt; and &lt;code&gt;head&lt;/code&gt; both also produce data on standard output, but only in
+response to data on standard input; this isn’t interesting because of which
+side of the pipe we put them on &lt;a href=&quot;#fnref:wc-head-stdout&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Tue, 30 Jun 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/06/30/my-favourite-bug-so-far-at-the-recurse-center/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/30/my-favourite-bug-so-far-at-the-recurse-center/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center lab notes 2015-06-29: fun with signals; confusing shell-writing</title>
@@ -583,247 +758,6 @@ any&lt;/li&gt;
         <pubDate>Thu, 11 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/11/ifconfig-how-does-it-even/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/11/ifconfig-how-does-it-even/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Some early Linux IPC latency data</title>
-        <description>&lt;p&gt;I’ve &lt;a href=&quot;https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/e06c93b54b4d13e1f78c64add9ac8a5cdf19b9ff&quot;&gt;added&lt;/a&gt; &lt;a href=&quot;https://github.com/kamalmarhubi/linux-ipc-benchmarks/commit/8f9094522465db54003f08da4d5b797e2944f47e&quot;&gt;benchmarks&lt;/a&gt; for UNIX domain
-sockets and TCP sockets over the loopback interface. UNIX domain sockets were
-super easy to implement thanks to the handy &lt;a href=&quot;http://man7.org/linux/man-pages/man2/socketpair.2.html&quot;&gt;&lt;code&gt;socketpair&lt;/code&gt;&lt;/a&gt;
-function. It was not really any different from pipes. The difference is that
-since sockets are full duplex, you only need to create one pair.  If the
-processes were unrelated, or if I wanted to be able to accept multiple
-connections, it would be much more like TCP sockets—ie, a pain!&lt;/p&gt;
-
-&lt;p&gt;I say a pain because, in doing this, I ‘found out’ that, despite having written
-a non-zero number of server applications, I’ve never done socket programming
-before. This wasn’t exactly a surprise, but it was definitely interesting to
-realise how little I knew about how to go about it. Luckily, man pages! (And
-&lt;a href=&quot;http://www.apuebook.com/index.html&quot;&gt;Advanced Programming in the UNIX Environment&lt;/a&gt;.)&lt;/p&gt;
-
-&lt;p&gt;Here’s the quick tl;dr for TCP over IPv4::&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;to listen for incoming connections:
-    &lt;ol&gt;
-      &lt;li&gt;create a socket with &lt;code&gt;socket(AF_INET, SOCK_STREAM, 0 /* default protocol */)&lt;/code&gt;.&lt;sup id=&quot;fnref:default-proto&quot;&gt;&lt;a href=&quot;#fn:default-proto&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
-      &lt;li&gt;bind it to a port with &lt;code&gt;bind(sockfd, addr, addrlen)&lt;/code&gt; where &lt;code&gt;addr&lt;/code&gt; is a
-struct that specifies the address to bind to. For &lt;code&gt;AF_INET&lt;/code&gt;, this means
-the IP and port. In my case, I used &lt;code&gt;INETADDR_LOOPBACK&lt;/code&gt; and &lt;code&gt;0&lt;/code&gt; to listen
-on some available port on &lt;code&gt;127.0.0.1&lt;/code&gt;.&lt;sup id=&quot;fnref:htonl&quot;&gt;&lt;a href=&quot;#fn:htonl&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
-      &lt;li&gt;start listening on the socket with &lt;code&gt;listen(sockfd, 1 /* backlog */)&lt;/code&gt;. I
-used a &lt;code&gt;backlog&lt;/code&gt; of 1 because I only expect a single incoming connection.&lt;/li&gt;
-      &lt;li&gt;finally, call &lt;code&gt;accept(sockfd, NULL /* addr */, NULL /* addrlen */)&lt;/code&gt; to
-block until a connection comes in, which returns a new file descriptor to
-talk to the connecting process. I pass in &lt;code&gt;NULL&lt;/code&gt; for the &lt;code&gt;addr&lt;/code&gt; because I
-don’t care who’s talking to me!&lt;/li&gt;
-    &lt;/ol&gt;
-  &lt;/li&gt;
-  &lt;li&gt;to connect to another process that’s listening:
-    &lt;ol&gt;
-      &lt;li&gt;create a socket with &lt;code&gt;socket(AF_INET, SOCK_STREAM, 0 /* default protocol */)&lt;/code&gt;.&lt;/li&gt;
-      &lt;li&gt;connect to the remote process with &lt;code&gt;connect(sockfd, addr, addrlen)&lt;/code&gt;. The
-&lt;code&gt;addr&lt;/code&gt; specifies the address to connect to; again for &lt;code&gt;AF_INET&lt;/code&gt; this means
-the IP and port.&lt;/li&gt;
-    &lt;/ol&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;This brings me up to having programs to test latency for four IPC mechanisms:
-- pipes
-- eventfd
-- UNIX domain sockets
-- TCP sockets over the loopback interface&lt;/p&gt;
-
-&lt;p&gt;Here is some early latency data from my machine, with emphasis on the tail latencies:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt; &lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;50&lt;/th&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt;75&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;90&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99.9&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99.99&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99.999&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;pipes&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4255&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;4960&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5208&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5352&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;7814&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;16214&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;31290&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;eventfd&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4353&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;4443&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4760&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5053&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;9445&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;14573&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;68528&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;af_unix&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;1439&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;1621&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;1655&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;1898&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;2681&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;11512&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;54714&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;af_inet_loopback&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;7287&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;7412&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;7857&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;8573&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;17412&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;20515&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;37019&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Units are nanoseconds. Time is measured using &lt;code&gt;clock_gettime&lt;/code&gt; with
-&lt;code&gt;CLOCK_MONOTONIC&lt;/code&gt;. The quantiles are for a million measurements; in all cases,
-the binary was run with flags &lt;code&gt;--warmup-iters=10000 --iters=1 --repeat=1000000&lt;/code&gt;
-(see below).&lt;/p&gt;
-
-&lt;p&gt;For me, the biggest surprise was how much faster UNIX domain sockets were than
-anything else, and in particular, how much faster they are than eventfd. Or
-that they are faster at all. The &lt;code&gt;read&lt;/code&gt; call in each case blocks until a
-corresponding &lt;code&gt;write&lt;/code&gt;. I would have thought eventfd had the minimal amount of
-extra work beyond that, since all it does is read and modify a &lt;code&gt;uint64_t&lt;/code&gt;. In
-fairness, each of the other programs are writing a single byte at present, but
-I doubt the difference will be so drastic.&lt;/p&gt;
-
-&lt;p&gt;Another fun thing is to see difference in `latency when pinning the two
-processes to specific CPUs. My machine has a dual core processor, where each
-processor has 2 hardware threads. Here’s a quick look at latencies for pipes
-with different CPU affinities:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt;Percentile&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;50&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;75&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;90&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99.9&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99.99&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;99.999&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;default&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4255&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4960&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5208&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5352&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;7814&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;16214&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;31290&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;same CPU&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;2386&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;2402&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;2564&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;3134&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;12255&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;15126&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;28225&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;same core&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4232&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4270&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4395&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;4788&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;14408&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;17101&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;39052&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;different core&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5043&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5101&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5170&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;5772&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;11894&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;38726&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;398796&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;I was expecting a difference between different cores and not, since it requires
-a trip through the L3 cache. I have no realy idea of what difference I was
-expecting, but a microsecond could make sense if multiple locations needed to
-be accessed. This stuff is beyond my ken, so I’m just guessing.&lt;/p&gt;
-
-&lt;p&gt;What I was &lt;em&gt;not&lt;/em&gt; expecting, was a dramatic difference between ‘same CPU’ and
-‘same core’. The CPUs are hardware threads on a single core. I can’t think of
-any reason there would be such a difference. I do want to check that it’s not
-due to scheduling weirdness, so I’ll probably boot up in single user mode at
-some point to give it another go.&lt;/p&gt;
-
-&lt;p&gt;If you want to run these on your own system, clone the &lt;a href=&quot;https://github.com/kamalmarhubi/linux-ipc-benchmarks&quot;&gt;repo&lt;/a&gt; and run &lt;code&gt;make&lt;/code&gt;.
-There will be four binaries produced, one for each of the mechanisms.  They all
-take the same command line flags:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;  -c, --child-cpu=CPUID      CPU to run the child on; default is to let the
-                             scheduler do as it will
-  -i, -n, --iters=COUNT      number of iterations to measure; default: 100000
-  -p, --parent-cpu=CPUID     CPU to run the parent on; default is to let the
-                             scheduler do as it will
-  -r, --repeat=COUNT         number of times to repeat measurement; default: 1
-  -w, --warmup-iters=COUNT   number of iterations before measurement; default:
-                             1000
-  -?, --help                 Give this help list
-      --usage                Give a short usage message
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:default-proto&quot;&gt;
-
-      &lt;p&gt;The default protocol for &lt;code&gt;SOCK_STREAM&lt;/code&gt; for the &lt;code&gt;AF_INET&lt;/code&gt;
-socket family is TCP. &lt;a href=&quot;#fnref:default-proto&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-    &lt;li id=&quot;fn:htonl&quot;&gt;
-
-      &lt;p&gt;A fun little thing to be aware of is that the &lt;code&gt;addr&lt;/code&gt; must contain the IP
-address in network byte order. This necessitates converting the IP address
-and port using &lt;code&gt;htonl&lt;/code&gt; and &lt;code&gt;htons&lt;/code&gt;, respectively, to convert the IP from
-&lt;em&gt;h_ost _to&lt;/em&gt; _n_etwork byte order (the &lt;code&gt;l&lt;/code&gt; stands for &lt;code&gt;long&lt;/code&gt;, which in this
-case means a &lt;code&gt;uint32_t&lt;/code&gt; because &lt;code&gt;long&lt;/code&gt;s used to be shorter; the &lt;code&gt;s&lt;/code&gt; stands
-for &lt;code&gt;short&lt;/code&gt; which have stayed short at 16 bits long). &lt;a href=&quot;#fnref:htonl&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Wed, 10 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/10/some-early-linux-ipc-latency-data/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/10/some-early-linux-ipc-latency-data/</guid>
         
         
       </item>
