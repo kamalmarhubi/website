@@ -151,3 +151,6 @@ A big takeaway for me here is that it's up to us as developers to deal with
 idiosyncrasies in our platform. The fact that there's an acknowledged bug in
 Python doesn't mean we can just throw up our hands in a big ¯\\\_(ツ)\_/¯.
 
+<br />
+
+---
