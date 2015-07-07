@@ -5,9 +5,119 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 01 Jul 2015 09:52:14 -0400</pubDate>
-    <lastBuildDate>Wed, 01 Jul 2015 09:52:14 -0400</lastBuildDate>
+    <pubDate>Tue, 07 Jul 2015 01:54:25 -0400</pubDate>
+    <lastBuildDate>Tue, 07 Jul 2015 01:54:25 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes 2015-07-06: new Recursers, ES15, planning</title>
+        <description>&lt;p&gt;Today was day one of the Summer 2 batch, meaning we got thirty new people! This
+also means we had our first day without the Spring 2 batch, who I’ll definitely
+miss. But several of them showed up for a games night so it’s almost like
+they’re still here.&lt;/p&gt;
+
+&lt;p&gt;It was interesting to see the intro talks again from six weeks in. A bit of
+deja vu, and a good point to really stop and reflect. The advice and words from
+the faculty was different the second time, even though the words were the same.
+Our batch also gave advice or other thoughts to the new Recursers—Sophie
+&lt;a href=&quot;https://sfrapoport.github.io/2015/07/06/Advice-for-Summer-2s.html&quot;&gt;jotted it all down&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;ecmascript-15&quot;&gt;EcmaScript 15&lt;/h2&gt;
+
+&lt;p&gt;The morning was taken up with welcoming the new batch, so it was a while until
+I got back to programming. I decided to start learning JavaScript / ES15 with
+[es6kata][]. There’s a lot of interdependence between the exercises! I started
+off with the Arrays collection, but had to take a detour into destructuring. I
+should have also taken a detour into iterables, as I wasn’t clear on what an
+ES15 iterator was, and it was needed.&lt;/p&gt;
+
+&lt;p&gt;So far ES15 looks pretty nice! I’m almost glad I put of learning JS for so
+long. Destructuring is especially good. It’s similar to Python, but a bit more
+versatile. The big features I noticed:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;fields of objects can be destructured like so:&lt;/p&gt;
+
+    &lt;pre&gt;&lt;code&gt;let dessert = { name: &quot;eton mess&quot;, tasty: true };
+let {name} = dessert;
+console.log(name);  // =&amp;gt; &quot;eton mess&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+    &lt;p&gt;It was a bit mysterious to me at first, but this also applies to fields on
+builtin types, eg, &lt;code&gt;length&lt;/code&gt; on &lt;code&gt;String&lt;/code&gt;:&lt;/p&gt;
+
+    &lt;pre&gt;&lt;code&gt;let a = &quot;hi&quot;;
+let {length} = a;
+console.log(length);  // =&amp;gt; 2
+&lt;/code&gt;&lt;/pre&gt;
+
+    &lt;p&gt;(I just realised I should check if this works for properties with getters or
+ not.)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;you can choose a name to bind to different from the attribute name with a
+colon, eg,&lt;/p&gt;
+
+    &lt;pre&gt;&lt;code&gt;let a = &quot;hi&quot;;
+let {length:l} = a;
+console.log(l);  // =&amp;gt; 2
+&lt;/code&gt;&lt;/pre&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;you can supply defaults when destructuring which is cool! It works when you
+use the default name for a binding, as well as when you change it, eg,&lt;/p&gt;
+
+    &lt;pre&gt;&lt;code&gt;let dessert = { name: &quot;eton mess&quot;, tasty: true };
+let {dairyFree=false} = dessert;  // be safe and assume desserts contain dairy
+console.log(dairyFree);  // =&amp;gt; false
+&lt;/code&gt;&lt;/pre&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;all of this comes together most excellently in using destructuring on a
+function argument, eg,&lt;/p&gt;
+
+    &lt;pre&gt;&lt;code&gt;let dessert = { name: &quot;eton mess&quot;, tasty: true };
+let eat = {name:n, tasty, dairyFree:df=false} =&amp;gt; {
+    if (!df || !tasty) { console.log(&quot;no thanks!&quot;); return; }
+
+    console.log(`mmm yes, I&#39;ll eat some ${n}!`);
+}
+
+eat(dessert);  // =&amp;gt; &quot;no thanks!&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+    &lt;p&gt;The default arguments let you have default values in a nice succinct way, and
+the binding renaming lets you have nice descriptive names in the interface but
+abbreviate in the implementation.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;planning-the-second-half-of-rc&quot;&gt;Planning the second half of RC&lt;/h2&gt;
+
+&lt;p&gt;Towards the end of the day, I had a worry session with Tom, one of the
+facilitators. The short of it is I’m worried I’m not going to complete as many
+things as I want to. I’ve been getting a fair amount of stuff done, but aside
+from &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr/&quot;&gt;&lt;code&gt;lsaddr&lt;/code&gt;&lt;/a&gt; I haven’t got much to show for it. While at RC I want
+to get more comfortable completing things.&lt;/p&gt;
+
+&lt;p&gt;Part of this is being afraid of spending too much time on a project that ends
+up being too big for RC. Of course, at the other end of this, I’m also afraid
+of spending too much of my time flitting between things. We ended up at the
+idea of spending a solid day on each of 2-3 projects I have in mind to see
+where I can get them.&lt;/p&gt;
+
+&lt;p&gt;So, my plan for tomorrow is to take &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/06/24/recurse-center-lab-notes/&quot;&gt;what I’ve learned about &lt;code&gt;mmap&lt;/code&gt;&lt;/a&gt; and start
+putting it into a Cap’n Proto message builder that writes directly to a memory
+mapped file. Wish me luck!&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 06 Jul 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/07/06/recurse-center-lab-notes</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/06/recurse-center-lab-notes</guid>
+        
+        
+      </item>
     
       <item>
         <title>My favourite bug so far at the Recurse Center!</title>
@@ -713,54 +823,6 @@ now thinking &lt;code&gt;lsaddr&lt;/code&gt;. I am bad at names.&lt;/li&gt;
         <pubDate>Mon, 15 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/15/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/15/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>ifconfig: how does it even?</title>
-        <description>&lt;p&gt;I can already &lt;a href=&quot;/blog/2015/06/10/some-early-linux-ipc-latency-data/&quot;&gt;measure the latency&lt;/a&gt; of TCP sockets over the
-loopback interface. I want to compare this to TCP sockets connecting to one of
-the ‘real’ addresses the machine has, to see if it’s any different. I could see
-this being either the same as the loopback interface, or being slower. I’m way
-below the level I have any real knowledge of at this point, so there’s only one
-way to find out.&lt;/p&gt;
-
-&lt;p&gt;But rather than hardcode in the IP addresses, or take them on the command line,
-I want the benchmark to find them itself. One thing I want out of these
-benchmarks is for them to build on any Linux system, and run without needing
-machine-specific arguments.  When &lt;em&gt;I&lt;/em&gt; find out what IP addresses my machine
-has, I use &lt;code&gt;ifconfig&lt;/code&gt;. But how does &lt;code&gt;ifconfig&lt;/code&gt; do it? I was about to Google the
-answer when I realised this would be a perfect time use &lt;code&gt;strace&lt;/code&gt;, and so I did!&lt;/p&gt;
-
-&lt;blockquote class=&quot;twitter-tweet&quot; lang=&quot;en&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;I just straced ifconfig to find out how it finds out which interfaces exist! /cc &lt;a href=&quot;https://twitter.com/b0rk&quot;&gt;@b0rk&lt;/a&gt;&lt;/p&gt;&amp;mdash; Kamal Marhubi (@kamalmarhubi) &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/608735834905415680&quot;&gt;June 10, 2015&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-
-&lt;p&gt;Here’s the quick summary of what happens:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;create sockets of both &lt;code&gt;AF_INET&lt;/code&gt; and &lt;code&gt;AF_INET6&lt;/code&gt; families&lt;/li&gt;
-  &lt;li&gt;read &lt;code&gt;/proc/net/dev&lt;/code&gt; to get a complete list of interfaces; we’ll need this
-to get the addresses for &lt;code&gt;AF_INET6&lt;/code&gt; socket, as well as to get the list of
-interfaces that don’t have an &lt;code&gt;AF_INET&lt;/code&gt; address&lt;/li&gt;
-  &lt;li&gt;use the &lt;code&gt;SIOCGIFCONF&lt;/code&gt; &lt;code&gt;ioctl&lt;/code&gt; to get a list of addresses for &lt;code&gt;AF_INET&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;loop through the interface names that came from &lt;code&gt;/proc/net/dev&lt;/code&gt; and for each
-one
-    &lt;ul&gt;
-      &lt;li&gt;read &lt;code&gt;/proc/net/if_inet6&lt;/code&gt; to get the IPv6 address for the interface, if
-any&lt;/li&gt;
-      &lt;li&gt;use a series of &lt;code&gt;ioctl&lt;/code&gt; calls to get data about the interface&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;To see in more detail, take a look at &lt;a href=&quot;https://gist.github.com/kamalmarhubi/1dfc1fa302916e21975d&quot;&gt;this gist&lt;/a&gt; for an annotated
-&lt;code&gt;strace&lt;/code&gt; of &lt;code&gt;ifconfig&lt;/code&gt; and &lt;code&gt;ifconfig -s&lt;/code&gt;.&lt;/p&gt;
-
-</description>
-        <pubDate>Thu, 11 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/11/ifconfig-how-does-it-even/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/11/ifconfig-how-does-it-even/</guid>
         
         
       </item>
