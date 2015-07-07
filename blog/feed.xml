@@ -5,8 +5,8 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 07 Jul 2015 07:38:32 -0400</pubDate>
-    <lastBuildDate>Tue, 07 Jul 2015 07:38:32 -0400</lastBuildDate>
+    <pubDate>Tue, 07 Jul 2015 11:07:32 -0400</pubDate>
+    <lastBuildDate>Tue, 07 Jul 2015 11:07:32 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -17,7 +17,7 @@ miss. But several of them showed up for a games night so it’s almost like
 they’re still here.&lt;/p&gt;
 
 &lt;p&gt;It was interesting to see the intro talks again from six weeks in. A bit of
-deja vu, and a good point to really stop and reflect. The advice and words from
+deja vu, and a good point to really stop and reflect. The advice from
 the faculty was different the second time, even though the words were the same.
 Our batch also gave advice or other thoughts to the new Recursers—Sophie
 &lt;a href=&quot;https://sfrapoport.github.io/2015/07/06/Advice-for-Summer-2s.html&quot;&gt;jotted it all down&lt;/a&gt;.&lt;/p&gt;
@@ -26,12 +26,12 @@ Our batch also gave advice or other thoughts to the new Recursers—Sophie
 
 &lt;p&gt;The morning was taken up with welcoming the new batch, so it was a while until
 I got back to programming. I decided to start learning JavaScript / ES15 with
-&lt;a href=&quot;http://es6katas.org/&quot;&gt;es6kata&lt;/a&gt;. There’s a lot of interdependence between the exercises! I started
+[es6katas][]. There’s a lot of interdependence between the exercises! I started
 off with the Arrays collection, but had to take a detour into destructuring. I
 should have also taken a detour into iterables, as I wasn’t clear on what an
 ES15 iterator was, and it was needed.&lt;/p&gt;
 
-&lt;p&gt;So far ES15 looks pretty nice! I’m almost glad I put of learning JS for so
+&lt;p&gt;So far ES15 looks pretty nice! I’m almost glad I put off learning JS for so
 long. Destructuring is especially good. It’s similar to Python, but a bit more
 versatile. The big features I noticed:&lt;/p&gt;
 
