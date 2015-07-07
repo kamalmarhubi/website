@@ -26,7 +26,7 @@ off with the Arrays collection, but had to take a detour into destructuring. I
 should have also taken a detour into iterables, as I wasn't clear on what an
 ES15 iterator was, and it was needed.
 
-[e6kata]: http://es6katas.org/
+[es6kata]: http://es6katas.org/
 
 So far ES15 looks pretty nice! I'm almost glad I put of learning JS for so
 long. Destructuring is especially good. It's similar to Python, but a bit more
