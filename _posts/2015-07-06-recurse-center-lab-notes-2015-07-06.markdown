@@ -10,7 +10,7 @@ miss. But several of them showed up for a games night so it's almost like
 they're still here.
 
 It was interesting to see the intro talks again from six weeks in. A bit of
-deja vu, and a good point to really stop and reflect. The advice and words from
+deja vu, and a good point to really stop and reflect. The advice from
 the faculty was different the second time, even though the words were the same.
 Our batch also gave advice or other thoughts to the new Recursers—Sophie
 [jotted it all down][sophie-advice].
@@ -21,14 +21,14 @@ Our batch also gave advice or other thoughts to the new Recursers—Sophie
 
 The morning was taken up with welcoming the new batch, so it was a while until
 I got back to programming. I decided to start learning JavaScript / ES15 with
-[es6kata][]. There's a lot of interdependence between the exercises! I started
+[es6katas][]. There's a lot of interdependence between the exercises! I started
 off with the Arrays collection, but had to take a detour into destructuring. I
 should have also taken a detour into iterables, as I wasn't clear on what an
 ES15 iterator was, and it was needed.
 
 [es6kata]: http://es6katas.org/
 
-So far ES15 looks pretty nice! I'm almost glad I put of learning JS for so
+So far ES15 looks pretty nice! I'm almost glad I put off learning JS for so
 long. Destructuring is especially good. It's similar to Python, but a bit more
 versatile. The big features I noticed:
 
