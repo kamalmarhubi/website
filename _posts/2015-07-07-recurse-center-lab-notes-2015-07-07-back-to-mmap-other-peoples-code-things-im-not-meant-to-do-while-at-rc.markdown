@@ -49,7 +49,7 @@ allocated segments could do with a short overview. I'm most of the way to
 understanding how it fits together, but it's been slower than I would have
 liked.
 
-[capnp-arenal]: https://github.com/sandstorm-io/capnproto/blob/1702050903e1038acf0556c6eabcf8f99702690d/c%2B%2B/src/capnp/arena.h#L197
+[capnp-arena]: https://github.com/sandstorm-io/capnproto/blob/1702050903e1038acf0556c6eabcf8f99702690d/c%2B%2B/src/capnp/arena.h#L197
 
 The process of understanding the code has been slowed by needing to learn the
 [`kj`][kj] library that Cap'n Proto makes heavy use of. I'm trying to find out
