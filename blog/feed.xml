@@ -5,9 +5,33 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 08 Jul 2015 08:03:44 -0400</pubDate>
-    <lastBuildDate>Wed, 08 Jul 2015 08:03:44 -0400</lastBuildDate>
+    <pubDate>Thu, 09 Jul 2015 01:03:48 -0400</pubDate>
+    <lastBuildDate>Thu, 09 Jul 2015 01:03:48 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes 2015-07-08</title>
+        <description>&lt;p&gt;Yesterday’s tinkering with Bazel and Kythe seeped into today. I attempted to
+run Kythe’s indexers on its own code base. This was a multi-stage process that
+took something like 15 hours of CPU time and generated 90+ GB of intermediate
+data. The end result was disappointing: I get a 500 error in the provided web
+service.&lt;/p&gt;
+
+&lt;p&gt;It was definitely fun to use Blaze / Bazel again though! While Kythe didn’t
+work out, I’m vaguely tempted to use Bazel on some personal stuff, but it needs
+more build rules before that becomes non-painful. I need to take a slightly
+closer look at what is available already. It looked like someone was adding
+build rules for Rust…&lt;/p&gt;
+
+&lt;p&gt;The rest of the day was taken up by being non-productive, followed by doing
+some more ES6, followed by napping for too long. We’ll try again tomorrow!&lt;/p&gt;
+</description>
+        <pubDate>Wed, 08 Jul 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center lab notes 2015-07-07: back to mmap; other people&#39;s code; things I&#39;m not meant to do while at RC</title>
@@ -764,64 +788,6 @@ more often. Physical activity is good.&lt;/li&gt;
         <pubDate>Wed, 17 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/17/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/17/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-06-16</title>
-        <description>&lt;p&gt;Today I continued working on my &lt;code&gt;lsaddr&lt;/code&gt; utility for listing IP addresses.
-Here’s a quick update:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;there is now a &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr&quot;&gt;repository on GitHub&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;I have a &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr/blob/master/lsaddr.adoc&quot;&gt;man page&lt;/a&gt; that I’m mostly pleased with; here’s the
-synopsis:&lt;/p&gt;
-
-    &lt;p&gt;&lt;code&gt;
-lsaddr [ -46 ] [--include-loopback] [--include-ipv6-link-local] [ interface ... ]
-&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;I am checking that the supplied interfaces exist and reporting errors with
-&lt;a href=&quot;http://linux.die.net/man/3/error&quot;&gt;&lt;code&gt;error&lt;/code&gt;&lt;/a&gt;, which I discovered was the done thing by using &lt;code&gt;ltrace&lt;/code&gt; on
-&lt;code&gt;ls does-not-exist&lt;/code&gt; :-)&lt;/li&gt;
-  &lt;li&gt;I tried to use &lt;a href=&quot;http://linux.die.net/man/3/lfind&quot;&gt;&lt;code&gt;lfind&lt;/code&gt;&lt;/a&gt; to determine if interfaces were listed as
-arguments, but wow what a mess that was&lt;sup id=&quot;fnref:lfind-mess&quot;&gt;&lt;a href=&quot;#fn:lfind-mess&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;; I scrapped that to come
-back to it another day&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;In other news, I read &lt;a href=&quot;http://www.brendangregg.com/blog/2015-05-15/ebpf-one-small-step.html&quot;&gt;this exciting post&lt;/a&gt; by Brendan Gregg on eBPF
-and tracing in the kernel. Apparently it will soon be possible to gather
-latency data from inside the kernel. I haven’t figured out if this could be
-interesting for IPC benchmarks.&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:lfind-mess&quot;&gt;
-
-      &lt;p&gt;the closest C comes to having generics / parametric polymorphism is
-&lt;code&gt;void *&lt;/code&gt;. With things like &lt;a href=&quot;http://linux.die.net/man/3/malloc&quot;&gt;&lt;code&gt;malloc&lt;/code&gt;&lt;/a&gt;, this is mostly fine. With algorithms
-like &lt;code&gt;lfind&lt;/code&gt; and friends… well you’re going to have a bad time. Just look
-a this signature:&lt;/p&gt;
-
-      &lt;p&gt;&lt;code&gt;
-void *lfind(const void *key, const void *base, size_t *nmemb,
-            size_t size, int(*compar)(const void *, const void *))
-&lt;/code&gt;&lt;/p&gt;
-
-      &lt;p&gt;I find &lt;a href=&quot;http://en.cppreference.com/w/cpp/algorithm/find&quot;&gt;&lt;code&gt;std::find&lt;/code&gt;&lt;/a&gt; unfriendly, but this is a whole other level. &lt;a href=&quot;#fnref:lfind-mess&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Tue, 16 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/16/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/16/recurse-center-lab-notes</guid>
         
         
       </item>
