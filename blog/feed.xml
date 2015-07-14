@@ -5,9 +5,80 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 09 Jul 2015 01:03:48 -0400</pubDate>
-    <lastBuildDate>Thu, 09 Jul 2015 01:03:48 -0400</lastBuildDate>
+    <pubDate>Tue, 14 Jul 2015 00:56:50 -0400</pubDate>
+    <lastBuildDate>Tue, 14 Jul 2015 00:56:50 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Rethinking my rules</title>
+        <description>&lt;p&gt;After a conversation with &lt;a href=&quot;http://jvns.ca/&quot;&gt;Julia&lt;/a&gt; and &lt;a href=&quot;https://blog.gregbrockman.com/&quot;&gt;Greg&lt;/a&gt; about how to approach the
+Recurse Center, I’m revisiting my not-at-RC project list. I wrote about
+this early on in &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/06/02/goals-non-goals-and-anti-goals/&quot;&gt;Goals, non-goals, and anti-goals&lt;/a&gt;. The
+gist of it is that I wanted to avoid spending time on things that were
+mostly ‘busywork and configuration’. The list of not-at-RC projects was
+vaguely:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt;, &lt;a href=&quot;https://coreos.com/&quot;&gt;CoreOS&lt;/a&gt;, and other containery and clustery stuff&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://bazel.io/&quot;&gt;Bazel&lt;/a&gt;, Google’s recently open sourced build tool&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://kythe.io/&quot;&gt;Kythe&lt;/a&gt;, Google’s recently open sourced source code indexer&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://prometheus.io/&quot;&gt;Prometheus&lt;/a&gt;, a monitoring and alerting system&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;There’s a common thread here of wanting a Google-away-from-Google, at
+least in terms of the developer experience. This might be misguided,
+because not all problems are Google-sized. The developer experience of a
+great code search, unified build system, and cluster scheduler is really
+great though! The main problem is I’m not sure how many of these things
+require scale to be worthwhile.&lt;/p&gt;
+
+&lt;p&gt;Back to the conversation that made me think of changing my rules. Greg
+said it was valuable to explore and learn to use tools to give you a
+better understanding of how to judge similar things. That resonated with
+me: if I want to have informed opinions on things in this space, I have
+to use some of them!&lt;/p&gt;
+
+&lt;p&gt;With all that in mind, here’s what I’m working on at the moment:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;fixed an issue I’d been having with my CoreOS cluster, so that I no longer
+get complaints about failed systemd units on login&lt;/li&gt;
+  &lt;li&gt;reading up on what’s changed in Kubernetes since I read the original design
+docs when it was first released. There’s a lot of new concepts in there now,
+and they’re &lt;a href=&quot;http://kuberneteslaunch.com/&quot;&gt;gearing up for a 1.0 next week&lt;/a&gt;&lt;sup id=&quot;fnref:launch-site&quot;&gt;&lt;a href=&quot;#fn:launch-site&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;,
+so this seems like a good time to dig in!&lt;/li&gt;
+  &lt;li&gt;I installed &lt;a href=&quot;https://sandstorm.io/&quot;&gt;Sandstorm&lt;/a&gt; on a new server in GCE. Eventually I plan to move
+this to the Kubernetes cluster.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Of course, bringing in a new theme means something has to go to make room. I’m
+probably going to drop the priority on learning JavaScript / ES15. Unlike with
+the systems programming I was doing, I don’t have a strong and clear goal in
+mind there. I do expect to get back to &lt;code&gt;mmap&lt;/code&gt; and my other friends in that
+world though. I’ll treat Kubernetes and CoreOS as a little break for now, and
+then figure out a way to interleave the different kinds of work.&lt;/p&gt;
+
+&lt;p&gt;This should be fun!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:launch-site&quot;&gt;
+
+      &lt;p&gt;Yes, apparently they got a domain just for the launch. &lt;a href=&quot;#fnref:launch-site&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Tue, 14 Jul 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center lab notes 2015-07-08</title>
@@ -722,72 +793,6 @@ and IPv6 addresses, with the loopback interfaces and IPv6 link-local omitted.
         <pubDate>Thu, 18 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/18/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/18/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-06-17</title>
-        <description>&lt;p&gt;Not a lot to report today: I overslept and only got in at 11, and then left at
-6 to go ringing. I did bring another recurser—Jess—along with me, so that was
-cool. I think she’ll be back, too! I left ringing early to go and checkout the
-&lt;a href=&quot;http://www.keyboard.io/&quot;&gt;Keyboardio Model 01&lt;/a&gt; in midtown. It’s a very attractive piece of
-hardware, and has me tempted to order one. I’ll need a second keyboard at some
-point, right?&lt;/p&gt;
-
-&lt;p&gt;On the &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr&quot;&gt;&lt;code&gt;lsaddr&lt;/code&gt;&lt;/a&gt; front, I figured out how to make &lt;code&gt;lfind&lt;/code&gt; go. I don’t understand
-why, but I’ll take my win for now. I’m also parsing &lt;code&gt;/proc/net/if_inet6&lt;/code&gt; to get
-IPv6 addresses, though not yet including them in the output. I mostly pushed
-characters around in source files:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ git log --since=yesterday --reverse --oneline
-a08386b Fix typo in manpage
-16fbff4 Change int to size_t in a couple of places
-69300ac Use designated initializers instead of statements
-614ef75 Rename ipv4_fd to sockfd and use AF_INET6
-8d9aacc Check interface arguments exist
-d21ecec Run clang-format
-8f9fb9c Properly handle user specified interfaces
-6d75545 Comment the repeated ioctl(SIOCGIFCONF)
-3f03089 Improve handling of unspecified arguments
-88a2eb5 Reformat struct initializer
-8ea9224 Properly handle the IP version flags (IPv4 only)
-bf08afa Move manpage doctype to a flag to a2x
-cef15c4 Change manpage source file suffix to .1.txt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tomorrow’s work on &lt;code&gt;lsaddr&lt;/code&gt; will be to finish off IPv6 listing first thing in
-the morning, and then do some restructuring to make option handling easier:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;get list of interfaces from /proc/net/dev
-    &lt;ul&gt;
-      &lt;li&gt;&lt;code&gt;int list_interfaces(char ***interfaces, size_t *num_interfaces);&lt;/code&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;check against that list instead of using &lt;code&gt;ioctl&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;have a &lt;code&gt;struct address { char [ADDRESSBUFLEN] addr, char [IFNAMSIZ]
-interface, enum {ipv4 = 4, ipv6 = 6} ip_version }&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;have an array of &lt;code&gt;struct address&lt;/code&gt; sorted by interface, version, addr&lt;/li&gt;
-  &lt;li&gt;internal list of interfaces with pointers into list of &lt;code&gt;struct address&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Other random things:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;I read &lt;a href=&quot;https://docs.google.com/document/pub?id=1IC9yOXj7j6cdLLxWEBAGRL6wl97tFxgjLUEHIX3MSTs&quot;&gt;Introducing the Journal&lt;/a&gt;, the post introducing &lt;code&gt;journald&lt;/code&gt;.
-I’m new to this &lt;code&gt;systemd&lt;/code&gt; world so it was interesting to get some background.
-The ‘frequently asked questions’ are pretty terrible though, in that
-intending-to-be-funny-but-mostly-condescending way that’s a bit too common in
-tech.&lt;/li&gt;
-  &lt;li&gt;I went to yoga in the early afternoon, which was a good idea. I need to go
-more often. Physical activity is good.&lt;/li&gt;
-&lt;/ul&gt;
-
-</description>
-        <pubDate>Wed, 17 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/17/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/17/recurse-center-lab-notes</guid>
         
         
       </item>
