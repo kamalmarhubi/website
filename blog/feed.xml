@@ -5,9 +5,76 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 14 Jul 2015 00:56:50 -0400</pubDate>
-    <lastBuildDate>Tue, 14 Jul 2015 00:56:50 -0400</lastBuildDate>
+    <pubDate>Wed, 15 Jul 2015 02:16:23 -0400</pubDate>
+    <lastBuildDate>Wed, 15 Jul 2015 02:16:23 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes 2015-07-15: X.509 PKI</title>
+        <description>&lt;p&gt;I spent today working towards my Kubernetes cluster. On the way, I decided I
+wanted to have client certificates to control access to the API server.&lt;/p&gt;
+
+&lt;p&gt;Here’s an overview of where I’m going:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;generate a root certificate and key, ideally stored offline and in a hardware
+security module (HSM)&lt;/li&gt;
+  &lt;li&gt;use that to sign an intermediate root certificate&lt;/li&gt;
+  &lt;li&gt;use the intermediate root to sign any client or server certificates&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I’m just tinkering for now, and so I’m storing the root certificate on my
+laptop. I’m using easy-rsa to generate the setup. It’s a collection of
+scripts from the OpenVPN project to help set up a CA to use for VPN
+authentication.&lt;/p&gt;
+
+&lt;p&gt;I’m roughly following these guides, and doing peripheral reading up on what I’m
+actually doing:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://openvpn.net/index.php/open-source/documentation/miscellaneous/77-rsa-key-management.html&quot;&gt;https://openvpn.net/index.php/open-source/documentation/miscellaneous/77-rsa-key-management.html&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://wiki.archlinux.org/index.php/Create_a_Public_Key_Infrastructure_Using_the_easy-rsa_Scripts&quot;&gt;https://wiki.archlinux.org/index.php/Create_a_Public_Key_Infrastructure_Using_the_easy-rsa_Scripts&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;A fun part is I get to name my CA. I went with ‘Kamal Marhubi CA’, but I’m
+probably going to redo it. I also have to get a better handle on all these &lt;code&gt;O&lt;/code&gt;,
+&lt;code&gt;CN&lt;/code&gt;, &lt;code&gt;C&lt;/code&gt;, and other fields that show up in an X.509 certificate, and what’s
+allowed there. &lt;a href=&quot;https://tools.ietf.org/html/rfc5280&quot;&gt;RFC 5280&lt;/a&gt; is my friend here.&lt;/p&gt;
+
+&lt;p&gt;Once done, I’ll have to keep running these scipts whenever I need new
+certificates. That’s just fine for my small use case! I’ll need a server
+certificate for each of the API server nodes, client certificates for each
+worker node, and a client certificate for me to connect to the API server.&lt;/p&gt;
+
+&lt;p&gt;If you want to get fancy, CloudFlare have &lt;a href=&quot;https://blog.cloudflare.com/how-to-build-your-own-public-key-infrastructure/&quot;&gt;a good post on setting up fancier
+PKI&lt;/a&gt; using their &lt;a href=&quot;https://blog.cloudflare.com/how-to-build-your-own-public-key-infrastructure/&quot;&gt;CFSSL&lt;/a&gt; project. It includes an API server that can
+issue certificates automatically.  This would be useful if you wanted your
+services to be authenticated, but also to be able to spin new instances up and
+down dynamically.&lt;/p&gt;
+
+&lt;p&gt;The CloudFlare post talks about using multiple intermediate roots for different
+services. The example is that an API server only trusts certificates signed by
+the DB root CA, and vice versa. A comment there mentions using &lt;a href=&quot;https://tools.ietf.org/html/rfc5280#section-4.2.1.12&quot;&gt;Extended Key
+Usage (EKU)&lt;/a&gt; instead. This is a standard way to designate the type of use
+a certificate is valid for. This requires an OID. For external use, you’d have
+to register one. But in this use case, you can use aUUID based OID. Some more
+info for my future self: &lt;a href=&quot;http://www.itu.int/en/ITU-T/asn1/Pages/UUID/uuids.aspx&quot;&gt;one&lt;/a&gt;, &lt;a href=&quot;http://www.oid-info.com/get/2.25&quot;&gt;two&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;For maximal fanciness, you want to be using HSMs and TPMs where possible. Both
+are special hardware that stores keys, and is able to do cryptographic
+operations without the key ever leaving the device. You probably have a TPM in
+the computer you’re using right now, though it might be disabled. I enabled
+mine in the BIOS setup, and have ‘taken ownership’ of it. As in, I literally
+ran a command called &lt;code&gt;tpm_takeownership&lt;/code&gt;. I’m going to see if I can get it
+added as a security device in Firefox. That way, when the time comes, I’ll be
+able to store my client certificates in there. Or something!&lt;/p&gt;
+</description>
+        <pubDate>Wed, 15 Jul 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</guid>
+        
+        
+      </item>
     
       <item>
         <title>Rethinking my rules</title>
@@ -716,83 +783,6 @@ Proto RPC&lt;/a&gt;.&lt;/p&gt;
         <pubDate>Mon, 22 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/22/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/22/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-06-18</title>
-        <description>&lt;p&gt;Lots of progress on &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr&quot;&gt;&lt;code&gt;lsaddr&lt;/code&gt;&lt;/a&gt; today! Unlike yesterday, most of these
-commits are writing code rather than poking at it:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ git log --since=yesterday --reverse --oneline
-0a695b0 Get IPv6 addresses from /proc/net/if_inet6
-683d9c2 Fix typo in Makefile
-8d61702 Add debug target to Makefile
-686995b Add --list-interfaces option
-8f2d3c4 Sort output of --list-interfaces
-db95d00 Comment why we replace colon with null
-ccf04d5 Introduce struct str_list to remove need for triple pointers
-2209807 Use struct str_list in struct args
-99cc8db Check interfaces exist using entries from /proc/net/dev
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Some highlights: I now feel like I’ve got this &lt;code&gt;lfind&lt;/code&gt; thing under control: I’m
-using it to filter non-existent interfaces from the user’s arguments, as well
-as to make sure I only output IP addresses for the specified interfaces. I also
-implemented a &lt;code&gt;--list-interfaces&lt;/code&gt; option that does what it says. All this
-information is pretty scattered and disorganised. Here are my sources:&lt;/p&gt;
-
-&lt;dl&gt;
-  &lt;dt&gt;&lt;code&gt;/proc/net/dev&lt;/code&gt;&lt;/dt&gt;
-  &lt;dd&gt;contains a list of interfaces and some other data in a fairly
-parse-unfriendly layout—two header rows, and the interface names have a colon
-appended&lt;/dd&gt;
-  &lt;dt&gt;&lt;code&gt;/proc/net/if_inet6&lt;/code&gt;&lt;/dt&gt;
-  &lt;dd&gt;contains a list of IPv6 addresses along with some other data in a more
-parse-friendly format, except that the IP addresses are given as 128-bits
-hex-encoded, no colons and no zero-contractions—not ready for human
-consumption&lt;/dd&gt;
-  &lt;dt&gt;&lt;code&gt;ioctl(SIOCGIFCONF)&lt;/code&gt;&lt;/dt&gt;
-  &lt;dd&gt;a system call that needs to be made on a socket file descriptor to get a list
-of interfaces with IPv4 addresses as &lt;code&gt;struct sockaddr_in&lt;/code&gt;&lt;/dd&gt;
-&lt;/dl&gt;
-
-&lt;p&gt;So far &lt;code&gt;--include-loopback&lt;/code&gt; and &lt;code&gt;--include-link-local&lt;/code&gt; don’t do anything. I
-started some refactoring to make them easier to impelment. I should be able to
-get this wrapped up pretty soon!&lt;/p&gt;
-
-&lt;p&gt;I also gave a presentation on writing manpages with &lt;a href=&quot;http://asciidoc.org/&quot;&gt;AsciiDoc&lt;/a&gt;. The tl;dr was
-that it’s really easy! Take a look at the &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr/blob/master/lsaddr.1.txt&quot;&gt;AsciiDoc source&lt;/a&gt; for
-the &lt;code&gt;lsaddr&lt;/code&gt; manpage. It starts off:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;lsaddr(1)
-=======
-
-NAME
-----
-lsaddr - list active IP addresses
-
-SYNOPSIS
---------
-[verse]
-*lsaddr* [ *-46* ] [*--include-loopback*] [*--include-ipv6-link-local*] [ _interface_ ... ]
-*lsaddr --list-interfaces*
-
-DESCRIPTION
------------
-List IP addresses of the specified __interface__s. By default, lists all IPv4
-and IPv6 addresses, with the loopback interfaces and IPv6 link-local omitted.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;And here’s a screenshot of the formatted output in my terminal:
-&lt;img src=&quot;/static/lsaddr-manpage.png&quot; alt=&quot;screenshot&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;That’s it for now. I should be getting back to IPC stuff soon!&lt;/p&gt;
-</description>
-        <pubDate>Thu, 18 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/18/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/18/recurse-center-lab-notes</guid>
         
         
       </item>
