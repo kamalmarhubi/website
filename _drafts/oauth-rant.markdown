@@ -43,6 +43,20 @@ trying new Twitter clients, so I have done it many times!
 Sticking with Twitter mobile apps, let's look at what setting up an account
 looks like in TODO(someapp):
 
+For the purposes of this post, OAuth is the thing that lets you sign in and
+grant permissions to sites and apps with your Twitter / Facebook / Github /
+Google / Klout / LinkedIn / whathaveyou account without sharing your password.
+If you're like me and have an Android third-party Twitter app problem
+^[twitter-app]——then you've probably done this several times on your phone.
+
+^[twitter-app]:
+    I continue to believe that one day I'll find the perfect Twitter app!!
+
+Here's what this looks like for the Twitter app I'm currently using:
+
+This probably looks normal since it'
+
+
 A mobile app has full control over everything it shows you, and has full access
 to all input you give it. From a security perspective, it's safest to assume
 everything it shows you is a lie, and that it's secretly logging all input. This
