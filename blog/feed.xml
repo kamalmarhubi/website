@@ -5,9 +5,57 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 26 Jul 2015 18:15:12 -0400</pubDate>
-    <lastBuildDate>Sun, 26 Jul 2015 18:15:12 -0400</lastBuildDate>
+    <pubDate>Mon, 27 Jul 2015 01:25:37 -0400</pubDate>
+    <lastBuildDate>Mon, 27 Jul 2015 01:25:37 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Preludes</title>
+        <description>&lt;p&gt;This evening I walked from the Lincoln Center at 66th and Broadway down
+to 40th street, all the while listening to Rachmaninoff’s 1929
+performance of his Piano Concerto № 2. My noise cancelling headphones
+masked the never ending cacophony of the city. The experience of the
+third movement was slightly surreal, coinciding with my traversal of
+Times Square.&lt;/p&gt;
+
+&lt;p&gt;This was brought on by having just watched &lt;a href=&quot;http://www.lct.org/shows/preludes/&quot;&gt;Preludes&lt;/a&gt;, ‘a musical fantasia
+set in the hypnotized mind of Russian composer Sergei Rachmaninoff’,
+which is playing at the Lincoln Center through to August second.
+Rachmaninoff suffered depression and writer’s block, and visited
+hypnotherapist Nikolai Dahl to help him break through it. Rachmaninoff
+dedicated the second Concerto to Dahl.&lt;/p&gt;
+
+&lt;p&gt;To say I really enjoyed the play would be a slight understatement. One
+of the actors was at a grand piano in center stage. He played pieces
+that came up in dialogue, as well as snatches of themes from Piano
+Concerto № 2 as the composer worked through his block. I experienced
+&lt;a href=&quot;http://www.bbc.com/future/story/20150721-when-was-the-last-time-music-gave-you-a-skin-orgasm&quot;&gt;musical frisson—or ‘skin orgasm’—&lt;/a&gt;several times; I hadn’t
+listened to any Rachmaninoff in a good while, but he is way up on my
+list of favourite composers. The C♯ minor and G minor preludes, both of
+which I love, were played in full.&lt;/p&gt;
+
+&lt;p&gt;Musical performances aside, there was plenty of food for thought.
+Creativity, performance anxiety, writer’s block, depression, a need to
+be ‘great’, obsession with how others perceive you and your work—all too
+familiar! I wish I’d had a notebook out to jot down some quotes to think
+over more, especially as I come to the last three weeks at the Recurse
+Center. I’ve not written here in about two weeks, and some of that is
+not feeling like I have something worthy of writing about. And the
+longer I go without writing, the more important it seems for the next
+writing to be, if not great, at least good. I hope the play will snap me
+out of that. Let’s see!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Thanks to David Albert for telling me about the play, and to the fellow
+recursers who joined me at the play.&lt;/em&gt;&lt;/p&gt;
+</description>
+        <pubDate>Sun, 26 Jul 2015 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/07/26/preludes/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/26/preludes/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Recurse Center lab notes 2015-07-15: X.509 PKI</title>
@@ -750,39 +798,6 @@ and being productive, and making good use of time!&lt;/p&gt;
         <pubDate>Tue, 23 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/23/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/23/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-06-22</title>
-        <description>&lt;p&gt;Today was slightly slow. I re-remembered why it’s a good idea to leave
-things incomplete at the end of the day or week: it gives you somewhere
-to start. I consider &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr&quot;&gt;&lt;code&gt;lsaddr&lt;/code&gt;&lt;/a&gt; to be more or less feature
-complete at this point, at least for a ‘1.0’. That was the state on
-Friday, and is still the state today. If something was left, I would
-have had an immediate place to start this morning.&lt;/p&gt;
-
-&lt;p&gt;I wasn’t feeling like going back to IPC benchmarking immediately, so I
-ended up deciding to run a version of my &lt;a href=&quot;https://github.com/kamalmarhubi/shell-workshop&quot;&gt;Let’s Build a
-Shell!&lt;/a&gt; workshop. I’ve been wanting to do this for a while,
-since I think it’s a pretty good way to get a deeper understanding of
-how our programs are run. I need to file some issues to improve the
-documentation a little, but I remain pretty pleased with how it’s set
-up. Good job past me!&lt;/p&gt;
-
-&lt;p&gt;After the workshop, I spent a bit of time deciding what to do next. I
-think I’ve settled on adding a memory mapped message builder to &lt;a href=&quot;https://capnproto.org/&quot;&gt;Cap’n
-Proto&lt;/a&gt;’s C++ library. This was requested in a &lt;a href=&quot;https://groups.google.com/d/topic/capnproto/kLQOsxjkjxM/discussion&quot;&gt;recent mailing
-list posting&lt;/a&gt;. It’ll get me poking at the innards of
-Cap’n Proto a little, which would be good for one of my potential bigger
-project ideas for my time at RC: a shared memory transport for &lt;a href=&quot;https://capnproto.org/rpc.html&quot;&gt;Cap’n
-Proto RPC&lt;/a&gt;.&lt;/p&gt;
-
-</description>
-        <pubDate>Mon, 22 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/22/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/22/recurse-center-lab-notes</guid>
         
         
       </item>
