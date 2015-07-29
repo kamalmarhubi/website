@@ -5,9 +5,73 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 27 Jul 2015 01:25:37 -0400</pubDate>
-    <lastBuildDate>Mon, 27 Jul 2015 01:25:37 -0400</lastBuildDate>
+    <pubDate>Wed, 29 Jul 2015 00:38:10 -0400</pubDate>
+    <lastBuildDate>Wed, 29 Jul 2015 00:38:10 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Recurse Center lab notes catch up</title>
+        <description>&lt;p&gt;I’m way behind on posting here. Here is a quick rundown of what I’ve been up to.&lt;/p&gt;
+
+&lt;p&gt;The biggest thing is that I managed to run &lt;a href=&quot;http://kythe.io/&quot;&gt;Kythe&lt;/a&gt;! It took me half a week to
+get it to work with a hello world program, but once I had that I was good to
+go. This meant I got to play with &lt;a href=&quot;http://bazel.io/&quot;&gt;Bazel&lt;/a&gt; again, which was nicely familiar.&lt;/p&gt;
+
+&lt;p&gt;A lot of the confusion was that remote Bazel repositories don’t quite work for
+C++ in the current state. My approach of referring to the Kythe indexer from a
+Bazel repository with my hello world program just wasn’t going to work, even
+though I kept trying. In the end, I just copied the binaries into my tree and
+set up the configuration needed to run them.&lt;/p&gt;
+
+&lt;p&gt;I gave a demo of the web UI that comes with Kythe, run against some data
+structure code that had Alice written. There’s a somewhat hilarious blowup in
+size: 7 kB of source results in a couple of serving database tables. I also did
+a hackish port of the SQLite build over to Bazel so I could run Kythe over it.
+The 1.5 MB of source resulted in a ~80 MB database. The flipside is that the
+API server responds to most queries in a few milliseconds.&lt;/p&gt;
+
+&lt;p&gt;Keeping with Kythe, I’m currently working on an alternative web UI. The
+provided one is really good to understand how nodes are linked together in the
+graph structure that Kythe builds up, but it’s too noisy and clunky to use as a
+day-to-day code exploration tool. As an example, it shows the syntactic
+relationship of a variable reference being a child of the function it occurs
+in.&lt;/p&gt;
+
+&lt;p&gt;I’m pretty excited about this project because one of the things I wanted to do
+at RC was to learn JavaScript (well, ECMAScript 2015). The &lt;a href=&quot;https://github.com/google/kythe/tree/master/kythe/web/ui/src-cljs/ui&quot;&gt;Kythe web
+UI&lt;/a&gt; is in &lt;a href=&quot;https://github.com/clojure/clojurescript&quot;&gt;Clojurescript&lt;/a&gt; using &lt;a href=&quot;https://github.com/omcljs/om&quot;&gt;Om&lt;/a&gt;, which I’m not currently
+interested in learning, so I’ll be starting my own from scratch.&lt;/p&gt;
+
+&lt;p&gt;Just to keep things slightly weird, I’m using &lt;a href=&quot;https://github.com/Reactive-Extensions/RxJS&quot;&gt;RxJS&lt;/a&gt;, the Reactive Extensions
+for JavaScript. I’m trying to emulate the architecture used in &lt;a href=&quot;http://elm-lang.org/&quot;&gt;Elm&lt;/a&gt; in place
+of the &lt;a href=&quot;http://facebook.github.io/flux/&quot;&gt;Flux&lt;/a&gt; architecture that’s more commonly used with React. The &lt;a href=&quot;https://github.com/evancz/elm-architecture-tutorial/&quot;&gt;Elm
+architecture&lt;/a&gt; is pleasantly functional, consisting of&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;a model type &lt;code&gt;Model&lt;/code&gt;;&lt;/li&gt;
+  &lt;li&gt;an action type &lt;code&gt;Action&lt;/code&gt; that specifies all the kinds of actions that exist;&lt;/li&gt;
+  &lt;li&gt;an update function &lt;code&gt;update :: Action -&amp;gt; Model -&amp;gt; Model&lt;/code&gt;; and&lt;/li&gt;
+  &lt;li&gt;a view function &lt;code&gt;view :: Model -&amp;gt; Html&lt;/code&gt; that renders the model.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;These are all wired up with functional reactive stuff—&lt;a href=&quot;http://package.elm-lang.org/packages/elm-lang/core/2.1.0/Signal&quot;&gt;Signals&lt;/a&gt; in Elm,
+&lt;a href=&quot;https://github.com/Reactive-Extensions/RxJS/blob/master/doc/api/core/observable.md&quot;&gt;Observables&lt;/a&gt; in RxJS. The user input events are translated into a stream of
+actions. A stream of models is created by folding the update function over the
+action stream. Finally, the view is kept up to date by mapping the view
+function over the model stream.&lt;/p&gt;
+
+&lt;p&gt;I have no real idea what I’m doing, so I’m starting off with translating the
+&lt;a href=&quot;https://github.com/evancz/elm-todomvc&quot;&gt;Elm TodoMVC&lt;/a&gt; implementation to this cobbled together set of
+tools. This should be done fairly soon, then I’ll go back to the Kythe code
+browser.&lt;/p&gt;
+
+</description>
+        <pubDate>Wed, 29 Jul 2015 00:01:49 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Preludes</title>
@@ -783,21 +847,6 @@ builder, which will hopefully inform the design more.&lt;/p&gt;
         <pubDate>Wed, 24 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/24/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/24/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-06-23</title>
-        <description>&lt;p&gt;My output today was to write &lt;a href=&quot;https://groups.google.com/d/msg/capnproto/kLQOsxjkjxM/ngbJYer52OwJ&quot;&gt;an email&lt;/a&gt;. I did a whole bunch of reading
-up on memory mapped files and handling page faults to get to that point, so I
-wasn’t exactly idle—just outputless. I need to remember that it still counts
-and being productive, and making good use of time!&lt;/p&gt;
-
-</description>
-        <pubDate>Tue, 23 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/23/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/23/recurse-center-lab-notes</guid>
         
         
       </item>
