@@ -2,6 +2,10 @@
 title: oauth rant
 ---
 
+section on sekrtis
+http://tools.ietf.org/html/rfc6819#section-4.1.1
+
+
 Security things on the internet sometimes make me sadangry. OAuth and the
 improper use thereof is on my mind at the moment. Let's start off with a very
 quick WEI (what even is) of OAuth, beginning with the abstract from the RFC:
