@@ -80,7 +80,7 @@ Now let's stick the example nginx pod manifest from above in an `nginx.yaml`
 file, and then drop it in the `manifests` directory. After a short wait, the
 kubelet will notice the file and fire up nginx.
 
-We can check this with `docker ps` on our system:
+We can check the list of running containers with `docker ps`:
 
 ~~~
 $ docker ps
@@ -90,10 +90,10 @@ CONTAINER ID        IMAGE                                  COMMAND              
 ~~~
 
 There are two containers running. One is nginx, the other is the pod
-infrastructure container. The infrastructure container is a place to put
-all the pod resources that are shared across containers in the pod shared
-resources are placed, eg, the IP and any volumes.[^pause] We can poke around a
-little more to see some of that:
+infrastructure container. The infrastructure container is a place to put all
+the pod resources that are shared across containers in the pod shared resources
+are placed, eg, the IP and any volumes.[^pause] We can poke around with `docker
+inspect` to see how they're configured and hooked up to each other:
 
 [^pause]:
     The `pause` command that the infrastructure container runs is a 129 byte
@@ -112,9 +112,9 @@ $ docker inspect --format '{{ .NetworkSettings.IPAddress }}' 697f93073509
 172.17.0.8
 ~~~
 
-The nginx container has no IP, but the infrastructure container does.
-Poking around at the nginx container a bit more, we can see its
-`NetworkMode` is set to use the infrastructure container's network:
+The nginx container has no IP, but the infrastructure container does. Taking a
+closer look at at the nginx container, we can see its `NetworkMode` is set to
+use the infrastructure container's network:
 
 ~~~
 $ docker inspect --format '{{ .HostConfig.NetworkMode }}' 64c55f0d9994
