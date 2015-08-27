@@ -3,12 +3,17 @@ layout: post
 title: What even is a kubelet?
 ---
 
+*This post is the first in a series exploring the concepts and components that
+underly [Kubernetes].*
+
 [Kubernetes] is Google's open source, container-focused cluster management
 thing.  I see it as their attempt to tell everyone how they think containers
 and clusters fit together. While they have [plenty of getting started
-guides][getting-started], most of them don't really go into what the moving
-parts are and how they fit together. I've been tinkering with it lately, and as
-I continue I'll write up bits and pieces of what I've learned.
+guides][getting-started], most of them are focused on getting a cluster up for
+experimentation. This makes them great for seeing what the application developer's
+experience is like. But to be comfortable operating a production-ready cluster,
+I really want to understand what the moving parts are and how they fit together.
+
 
 [kubernetes]: http://kubernetes.io/
 [getting-started]: http://kubernetes.io/v1.0/docs/getting-started-guides/README.html
