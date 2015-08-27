@@ -4,16 +4,16 @@ title: What even is a kubelet?
 ---
 
 *This post is the first in a series exploring the concepts and components that
-underly [Kubernetes].*
+underly [Kubernetes]. It talks about the kubelet component, and the pod
+concept.*
 
 [Kubernetes] is Google's open source, container-focused cluster management
 thing.  I see it as their attempt to tell everyone how they think containers
-and clusters fit together. While they have [plenty of getting started
-guides][getting-started], most of them are focused on getting a cluster up for
-experimentation. This makes them great for seeing what the application developer's
-experience is like. But to be comfortable operating a production-ready cluster,
-I really want to understand what the moving parts are and how they fit together.
-
+and clusters fit together. The Kubernetes documentation is quite good, but it's
+divided up in a way that makes it great as a reference. I want to understand
+both the concepts Kubernetes introduces, and the components that make up a
+Kubernetes cluster, and I want to learn by doing. I'm planning to build up a
+cluster from scratch, documenting the moving parts and concepts as I go.
 
 [kubernetes]: http://kubernetes.io/
 [getting-started]: http://kubernetes.io/v1.0/docs/getting-started-guides/README.html
@@ -27,9 +27,14 @@ they are all running.
 [kubelet]: http://kubernetes.io/v1.0/docs/admin/kubelet.html
 [supervisord]: http://supervisord.org/
 
-The unit of execution that Kubernetes works with is called a [pod]. A pod is a
-collection of containers that share an IP and volumes. Pods are defined by a
-JSON or YAML file called a pod manifest. A simple one looks like this:
+The unit of execution that Kubernetes works with is the [*pod*]. A pod is a
+collection of containers that share some resources: they have a single IP, and
+can share volumes. For example, a web server pod could have a container for the
+server itself, and a container that tails the logs and ships them off to your
+logging or metrics infrastructure.
+
+Pods are defined by a JSON or YAML file called a pod manifest. A simple one
+looks like this:
 
 [pod]: http://kubernetes.io/v1.0/docs/user-guide/pods.html
 
@@ -46,8 +51,9 @@ spec:
     - containerPort: 80
 ~~~
 
-The `image` is a docker image name. The `containerPort` exposes that port from
-the nginx container so we can connect to the nginx server at the pod's IP.
+The container's `image` is a Docker image name. The `containerPort` exposes
+that port from the nginx container so we can connect to the nginx server at the
+pod's IP.
 
 There are a few ways to tell the kubelet what to run. The simplest is to put a
 pod manifest in a directory it watches. Every 20 seconds, it checks for changes
