@@ -60,6 +60,55 @@ the nginx image, that's the nginx server.
 
 [entrypoint]: http://docs.docker.com/reference/builder/#entrypoint
 
+Let's add a log truncator container to this pod. This will take care of the
+nginx access log, truncating it every 10 seconds—who needs those anyway? To do
+this, we'll need nginx to write its logs to a volume that can be shared to the
+log truncator. We'll set this volume up as an `emptyDir` volume: it will start
+off as an empty directory when the pod starts, and be cleaned up when the pod
+exits, but will persist across restarts of the component containers.
+
+Here's the updated pod manifest:
+
+~~~ yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - mountPath: /var/log/nginx
+      name: nginx-logs
+  - name: log-truncator
+    image: busybox
+    command:
+    - /bin/sh
+    args: [-c, 'while true; do cat /dev/null > /logdir/access.log; sleep 10; done']
+    volumeMounts:
+    - mountPath: /logdir
+      name: nginx-logs
+  volumes:
+  - name: nginx-logs
+    emptyDir: {}
+~~~
+
+We've added an `emptyDir` volume named `nginx-logs`. nginx writes its logs at
+/var/log/nginx, so we mount that volume at that location in the `nginx`
+container. For the `log-truncator` container, we're using the [busybox] image.
+It's a tiny Linux command line environment, which provides everything we need
+for a robust log truncator. Inside that container, we've mounted the
+`nginx-logs` volume at `/logdir`. We set its `command` and `args` up to run a
+shell loop that truncates the log file every 10 seconds.
+
+[busybox]: https://hub.docker.com/_/busybox/
+
+Now we've got this paragon of production infrastructure configured, it's time
+to run it!
+
 # Running a pod
 
 There are a few ways the kubelet finds pods to run
