@@ -36,7 +36,7 @@ server itself, and a container that tails the logs and ships them off to your
 logging or metrics infrastructure.
 
 Pods are defined by a JSON or YAML file called a pod manifest. A simple one
-looks like this:
+with one container looks like this:
 
 [pod]: http://kubernetes.io/v1.0/docs/user-guide/pods.html
 
@@ -55,7 +55,10 @@ spec:
 
 The container's `image` is a Docker image name. The `containerPort` exposes
 that port from the nginx container so we can connect to the nginx server at the
-pod's IP.
+pod's IP. By default, the [entrypoint] defined in the image is what will run; in
+the nginx image, that's the nginx server.
+
+[entrypoint]: http://docs.docker.com/reference/builder/#entrypoint
 
 # Running a pod
 
@@ -83,17 +86,18 @@ $ chmod +x kubelet
 
 If you run `./kubelet --help`, you'll get an overwhelming list of options. For
 what we're about to do, we only need one of them though: the `--config` option.
-This is the directory that the kubelet will watch for pod manifests to run. We'll
-create a directory for this, and then start the kubelet.
+This is the directory that the kubelet will watch for pod manifests to run.
+We'll create a directory for this, and then start the kubelet. You might need
+to run it under `sudo` so that it can talk to the docker daemon.
 
 ~~~
 $ mkdir manifests
-$ sudo ./kubelet --config=$PWD/manifests
+$ ./kubelet --config=$PWD/manifests
 ~~~
 
 Now let's stick the example nginx pod manifest from above in an `nginx.yaml`
 file, and then drop it in the `manifests` directory. After a short wait, the
-kubelet will notice the file and fire up nginx.
+kubelet will notice the file and fire up the pod.
 
 We can check the list of running containers with `docker ps`:
 
