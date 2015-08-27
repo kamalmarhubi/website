@@ -62,17 +62,22 @@ the nginx image, that's the nginx server.
 
 # Running a pod
 
-There are a few ways to tell the kubelet what to run. The simplest is to put a
-pod manifest in a directory it watches. Every 20 seconds, it checks for changes
-in the directory, and adjusts what it's running based on what it finds. This
-means both launching pods that are added, as well as killing ones that are
-removed.
+There are a few ways the kubelet finds pods to run
+- a directory it polls for new pod manifests to run
+- a URL it polls and downloads pod manifests from
+- from the Kubernetes API server
+
+The first of these is definitely the simplest: to run a pod, we just put it in
+the watched directory. Every 20 seconds, the kubelet checks for changes in the
+directory, and adjusts what it's running based on what it finds. This means
+both launching pods that are added, as well as killing ones that are removed.
 
 The kubelet is such a low level component with such limited responsibilities
-that we can actually use it independently of Kubernetes. The kubelet supports
-[Docker] and [rkt] as continer runtimes. The default is Docker, so that's what
-we'll use in the examples here. You'll need a machine with Docker installed and
-running to try this out.
+that we can actually use it independently of Kubernetes—all we have to do is
+not tell it about a Kubernetes API server. The kubelet supports [Docker] and
+[rkt] as continer runtimes. The default is Docker, and that's what we'll use in
+the examples here. You'll need a machine with Docker installed and running to
+try this out.
 
 [docker]: https://github.com/docker/docker
 [rkt]: https://github.com/coreos/rkt
