@@ -18,7 +18,7 @@ cluster from scratch, documenting the moving parts and concepts as I go.
 [kubernetes]: http://kubernetes.io/
 [getting-started]: http://kubernetes.io/v1.0/docs/getting-started-guides/README.html
 
-I'll start of with a look at the [kubelet], which is the lowest level component
+I'll start of with a look at the *[kubelet]*, which is the lowest level component
 in Kubernetes. It's responsible for what's running on an individual machine.
 You can think of it as a process watcher like [supervisord], but focused on
 running containers. It has one job: given a set of containers to run, make sure
@@ -27,7 +27,9 @@ they are all running.
 [kubelet]: http://kubernetes.io/v1.0/docs/admin/kubelet.html
 [supervisord]: http://supervisord.org/
 
-The unit of execution that Kubernetes works with is the [*pod*]. A pod is a
+# Pods
+
+The unit of execution that Kubernetes works with is the *[pod]*. A pod is a
 collection of containers that share some resources: they have a single IP, and
 can share volumes. For example, a web server pod could have a container for the
 server itself, and a container that tails the logs and ships them off to your
@@ -54,6 +56,8 @@ spec:
 The container's `image` is a Docker image name. The `containerPort` exposes
 that port from the nginx container so we can connect to the nginx server at the
 pod's IP.
+
+# Running a pod
 
 There are a few ways to tell the kubelet what to run. The simplest is to put a
 pod manifest in a directory it watches. Every 20 seconds, it checks for changes
