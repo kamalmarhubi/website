@@ -155,15 +155,17 @@ We can check the list of running containers with `docker ps`:
 ~~~
 $ docker ps
 CONTAINER ID        IMAGE                                  COMMAND                CREATED             STATUS              PORTS               NAMES
-64c55f0d9994        nginx:latest                           "nginx -g 'daemon of   5 minutes ago       Up 5 minutes                            k8s_nginx.d7d3eb2f_nginx-kx_default_86ad95a1282b0607619533d662696c04_e7b1f43d   
-697f93073509        gcr.io/google_containers/pause:0.8.0   "/pause"               5 minutes ago       Up 5 minutes                            k8s_POD.ef28e851_nginx-kx_default_86ad95a1282b0607619533d662696c04_d0666e90     
+f1a27680e401        busybox:latest                         "/bin/sh -c 'while t   6 seconds ago       Up 5 seconds                            k8s_log-truncator.72cfff7a_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_401a4c94   
+c5e357fc981a        nginx:latest                           "nginx -g 'daemon of   6 seconds ago       Up 6 seconds                            k8s_nginx.515d0778_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_cd02602b           
+b2692643c372        gcr.io/google_containers/pause:0.8.0   "/pause"               6 seconds ago       Up 6 seconds                            k8s_POD.ef28e851_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_836cadc7             
 ~~~
 
-There are two containers running. One is nginx, the other is the pod
-infrastructure container. The infrastructure container is a place to put all
-the pod resources that are shared across containers in the pod shared resources
-are placed, eg, the IP and any volumes.[^pause] We can poke around with `docker
-inspect` to see how they're configured and hooked up to each other:
+There are three containers running: the `nginx` and `log-truncator` containers
+we defined, as well as the pod infrastructure container.[^pause] The
+infrastructure container is where the kubelet puts all the resources that are
+shared across containers in the pod. This includes the IP, as well as any
+volumes we've defined. We can poke around with `docker inspect` to see how
+they're configured and hooked up to each other:
 
 [^pause]:
     The `pause` command that the infrastructure container runs is a 129 byte
@@ -176,36 +178,51 @@ inspect` to see how they're configured and hooked up to each other:
 [pause-source]: https://github.com/kubernetes/kubernetes/blob/88317efb42db763b9fb97cd1d9ac1465e62009d0/third_party/pause/pause.asm
 
 ~~~
-$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' 64c55f0d9994
+$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' f1a27680e401
 
-$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' 697f93073509
-172.17.0.8
+$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' c5e357fc981a
+
+$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' b2692643c372
+172.17.0.2
 ~~~
 
-The nginx container has no IP, but the infrastructure container does. Taking a
-closer look at at the nginx container, we can see its `NetworkMode` is set to
+The nginx and log trunctator containers have no IP, but the infrastructure container does. Taking a
+closer look at at the containers we defined, we can see their `NetworkMode` is set to
 use the infrastructure container's network:
 
 ~~~
-$ docker inspect --format '{{ .HostConfig.NetworkMode }}' 64c55f0d9994
-container:697f93073509513d47f80b9ce76f8f4217c3503182c1b212c4f8856d75600bcd
+$ docker inspect --format '{{ .HostConfig.NetworkMode }}' c5e357fc981a
+container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
+$ docker inspect --format '{{ .HostConfig.NetworkMode }}' f1a27680e401
+container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
 ~~~
 
 Since we exposed port 80 from the nginx container with `containerPort`,
 we can connect to the nginx server at port 80 at the pod's IP:
 
 ~~~
-$ curl --stderr /dev/null http://172.17.0.8 | head -4
+$ curl --stderr /dev/null http://172.17.0.2 | head -4
 <!DOCTYPE html>
 <html>
 <head>
 <title>Welcome to nginx!</title>
 ~~~
 
-It really is running!
+It really is running! And just to check the log truncator is doing what we
+expect, let's watch the log file and make some requests with
 
-The kubelet also has an internal HTTP server. We won't go into it in detail
-in this post, except to say that it serves a read-only view at port
+~~~
+$ docker exec -tty f1a27680e401 watch cat /logdir/access.log
+~~~
+
+while we make a few requests. The log lines accumulate for a bit, but then they
+all disappear: the truncator doing its job!
+
+
+# Kubelet introspection
+
+The kubelet also has an internal HTTP server. We won't go into it in detail,
+except to say that it serves a read-only view at port
 10255.  There's a health check endpoint at `/healthz`:
 
 ~~~
