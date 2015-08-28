@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>What even is a kubelet?</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Kamal Marhubi</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">What even is a kubelet?</h1>
+    <p class="post-meta">Aug 27, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p><a href="http://kubernetes.io/">Kubernetes</a> is Google’s open source, container-focused cluster management
+thing.  I see it as their attempt to tell everyone how they think containers
+and clusters fit together. The Kubernetes documentation is quite good, but it’s
+divided up in a way that makes it great as a reference. I want to understand
+both the concepts Kubernetes introduces, and the components that make up a
+Kubernetes cluster, and I want to learn by doing. I’m planning to build up a
+cluster from scratch, documenting the moving parts and concepts as I go.</p>
+
+<p>I’ll start of with a look at the <em><a href="http://kubernetes.io/v1.0/docs/admin/kubelet.html">kubelet</a></em>, which is the lowest level component
+in Kubernetes. It’s responsible for what’s running on an individual machine.
+You can think of it as a process watcher like <a href="http://supervisord.org/">supervisord</a>, but focused on
+running containers. It has one job: given a set of containers to run, make sure
+they are all running.</p>
+
+<h1 id="kubelets-run-pods">Kubelets run pods</h1>
+
+<p>The unit of execution that Kubernetes works with is the <em><a href="http://kubernetes.io/v1.0/docs/user-guide/pods.html">pod</a></em>. A pod is a
+collection of containers that share some resources: they have a single IP, and
+can share volumes. For example, a web server pod could have a container for the
+server itself, and a container that tails the logs and ships them off to your
+logging or metrics infrastructure.</p>
+
+<p>Pods are defined by a JSON or YAML file called a pod manifest. A simple one
+with one container looks like this:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+</code></pre>
+
+<p>The container’s <code>image</code> is a Docker image name. The <code>containerPort</code> exposes
+that port from the nginx container so we can connect to the nginx server at the
+pod’s IP. By default, the <a href="http://docs.docker.com/reference/builder/#entrypoint">entrypoint</a> defined in the image is what will run; in
+the nginx image, that’s the nginx server.</p>
+
+<p>Let’s add a log truncator container to this pod. This will take care of the
+nginx access log, truncating it every 10 seconds—who needs those anyway? To do
+this, we’ll need nginx to write its logs to a volume that can be shared to the
+log truncator. We’ll set this volume up as an <code>emptyDir</code> volume: it will start
+off as an empty directory when the pod starts, and be cleaned up when the pod
+exits, but will persist across restarts of the component containers.</p>
+
+<p>Here’s the updated pod manifest:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - mountPath: /var/log/nginx
+      name: nginx-logs
+  - name: log-truncator
+    image: busybox
+    command:
+    - /bin/sh
+    args: [-c, 'while true; do cat /dev/null &gt; /logdir/access.log; sleep 10; done']
+    volumeMounts:
+    - mountPath: /logdir
+      name: nginx-logs
+  volumes:
+  - name: nginx-logs
+    emptyDir: {}
+</code></pre>
+
+<p>We’ve added an <code>emptyDir</code> volume named <code>nginx-logs</code>. nginx writes its logs at
+/var/log/nginx, so we mount that volume at that location in the <code>nginx</code>
+container. For the <code>log-truncator</code> container, we’re using the <a href="https://hub.docker.com/_/busybox/">busybox</a> image.
+It’s a tiny Linux command line environment, which provides everything we need
+for a robust log truncator. Inside that container, we’ve mounted the
+<code>nginx-logs</code> volume at <code>/logdir</code>. We set its <code>command</code> and <code>args</code> up to run a
+shell loop that truncates the log file every 10 seconds.</p>
+
+<p>Now we’ve got this paragon of production infrastructure configured, it’s time
+to run it!</p>
+
+<h1 id="running-a-pod">Running a pod</h1>
+
+<p>There are a few ways the kubelet finds pods to run:</p>
+
+<ul>
+  <li>a directory it polls for new pod manifests to run</li>
+  <li>a URL it polls and downloads pod manifests from</li>
+  <li>from the Kubernetes API server</li>
+</ul>
+
+<p>The first of these is definitely the simplest: to run a pod, we just put a
+manifest file in the watched directory. Every 20 seconds, the kubelet checks
+for changes in the directory, and adjusts what it’s running based on what it
+finds.  This means both launching pods that are added, as well as killing ones
+that are removed.</p>
+
+<p>The kubelet is such a low level component with such limited responsibilities
+that we can actually use it independently of Kubernetes—all we have to do is
+not tell it about a Kubernetes API server. The kubelet supports <a href="https://github.com/docker/docker">Docker</a> and
+<a href="https://github.com/coreos/rkt">rkt</a> as continer runtimes. The default is Docker, and that’s what we’ll use in
+the examples here. You’ll need a machine with Docker installed and running to
+try this out.</p>
+
+<p>First off, let’s get the kubelet binary from Google.</p>
+
+<pre><code>$ wget https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/kubelet
+$ chmod +x kubelet
+</code></pre>
+
+<p>If you run <code>./kubelet --help</code>, you’ll get an overwhelming list of options. For
+what we’re about to do, we only need one of them though: the <code>--config</code> option.
+This is the directory that the kubelet will watch for pod manifests to run.
+We’ll create a directory for this, and then start the kubelet. You might need
+to run it under <code>sudo</code> so that it can talk to the docker daemon.</p>
+
+<pre><code>$ mkdir manifests
+$ ./kubelet --config=$PWD/manifests
+</code></pre>
+
+<p>Now let’s stick the example nginx pod manifest from above in an <code>nginx.yaml</code>
+file, and then drop it in the <code>manifests</code> directory. After a short wait, the
+kubelet will notice the file and fire up the pod.</p>
+
+<p>We can check the list of running containers with <code>docker ps</code>:</p>
+
+<pre><code>$ docker ps
+CONTAINER ID        IMAGE                                  COMMAND                CREATED             STATUS              PORTS               NAMES
+f1a27680e401        busybox:latest                         "/bin/sh -c 'while t   6 seconds ago       Up 5 seconds                            k8s_log-truncator.72cfff7a_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_401a4c94   
+c5e357fc981a        nginx:latest                           "nginx -g 'daemon of   6 seconds ago       Up 6 seconds                            k8s_nginx.515d0778_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_cd02602b           
+b2692643c372        gcr.io/google_containers/pause:0.8.0   "/pause"               6 seconds ago       Up 6 seconds                            k8s_POD.ef28e851_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_836cadc7             
+</code></pre>
+
+<p>There are three containers running: the <code>nginx</code> and <code>log-truncator</code> containers
+we defined, as well as the pod infrastructure container.<sup id="fnref:pause"><a href="#fn:pause" class="footnote">1</a></sup> The
+infrastructure container is where the kubelet puts all the resources that are
+shared across containers in the pod. This includes the IP, as well as any
+volumes we’ve defined. We can poke around with <code>docker inspect</code> to see how
+they’re configured and hooked up to each other:</p>
+
+<!-- annoying quoting needed because liquid templates use  for something -->
+<pre><code>$ docker inspect --format '{{ .NetworkSettings.IPAddress  }}' f1a27680e401
+
+$ docker inspect --format '{{ .NetworkSettings.IPAddress  }}' c5e357fc981a
+
+$ docker inspect --format '{{ .NetworkSettings.IPAddress  }}' b2692643c372
+172.17.0.2
+</code></pre>
+
+<p>The nginx and log trunctator containers have no IP, but the infrastructure container does. Taking a
+closer look at at the containers we defined, we can see their <code>NetworkMode</code> is set to
+use the infrastructure container’s network:</p>
+
+<pre><code>$ docker inspect --format '{{ .HostConfig.NetworkMode  }}' c5e357fc981a
+container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
+$ docker inspect --format '{{ .HostConfig.NetworkMode  }}' f1a27680e401
+container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
+</code></pre>
+
+<p>Since we exposed port 80 from the nginx container with <code>containerPort</code>,
+we can connect to the nginx server at port 80 at the pod’s IP:</p>
+
+<pre><code>$ curl --stderr /dev/null http://172.17.0.2 | head -4
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Welcome to nginx!&lt;/title&gt;
+</code></pre>
+
+<p>It really is running! And just to check the log truncator is doing what we
+expect, let’s watch the log file and make some requests with</p>
+
+<pre><code>$ docker exec -tty f1a27680e401 watch cat /logdir/access.log
+</code></pre>
+
+<p>while we make a few requests. The log lines accumulate for a bit, but then they
+all disappear: the truncator doing its job!</p>
+
+<h1 id="kubelet-introspection">Kubelet introspection</h1>
+
+<p>The kubelet also has an internal HTTP server. We won’t go into it in detail,
+except to say that it serves a read-only view at port
+10255.  There’s a health check endpoint at <code>/healthz</code>:</p>
+
+<pre><code>$ curl http://localhost:10255/healthz
+ok
+</code></pre>
+
+<p>There are also a few status endpoints. For example, you can get a list
+of running pods at <code>/pods</code>:</p>
+
+<pre><code>$ curl --stderr /dev/null http://localhost:10255/pods | jq . | head
+{
+  "kind": "PodList",
+  "apiVersion": "v1",
+  "metadata": {},
+  "items": [
+    {
+      "metadata": {
+        "name": "nginx-kx",
+        "namespace": "default",
+        "selfLink": "/api/v1/pods/namespaces/nginx-kx/default",
+</code></pre>
+
+<p>You can also get specs of the machine the kubelet is running on at
+<code>/spec/</code>:</p>
+
+<pre><code>$ curl --stderr /dev/null  http://localhost:10255/spec/ | jq . | head
+{
+  "num_cores": 4,
+  "cpu_frequency_khz": 2700000,
+  "memory_capacity": 4051689472,
+  "machine_id": "9eacc5220f4b41e0a22972d8a47ccbe1",
+  "system_uuid": "818B908B-D053-CB11-BC8B-EEA826EBA090",
+  "boot_id": "a95a337d-6b54-4359-9a02-d50fb7377dd1",
+  "filesystems": [
+    {
+      "device": "/dev/mapper/kx--vg-root",
+</code></pre>
+
+<h1 id="tearing-things-down">Tearing things down</h1>
+
+<p>Finally, we can clean up after ourselves. Just deleting the nginx pod
+manifest will result in the kubelet stopping the containers.</p>
+
+<pre><code>$ rm $PWD/manifests/nginx.yaml
+$ sleep 20  # wait for the kublet to spot the removed manifest
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+$ curl --stderr /dev/null http://localhost:10255/pods
+{"kind":"PodList","apiVersion":"v1","metadata":{},"items":null}
+</code></pre>
+
+<p>All gone!</p>
+
+<p>We’ve seen that while the kubelet is a part of Kubernetes, at heart it’s a
+container-oriented process watcher. You can use it in isolation to manage
+containers running on a single host. In fact, the Kubernetes <a href="http://kubernetes.io/v1.0/docs/getting-started-guides/docker.html#step-two-run-the-master">getting started
+guides for Docker</a> run the kubelet under Docker and
+use the kubelet to manage the Kubernetes master components. In a later post,
+we’ll do something similar!</p>
+
+<p><br /></p>
+
+<hr />
+<div class="footnotes">
+  <ol>
+    <li id="fn:pause">
+
+      <p>The <code>pause</code> command that the infrastructure container runs is a 129 byte
+ELF binary that just calls the <a href="http://man7.org/linux/man-pages/man2/pause.2.html"><code>pause</code> system call</a>, and
+exits when a signal is received. This keeps the infrastructure container
+around until the kubelet brings it down. It’s pretty cool, check the
+<a href="https://github.com/kubernetes/kubernetes/blob/88317efb42db763b9fb97cd1d9ac1465e62009d0/third_party/pause/pause.asm">source</a>! <a href="#fnref:pause" class="reversefootnote">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:kamal@marhubi.com">kamal@marhubi.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/kamalmarhubi">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/kamalmarhubi">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text"></p>
+      </div>
+    </div>
+
+  </div>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-39994628-3', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</footer>
+
+
+  </body>
+
+</html>
