@@ -1,6 +1,7 @@
 ---
 layout: post
 title: What even is a kubelet?
+date: 2015-08-27T22:24:28-04:00
 ---
 
 [Kubernetes] is Google's open source, container-focused cluster management
