@@ -1,7 +1,7 @@
 ---
 layout: post
 title: What even is a kubelet?
-date: 2015-08-27T22:24:28-04:00
+date: 2015-08-27
 ---
 
 [Kubernetes] is Google's open source, container-focused cluster management
@@ -114,10 +114,11 @@ There are a few ways the kubelet finds pods to run:
 - a URL it polls and downloads pod manifests from
 - from the Kubernetes API server
 
-The first of these is definitely the simplest: to run a pod, we just put it in
-the watched directory. Every 20 seconds, the kubelet checks for changes in the
-directory, and adjusts what it's running based on what it finds. This means
-both launching pods that are added, as well as killing ones that are removed.
+The first of these is definitely the simplest: to run a pod, we just put a
+manifest file in the watched directory. Every 20 seconds, the kubelet checks
+for changes in the directory, and adjusts what it's running based on what it
+finds.  This means both launching pods that are added, as well as killing ones
+that are removed.
 
 The kubelet is such a low level component with such limited responsibilities
 that we can actually use it independently of Kubernetes—all we have to do is
@@ -178,12 +179,13 @@ they're configured and hooked up to each other:
 [man-2-pause]: http://man7.org/linux/man-pages/man2/pause.2.html
 [pause-source]: https://github.com/kubernetes/kubernetes/blob/88317efb42db763b9fb97cd1d9ac1465e62009d0/third_party/pause/pause.asm
 
+<!-- annoying quoting needed because liquid templates use {{ }} for something -->
 ~~~
-$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' f1a27680e401
+$ docker inspect --format '{{ "{{ .NetworkSettings.IPAddress "}} }}' f1a27680e401
 
-$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' c5e357fc981a
+$ docker inspect --format '{{ "{{ .NetworkSettings.IPAddress "}} }}' c5e357fc981a
 
-$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' b2692643c372
+$ docker inspect --format '{{ "{{ .NetworkSettings.IPAddress "}} }}' b2692643c372
 172.17.0.2
 ~~~
 
@@ -192,9 +194,9 @@ closer look at at the containers we defined, we can see their `NetworkMode` is s
 use the infrastructure container's network:
 
 ~~~
-$ docker inspect --format '{{ .HostConfig.NetworkMode }}' c5e357fc981a
+$ docker inspect --format '{{ "{{ .HostConfig.NetworkMode "}} }}' c5e357fc981a
 container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
-$ docker inspect --format '{{ .HostConfig.NetworkMode }}' f1a27680e401
+$ docker inspect --format '{{ "{{ .HostConfig.NetworkMode "}} }}' f1a27680e401
 container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
 ~~~
 
