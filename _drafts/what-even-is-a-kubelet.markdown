@@ -3,10 +3,6 @@ layout: post
 title: What even is a kubelet?
 ---
 
-*This post is the first in a series exploring the concepts and components that
-underly [Kubernetes]. It talks about the kubelet component, and the pod
-concept.*
-
 [Kubernetes] is Google's open source, container-focused cluster management
 thing.  I see it as their attempt to tell everyone how they think containers
 and clusters fit together. The Kubernetes documentation is quite good, but it's
@@ -27,7 +23,7 @@ they are all running.
 [kubelet]: http://kubernetes.io/v1.0/docs/admin/kubelet.html
 [supervisord]: http://supervisord.org/
 
-# Pods
+# Kubelets run pods
 
 The unit of execution that Kubernetes works with is the *[pod]*. A pod is a
 collection of containers that share some resources: they have a single IP, and
@@ -111,7 +107,8 @@ to run it!
 
 # Running a pod
 
-There are a few ways the kubelet finds pods to run
+There are a few ways the kubelet finds pods to run:
+
 - a directory it polls for new pod manifests to run
 - a URL it polls and downloads pod manifests from
 - from the Kubernetes API server
@@ -250,6 +247,8 @@ $ curl --stderr /dev/null  http://localhost:10255/spec/ | jq . | head
       "device": "/dev/mapper/kx--vg-root",
 ~~~
 
+# Tearing things down
+
 Finally, we can clean up after ourselves. Just deleting the nginx pod
 manifest will result in the kubelet stopping the containers.
 
@@ -276,4 +275,3 @@ we'll do something similar!
 <br>
 
 ---
-
