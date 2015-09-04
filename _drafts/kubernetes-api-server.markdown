@@ -9,10 +9,12 @@ manager. The first post was [about the kubelet][kubelet-post].*
 [kubernetes]: http://kubernetes.io/
 
 [Last time][kubelet-post] we took a look at the kubelet, Kubernetes'
-container-focused process watcher. We saw it running pods that were specified in
-files in a watched directory. This was a great way to understand the core
-purpose of the kubelet.  In a Kubernetes cluster, however, a kubelet will get
-most its pods to run from the Kubernetes API server.
+container-focused process watcher. The kubelet runs pods, which are collections
+of containers that share an IP and some volumes. In the post, we gave it pods
+to run by putting pod manifest files in directory it watched. This was a great
+way to understand the core purpose of the kubelet.  In a Kubernetes cluster,
+however, a kubelet will get most its pods to run from the Kubernetes API
+server.
 
 [kubelet-post]: http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/
 
@@ -199,7 +201,7 @@ by making a GET request:
 
 ~~~
 $ curl --stderr /dev/null http://localhost:8080/api/v1/namespaces/default/pods \
-| jq '.items[] | { name: .me tadata.name, status: .status} | del(.status.containerStatuses)'
+| jq '.items[] | { name: .metadata.name, status: .status} | del(.status.containerStatuses)'
 {
   "name": "nginx",
   "status": {
