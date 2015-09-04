@@ -168,17 +168,19 @@ $ ruby -ryaml -rjson \
 -e 'puts JSON.pretty_generate(YAML.load(ARGF))' < nginx.yaml > nginx.json
 ~~~
 
-Alternatively, [just download the JSON file][json-file], and make sure the `nodeName`
-matches your hostname:
+Alternatively, just download the [JSON file][json-file] and [YAML
+file][yaml-file], and make sure the `nodeName` matches your hostname:
 
 ~~~
 $ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json
-$ sed --in-place s/YOUR_HOSTNAME_HERE/$HOSTNAME/ nginx.json
+$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml
+$ sed --in-place s/YOUR_HOSTNAME_HERE/$HOSTNAME/ nginx.json nginx.yaml
 ~~~
 
 [json-file]: https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json
+[yaml-file]: https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml
 
-Now we can send post the pod manifest to the API server:
+Now we can post the JSON pod manifest to the API server:
 
 ~~~
 $ curl \
