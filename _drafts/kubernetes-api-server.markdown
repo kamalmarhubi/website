@@ -111,8 +111,11 @@ $ ./kubelet --api-servers=127.0.0.1:8080
 ~~~
 
 When a kubelet starts up, it registers itself as a node with the API server and
-starts watching for pods to run. We can check that the API server knows about
-our node:
+starts watching for pods to run. This is really great, because it means that
+when we get to running a multinode cluster, we can add nodes without having to
+reconfigure the API server.
+
+We can check that the API server knows about our node:
 
 ~~~
 $ curl --stderr /dev/null http://localhost:8080/api/v1/nodes/ \
@@ -120,13 +123,13 @@ $ curl --stderr /dev/null http://localhost:8080/api/v1/nodes/ \
 [
   {
     "metadata": {
-      "name": "kx",
-      "selfLink": "/api/v1/nodes/kx",
+      "name": "awesome-node",
+      "selfLink": "/api/v1/nodes/awesome-node",
       "uid": "6811f7b0-5181-11e5-b364-68f7288bdc45",
       "resourceVersion": "246",
       "creationTimestamp": "2015-09-02T14:46:34Z",
       "labels": {
-        "kubernetes.io/hostname": "kx"
+        "kubernetes.io/hostname": "awesome-node"
 ~~~
 
 We now have a one-node cluster!
@@ -145,14 +148,14 @@ specify it ourselves. To do this, we need to add a `nodeName` to the spec with
 the node's `name` from above:
 
 ~~~
-$ sed --in-place '/spec:/a\ \ nodeName: kx' nginx.yaml
+$ sed --in-place '/spec:/a\ \ nodeName: awesome-node' nginx.yaml
 $ head nginx.yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: nginx
 spec:
-  nodeName: kx
+  nodeName: awesome-node
   containers:
   - name: nginx
     image: nginx
@@ -169,13 +172,14 @@ $ ruby -ryaml -rjson \
 ~~~
 
 Alternatively, just download the [JSON file][json-file] and [YAML
-file][yaml-file], and make sure the `nodeName` matches your hostname:
+file][yaml-file]
 
 ~~~
 $ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json
 $ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml
-$ sed --in-place s/YOUR_HOSTNAME_HERE/$HOSTNAME/ nginx.json nginx.yaml
 ~~~
+
+Then edit the files so that the `nodeName` matches your hostname.
 
 [json-file]: https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json
 [yaml-file]: https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml
@@ -201,7 +205,7 @@ $ curl \
   "spec": {
     "restartPolicy": "Always",
     "dnsPolicy": "ClusterFirst",
-    "nodeName": "kx"
+    "nodeName": "awesome-node"
   },
   "status": {
     "phase": "Pending"
@@ -243,7 +247,7 @@ $ curl --stderr /dev/null http://172.17.0.37 | head -4
 
 Excellent!
 
-# The kubectl command line client
+# The Kubernetes command line client: kubectl
 
 While it's great to know that the API server speaks a fairly intelligible REST
 dialect, talking to it directly with `curl` and using `jq` to filter the
@@ -265,7 +269,7 @@ Now we can get the list of nodes and see what pods are running:
 ~~~
 $ ./kubectl get nodes
 NAME      LABELS                      STATUS
-kx        kubernetes.io/hostname=kx   Ready
+awesome-node        kubernetes.io/hostname=awesome-node   Ready
 $ ./kubectl get pods
 NAME      READY     STATUS    RESTARTS   AGE
 nginx     2/2       Running   0          28m
@@ -307,7 +311,7 @@ $ ./kubectl describe pods/nginx-the-second | head
 Name:                           nginx-the-second
 Namespace:                      default
 Image(s):                       nginx,busybox
-Node:                           kx/127.0.1.1
+Node:                           awesome-node/127.0.1.1
 Labels:                         <none>
 Status:                         Running
 Reason:
