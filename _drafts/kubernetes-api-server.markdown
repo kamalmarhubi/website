@@ -21,7 +21,7 @@ server.
 Kubernetes stores all its cluster state in [etcd], a distributed data store with
 a strong consistency model. This state includes what nodes exist in the cluster,
 what pods should be running, which nodes they are running on, and a whole lot
-more. The API server is the only Kubernetes cluster that connects to etcd; all
+more. The API server is the only Kubernetes component that connects to etcd; all
 the other components must go through the API server to work with cluster state.
 In this post we'll look at the API server, and its interaction with the kubelet.
 
@@ -79,12 +79,12 @@ $ curl http://localhost:8080/api/v1/nodes
 
 Not surprisingly, there aren't any yet.
 
-As a quick note on other fields in the response: the `kind` and `apiVersion` are
-giving information about the API version and type of response we got. The
+As a quick note on other fields in the response: the `kind` and `apiVersion`
+are giving information about the API version and type of response we got. The
 `selfLink` field is a canonical link for the resource in the response. The
-`resourceVersion` is used for concurrency control: clients send it back when
-they are changing a response, and the server can determine if there was a
-conflicting write in the meantime.
+`resourceVersion` is used for concurrency control. Clients send it back when
+they are changing a resource, and the server can determine if there was a
+conflicting write to the same resource in the meantime.
 
 All that is to say: right now we only care about the `items` field. We can use
 the incredibly handy [`jq`][jq] utility to just get at the items. We'll use `jq`
