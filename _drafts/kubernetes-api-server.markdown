@@ -96,7 +96,7 @@ $ curl --stderr /dev/null http://localhost:8080/api/v1/pods | jq '.items'
 []
 ~~~
 
-Hopefully there are no surprises there, either!
+No surprises there, either!
 
 [jq]: https://stedolan.github.io/jq/
 
