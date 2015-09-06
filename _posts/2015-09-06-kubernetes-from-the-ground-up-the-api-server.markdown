@@ -358,3 +358,10 @@ $ sleep 20  # wait for the Kubelet to stop all the containers
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 ~~~
+
+<br>
+
+---
+
+*Thanks to Johannes Alkjær, Julia Evans, Ray Bejjani, and Tavish Armstrong for
+reviewing drafts of this post.*
