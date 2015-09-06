@@ -235,7 +235,14 @@ $ curl --stderr /dev/null http://localhost:8080/api/v1/namespaces/default/pods \
 }
 ~~~
 
-And to confirm, we can check that nginx is reachable at the `podIP`:
+The pod is up, and it's been assigned the IP `172.17.0.37` by Docker. Docker
+networking is really quite interesting, and well worth reading about. A good
+place to start is [the network configuration article][docker-networking] in the Docker
+documentation.
+
+[docker-networking]: https://docs.docker.com/articles/networking/
+
+Let's check that nginx is reachable at that IP:
 
 ~~~
 $ curl --stderr /dev/null http://172.17.0.37 | head -4
@@ -246,6 +253,7 @@ $ curl --stderr /dev/null http://172.17.0.37 | head -4
 ~~~
 
 Excellent!
+
 
 # The Kubernetes command line client: kubectl
 
