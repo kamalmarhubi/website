@@ -1,5 +1,6 @@
 ---
 title: "Kubernetes from the ground up: the API server"
+date: 2015-09-06T12:02:47-04:00
 layout: post
 ---
 
