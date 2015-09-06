@@ -344,7 +344,7 @@ the command line client. We've still got a little way to go before this is a
 full-blown Kubernetes cluster, but we are inching closer. Next time we'll bring
 in the scheduler and add a couple more nodes into the mix.
 
-For now, let's just everything down:
+For now, let's just tear everything down:
 
 ~~~
 $ ./kubectl delete pods/nginx pods/nginx-the-second
