@@ -5,9 +5,335 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 27 Aug 2015 22:27:34 -0400</pubDate>
-    <lastBuildDate>Thu, 27 Aug 2015 22:27:34 -0400</lastBuildDate>
+    <pubDate>Sun, 06 Sep 2015 12:04:00 -0400</pubDate>
+    <lastBuildDate>Sun, 06 Sep 2015 12:04:00 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Kubernetes from the ground up: the API server</title>
+        <description>&lt;p&gt;&lt;em&gt;This is the second post in a series on &lt;a href=&quot;http://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt;, the open source cluster
+manager. The first post was &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/&quot;&gt;about the kubelet&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/&quot;&gt;Last time&lt;/a&gt; we took a look at the kubelet, Kubernetes’
+container-focused process watcher. The kubelet runs pods, which are collections
+of containers that share an IP and some volumes. In the post, we gave it pods
+to run by putting pod manifest files in directory it watched. This was a great
+way to understand the core purpose of the kubelet.  In a Kubernetes cluster,
+however, a kubelet will get most its pods to run from the Kubernetes API
+server.&lt;/p&gt;
+
+&lt;p&gt;Kubernetes stores all its cluster state in &lt;a href=&quot;https://github.com/coreos/etcd&quot;&gt;etcd&lt;/a&gt;, a distributed data store with
+a strong consistency model. This state includes what nodes exist in the cluster,
+what pods should be running, which nodes they are running on, and a whole lot
+more. The API server is the only Kubernetes component that connects to etcd; all
+the other components must go through the API server to work with cluster state.
+In this post we’ll look at the API server, and its interaction with the kubelet.&lt;/p&gt;
+
+&lt;h1 id=&quot;starting-the-api-server&quot;&gt;Starting the API server&lt;/h1&gt;
+
+&lt;p&gt;&lt;em&gt;You may need to use &lt;code&gt;sudo&lt;/code&gt; on some commands, depending on your setup.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;First off, we’re going to need etcd running. Luckily this is as easy as creating
+a directory for it to store its state and starting it with Docker. We’ll also
+save the Docker container ID so we can stop the container later.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ mkdir etcd-data
+$ docker run --volume=$PWD/etcd-data:/default.etcd \
+--detach --net=host quay.io/coreos/etcd &amp;gt; etcd-container-id
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We use host networking so that the API server can talk to it at &lt;code&gt;127.0.0.1&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Next we’ll want the API server binary:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ wget https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/kube-apiserver
+$ chmod +x kube-apiserver
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we can start it up. It needs to know where the etcd server is, as well as
+the service cluster IP range. We’ll save talking about what the IP range is for
+a later post that will go into Kubernetes’ services and networking. For now
+we’ll just provide &lt;code&gt;10.0.0.0/16&lt;/code&gt; so that the API server starts up without
+shouting at us!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./kube-apiserver \
+--etcd-servers=http://127.0.0.1:2379 \
+--service-cluster-ip-range=10.0.0.0/16 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can now &lt;code&gt;curl&lt;/code&gt; around and check a few things out. First off, we can get a
+list of nodes in our cluster:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl http://localhost:8080/api/v1/nodes
+{
+  &quot;kind&quot;: &quot;NodeList&quot;,
+  &quot;apiVersion&quot;: &quot;v1&quot;,
+  &quot;metadata&quot;: {
+    &quot;selfLink&quot;: &quot;/api/v1/nodes&quot;,
+    &quot;resourceVersion&quot;: &quot;150&quot;
+  },
+  &quot;items&quot;: []
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Not surprisingly, there aren’t any yet.&lt;/p&gt;
+
+&lt;p&gt;As a quick note on other fields in the response: the &lt;code&gt;kind&lt;/code&gt; and &lt;code&gt;apiVersion&lt;/code&gt;
+are giving information about the API version and type of response we got. The
+&lt;code&gt;selfLink&lt;/code&gt; field is a canonical link for the resource in the response. The
+&lt;code&gt;resourceVersion&lt;/code&gt; is used for concurrency control. Clients send it back when
+they are changing a resource, and the server can determine if there was a
+conflicting write to the same resource in the meantime.&lt;/p&gt;
+
+&lt;p&gt;All that is to say: right now we only care about the &lt;code&gt;items&lt;/code&gt; field. We can use
+the incredibly handy &lt;a href=&quot;https://stedolan.github.io/jq/&quot;&gt;&lt;code&gt;jq&lt;/code&gt;&lt;/a&gt; utility to just get at the items. We’ll use &lt;code&gt;jq&lt;/code&gt;
+to cut out noisy bits of responses throughout this post. For example, we can
+look at what pods our cluster is running:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://localhost:8080/api/v1/pods | jq &#39;.items&#39;
+[]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;No surprises there, either!&lt;/p&gt;
+
+&lt;h1 id=&quot;adding-a-node&quot;&gt;Adding a node&lt;/h1&gt;
+
+&lt;p&gt;In the last post, we had the kubelet watching for pod manifest files in a
+directory we gave it via the &lt;code&gt;--config&lt;/code&gt; flag. This time we’ll have it get pod
+manifests from the API server.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./kubelet --api-servers=127.0.0.1:8080
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When a kubelet starts up, it registers itself as a node with the API server and
+starts watching for pods to run. This is really great, because it means that
+when we get to running a multinode cluster, we can add nodes without having to
+reconfigure the API server.&lt;/p&gt;
+
+&lt;p&gt;We can check that the API server knows about our node:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://localhost:8080/api/v1/nodes/ \
+| jq &#39;.items&#39; | head
+[
+  {
+    &quot;metadata&quot;: {
+      &quot;name&quot;: &quot;awesome-node&quot;,
+      &quot;selfLink&quot;: &quot;/api/v1/nodes/awesome-node&quot;,
+      &quot;uid&quot;: &quot;6811f7b0-5181-11e5-b364-68f7288bdc45&quot;,
+      &quot;resourceVersion&quot;: &quot;246&quot;,
+      &quot;creationTimestamp&quot;: &quot;2015-09-02T14:46:34Z&quot;,
+      &quot;labels&quot;: {
+        &quot;kubernetes.io/hostname&quot;: &quot;awesome-node&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We now have a one-node cluster!&lt;/p&gt;
+
+&lt;h1 id=&quot;running-a-pod-via-the-api-server&quot;&gt;Running a pod via the API server&lt;/h1&gt;
+
+&lt;p&gt;Let’s run our nginx example from the last post:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/01-the-kubelet/nginx.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In a complete Kubernetes cluster, the scheduler will decide which node to run a
+pod on. For now, we’ve only got the API server and a kubelet, so we’ll have to
+specify it ourselves. To do this, we need to add a &lt;code&gt;nodeName&lt;/code&gt; to the spec with
+the node’s &lt;code&gt;name&lt;/code&gt; from above:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ sed --in-place &#39;/spec:/a\ \ nodeName: awesome-node&#39; nginx.yaml
+$ head nginx.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  nodeName: awesome-node
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With the &lt;code&gt;nodeName&lt;/code&gt; configured, we’re almost ready to send the pod manifest to
+the API server. Unfortunately, it only speaks JSON so we have to convert our YAML to
+JSON:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ruby -ryaml -rjson \
+-e &#39;puts JSON.pretty_generate(YAML.load(ARGF))&#39; &amp;lt; nginx.yaml &amp;gt; nginx.json
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Alternatively, just download the &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json&quot;&gt;JSON file&lt;/a&gt; and &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml&quot;&gt;YAML
+file&lt;/a&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json
+$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then edit the files so that the &lt;code&gt;nodeName&lt;/code&gt; matches your hostname.&lt;/p&gt;
+
+&lt;p&gt;Now we can post the JSON pod manifest to the API server:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl \
+--stderr /dev/null \
+--request POST http://localhost:8080/api/v1/namespaces/default/pods \
+--data @nginx.json | jq &#39;del(.spec.containers, .spec.volumes)&#39;
+{
+  &quot;kind&quot;: &quot;Pod&quot;,
+  &quot;apiVersion&quot;: &quot;v1&quot;,
+  &quot;metadata&quot;: {
+    &quot;name&quot;: &quot;nginx&quot;,
+    &quot;namespace&quot;: &quot;default&quot;,
+    &quot;selfLink&quot;: &quot;/api/v1/namespaces/default/pods/nginx&quot;,
+    &quot;uid&quot;: &quot;28aa5a55-5194-11e5-b364-68f7288bdc45&quot;,
+    &quot;resourceVersion&quot;: &quot;1365&quot;,
+    &quot;creationTimestamp&quot;: &quot;2015-09-02T17:00:48Z&quot;
+  },
+  &quot;spec&quot;: {
+    &quot;restartPolicy&quot;: &quot;Always&quot;,
+    &quot;dnsPolicy&quot;: &quot;ClusterFirst&quot;,
+    &quot;nodeName&quot;: &quot;awesome-node&quot;
+  },
+  &quot;status&quot;: {
+    &quot;phase&quot;: &quot;Pending&quot;
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;After a short wait, the kubelet should have started the pod. We can check this
+by making a GET request:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://localhost:8080/api/v1/namespaces/default/pods \
+| jq &#39;.items[] | { name: .metadata.name, status: .status} | del(.status.containerStatuses)&#39;
+{
+  &quot;name&quot;: &quot;nginx&quot;,
+  &quot;status&quot;: {
+    &quot;phase&quot;: &quot;Running&quot;,
+    &quot;conditions&quot;: [
+      {
+        &quot;type&quot;: &quot;Ready&quot;,
+        &quot;status&quot;: &quot;True&quot;
+      }
+    ],
+    &quot;hostIP&quot;: &quot;127.0.1.1&quot;,
+    &quot;podIP&quot;: &quot;172.17.0.37&quot;,
+    &quot;startTime&quot;: &quot;2015-09-02T18:00:00Z&quot;
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The pod is up, and it’s been assigned the IP &lt;code&gt;172.17.0.37&lt;/code&gt; by Docker. Docker
+networking is really quite interesting, and well worth reading about. A good
+place to start is &lt;a href=&quot;https://docs.docker.com/articles/networking/&quot;&gt;the network configuration article&lt;/a&gt; in the Docker
+documentation.&lt;/p&gt;
+
+&lt;p&gt;Let’s check that nginx is reachable at that IP:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://172.17.0.37 | head -4
+&amp;lt;!DOCTYPE html&amp;gt;
+&amp;lt;html&amp;gt;
+&amp;lt;head&amp;gt;
+&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Excellent!&lt;/p&gt;
+
+&lt;h1 id=&quot;the-kubernetes-command-line-client-kubectl&quot;&gt;The Kubernetes command line client: kubectl&lt;/h1&gt;
+
+&lt;p&gt;While it’s great to know that the API server speaks a fairly intelligible REST
+dialect, talking to it directly with &lt;code&gt;curl&lt;/code&gt; and using &lt;code&gt;jq&lt;/code&gt; to filter the
+responses isn’t the best user experience. This is a great point to pause and
+introduce the command line client&lt;a href=&quot;http://kubernetes.io/v1.0/docs/user-guide/kubectl/kubectl.html&quot;&gt; &lt;code&gt;kubectl&lt;/code&gt;&lt;/a&gt;, which we’ll use
+throughout the rest of this series. It will make things &lt;strong&gt;much&lt;/strong&gt; nicer!&lt;/p&gt;
+
+&lt;p&gt;First off, let’s download the client:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ wget https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/kubectl
+$ chmod +x kubectl
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we can get the list of nodes and see what pods are running:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./kubectl get nodes
+NAME      LABELS                      STATUS
+awesome-node        kubernetes.io/hostname=awesome-node   Ready
+$ ./kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+nginx     2/2       Running   0          28m
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Much easier and prettier! Creating pods is also easier with &lt;code&gt;kubectl&lt;/code&gt;. Let’s
+create a copy of the nginx pod manifest with a different name.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ sed &#39;s/^  name:.*/  name: nginx-the-second/&#39; nginx.yaml &amp;gt; nginx2.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we can use &lt;code&gt;kubectl create&lt;/code&gt; to start another copy.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./kubectl create --filename nginx2.yaml
+pods/nginx-the-second
+$ ./kubectl get pods
+NAME               READY     STATUS    RESTARTS   AGE
+nginx              2/2       Running   0          1h
+nginx-the-second   0/2       Running   0          6s
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we’ve got our second nginx pod running, but it reports &lt;code&gt;0/2&lt;/code&gt; containers
+running. Let’s give it a bit and try again:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./kubectl get pods
+NAME               READY     STATUS    RESTARTS   AGE
+nginx              2/2       Running   0          1h
+nginx-the-second   2/2       Running   0          1m
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can also use &lt;code&gt;kubectl describe&lt;/code&gt; to get at more detailed information on the
+pod:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./kubectl describe pods/nginx-the-second | head
+Name:                           nginx-the-second
+Namespace:                      default
+Image(s):                       nginx,busybox
+Node:                           awesome-node/127.0.1.1
+Labels:                         &amp;lt;none&amp;gt;
+Status:                         Running
+Reason:
+Message:
+IP:                             172.17.0.38
+Replication Controllers:        &amp;lt;none&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And just to be sure, we can check that this pod’s nginx is also up and serving
+requests at the pod’s IP:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://172.17.0.38 | head -4
+&amp;lt;!DOCTYPE html&amp;gt;
+&amp;lt;html&amp;gt;
+&amp;lt;head&amp;gt;
+&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Great! So now we’ve seen what it’s like to start a server in Kubernetes using
+the command line client. We’ve still got a little way to go before this is a
+full-blown Kubernetes cluster, but we are inching closer. Next time we’ll bring
+in the scheduler and add a couple more nodes into the mix.&lt;/p&gt;
+
+&lt;p&gt;For now, let’s just tear everything down:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ./kubectl delete pods/nginx pods/nginx-the-second
+pods/nginx
+pods/nginx-the-second
+$ ./kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+$ docker stop $(cat etcd-container-id)
+$ sleep 20  # wait for the Kubelet to stop all the containers
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Sun, 06 Sep 2015 12:02:47 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</guid>
+        
+        
+      </item>
     
       <item>
         <title>What even is a kubelet?</title>
@@ -925,125 +1251,6 @@ side of the pipe we put them on &lt;a href=&quot;#fnref:wc-head-stdout&quot; cla
         <pubDate>Tue, 30 Jun 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/06/30/my-favourite-bug-so-far-at-the-recurse-center/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/30/my-favourite-bug-so-far-at-the-recurse-center/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-06-29: fun with signals; confusing shell-writing</title>
-        <description>&lt;h1 id=&quot;signals&quot;&gt;Signals&lt;/h1&gt;
-
-&lt;p&gt;I finished skimming the chapter on signals in &lt;a href=&quot;http://www.apuebook.com/about3e.html&quot;&gt;Advanced Programming in the UNIX
-Environmnent&lt;/a&gt;. This took me a few attempts over the last few days, and I
-fell asleep reading it at least once. One big takeaway for me was the
-distinction between synchronous and asynchronous signals. In a nutshell:&lt;/p&gt;
-
-&lt;dl&gt;
-  &lt;dt&gt;&lt;strong&gt;synchronous signals&lt;/strong&gt;&lt;/dt&gt;
-  &lt;dd&gt;these signals are a direct result of execution; examples include
-
-    &lt;ul&gt;
-      &lt;li&gt;&lt;code&gt;SIGFPE&lt;/code&gt; (stands for &lt;em&gt;f&lt;/em&gt;loating &lt;em&gt;p&lt;/em&gt;point &lt;em&gt;e&lt;/em&gt;xception), which is sent on
-various errors in mathematical functions, such as dividing by zero&lt;/li&gt;
-      &lt;li&gt;&lt;code&gt;SIGPIPE&lt;/code&gt; (stands for… &lt;em&gt;pipe&lt;/em&gt;), which is sent if there’s a write to a pipe
-with no readers&lt;/li&gt;
-      &lt;li&gt;&lt;code&gt;SIGSEGV&lt;/code&gt; (stands for &lt;em&gt;seg&lt;/em&gt;mentation &lt;em&gt;v&lt;/em&gt;iolation), which is sent
-to a thread if it tries to access memory in a way it’s not allowed to, eg,
-dereferencing a null pointer, reading read-protected memory like kernel memory&lt;/li&gt;
-      &lt;li&gt;&lt;code&gt;SIGBUS&lt;/code&gt; (&lt;em&gt;bus&lt;/em&gt; error, whatever that is meant to mean&lt;sup id=&quot;fnref:sigbus&quot;&gt;&lt;a href=&quot;#fn:sigbus&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;!), which is sent on
-some types of memory access issues, eg, improper alignment, or—the one
-that’s exciting to me—attempting to access memory mapped beyond the end of a
-memory mapped file&lt;sup id=&quot;fnref:sigbus-openbsd&quot;&gt;&lt;a href=&quot;#fn:sigbus-openbsd&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/dd&gt;
-&lt;/dl&gt;
-
-&lt;dl&gt;
-  &lt;dt&gt;&lt;strong&gt;asynchronous signals&lt;/strong&gt;&lt;/dt&gt;
-  &lt;dd&gt;
-    &lt;p&gt;these signals can get sent independently of the running process or thread;
-they just show up. Examples include:
-- &lt;code&gt;SIGINT&lt;/code&gt; (&lt;em&gt;interrupt&lt;/em&gt;), which is sent when you interrupt a process from the
-  keyboard with &lt;code&gt;^C&lt;/code&gt; at the terminal
-- &lt;code&gt;SIGKILL&lt;/code&gt;, which is sent when you &lt;code&gt;kill -9&lt;/code&gt; something to kill it with fire;
-  the process terminates, and the signal cannot be caught, blocked or ignored
-- &lt;code&gt;SIGSTOP&lt;/code&gt;, which is sent when you stop a process with &lt;code&gt;^Z&lt;/code&gt; at the terminal;
-  the process is stopped, and will continue when it’s sent a &lt;code&gt;SIGCONT&lt;/code&gt;
-  (&lt;em&gt;cont&lt;/em&gt;inue)
-- &lt;code&gt;SIGHUP&lt;/code&gt; (&lt;em&gt;h&lt;/em&gt;ang&lt;em&gt;up&lt;/em&gt;), which is sent if the controlling terminal ‘hangs up’,
-  ie, is closed—this one is a fun anachronism which serves to us that we’re
-  still using &lt;a href=&quot;https://en.wikipedia.org/wiki/Terminal_emulator&quot;&gt;programs that pretend to be terminals&lt;/a&gt;,
-  which are in turn mostly pretending to be &lt;a href=&quot;https://en.wikipedia.org/wiki/Teleprinter&quot;&gt;teletype machines&lt;/a&gt;, and that
-  everything sort of pretends to be connected over a phone line&lt;/p&gt;
-  &lt;/dd&gt;
-&lt;/dl&gt;
-
-&lt;h1 id=&quot;python-shell-writing-weirdness&quot;&gt;Python shell writing weirdness&lt;/h1&gt;
-
-&lt;p&gt;Sophie asked me for some help with the mental model for file descriptors and
-pipes and &lt;code&gt;dup2&lt;/code&gt; and what happens when you fork and other such fun things. There
-is a really strange bug we couldn’t figure out: &lt;code&gt;ls | wc&lt;/code&gt; or &lt;code&gt;ls | head&lt;/code&gt; would
-terminate as expected, but &lt;code&gt;yes | wc&lt;/code&gt; or &lt;code&gt;yes | head&lt;/code&gt; would not; &lt;code&gt;yes&lt;/code&gt; would
-just keep on running and use loads of CPU, so it was not idle. On OS X only (2
-machines tested). On Linux, it worked as expected, with &lt;code&gt;yes&lt;/code&gt; terminating and
-complaining about the broken pipe. We gave up eventually, and I still haven’t
-got any idea what’s wrong. I really wish &lt;a href=&quot;http://man7.org/linux/man-pages/man5/procfs.5.html&quot;&gt;&lt;code&gt;procfs&lt;/code&gt;&lt;/a&gt; existed on OS X!&lt;/p&gt;
-
-&lt;p&gt;I wrote a minimized equivalent of our code. Please run it and let me know what
-happens! On my machine:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl https://gist.githubusercontent.com/kamalmarhubi/65c2ea1063e479f0c16b/raw/2459725829891b156f61ec5fc808587846ec07be/pipe_weirdness.py &amp;gt; pipe_weirdness.py
-$ chmod +x pipe_weirdness.py
-$ ./pipe_weirdness yes head
-y
-y
-y
-y
-y
-y
-y
-y
-y
-y
-yes: standard output: Broken pipe
-yes: write error
-$ █
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I’m really interested in ideas on why &lt;code&gt;yes&lt;/code&gt; wouldn’t terminate!&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:sigbus&quot;&gt;
-
-      &lt;p&gt;I think this is meant to be related to the memory bus, which makes sense for
-unaligned accesses, but not for the memory mapped file situtuation. &lt;a href=&quot;#fnref:sigbus&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-    &lt;li id=&quot;fn:sigbus-openbsd&quot;&gt;
-
-      &lt;p&gt;From man pages and some experimentation, &lt;code&gt;SIGBUS&lt;/code&gt; is sent for this
-situation on Linux, FreeBSD, OS X, and NetBSD; OpenBSD’s documentation says a
-&lt;code&gt;SIGSEGV&lt;/code&gt; is sent instead. Feel free to &lt;a href=&quot;https://gist.github.com/kamalmarhubi/d8a3b3754bc2f4f62899&quot;&gt;test it out&lt;/a&gt; on your system! On mine:&lt;/p&gt;
-
-      &lt;pre&gt;&lt;code&gt;$ curl https://gist.githubusercontent.com/kamalmarhubi/d8a3b3754bc2f4f62899/raw/333a1c8ebce4a3c7718e740ea4d175d22ca206fd/mmap_signal_test.c | cc -xc -o mmap_signal_test -
-$ ./mmap_signal_test
-Received signal while accessing 0x7facd3268000: Bus error
-Going to ftruncate
-Read: 0
-Wrote and read: 1
-$ █
-&lt;/code&gt;&lt;/pre&gt;
-      &lt;p&gt;&lt;a href=&quot;#fnref:sigbus-openbsd&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Mon, 29 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/29/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/29/recurse-center-lab-notes</guid>
         
         
       </item>
