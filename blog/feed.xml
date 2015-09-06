@@ -5,8 +5,8 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 06 Sep 2015 12:04:00 -0400</pubDate>
-    <lastBuildDate>Sun, 06 Sep 2015 12:04:00 -0400</lastBuildDate>
+    <pubDate>Sun, 06 Sep 2015 12:16:02 -0400</pubDate>
+    <lastBuildDate>Sun, 06 Sep 2015 12:16:02 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -327,6 +327,13 @@ $ sleep 20  # wait for the Kubelet to stop all the containers
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 &lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;em&gt;Thanks to Johannes Alkjær, Julia Evans, Ray Bejjani, and Tavish Armstrong for
+reviewing drafts of this post.&lt;/em&gt;&lt;/p&gt;
 </description>
         <pubDate>Sun, 06 Sep 2015 12:02:47 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</link>
