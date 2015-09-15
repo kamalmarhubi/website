@@ -5,9 +5,210 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 06 Sep 2015 12:16:02 -0400</pubDate>
-    <lastBuildDate>Sun, 06 Sep 2015 12:16:02 -0400</lastBuildDate>
+    <pubDate>Tue, 15 Sep 2015 21:31:42 +0200</pubDate>
+    <lastBuildDate>Tue, 15 Sep 2015 21:31:42 +0200</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Eliminating branches in Rust for fun... but not much profit</title>
+        <description>&lt;p&gt;Last week, I nerd-sniped myself after reading a &lt;a href=&quot;http://m4rw3r.github.io/parser-combinator-experiments-part-3/&quot;&gt;blog post&lt;/a&gt; about
+performance of parser combinators in Rust, and the associated &lt;a href=&quot;https://www.reddit.com/r/rust/comments/3k0d0d/parser_combinator_experiments_part_3_performance/&quot;&gt;Reddit
+discussion&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The benchmark in the post was parsing a bunch of HTTP requests. The focus was
+on improving performance of a function determining if a character formed part
+of a token. In the post, it was changed from&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;fn is_token(c: u8) -&amp;gt; bool {
+    c &amp;lt; 128 &amp;amp;&amp;amp; c &amp;gt; 31 &amp;amp;&amp;amp; b&quot;()&amp;lt;&amp;gt;@,;:\\\&quot;/[]?={} \t&quot;.iter()
+                           .position(|&amp;amp;i| i == c).is_none()
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;which iterates over a list of characters, to&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;fn is_token(c: u8) -&amp;gt; bool {
+    // roughly follows the order of ascii chars: &quot;\&quot;(),/:;&amp;lt;=&amp;gt;?@[\\]{} \t&quot;
+    c &amp;lt; 128 &amp;amp;&amp;amp; c &amp;gt; 32 &amp;amp;&amp;amp; c != b&#39;\t&#39; &amp;amp;&amp;amp; c != b&#39;&quot;&#39; &amp;amp;&amp;amp; c != b&#39;(&#39; &amp;amp;&amp;amp; c != b&#39;)&#39; &amp;amp;&amp;amp;
+        c != b&#39;,&#39; &amp;amp;&amp;amp; c != b&#39;/&#39; &amp;amp;&amp;amp; !(c &amp;gt; 57 &amp;amp;&amp;amp; c &amp;lt; 65) &amp;amp;&amp;amp; !(c &amp;gt; 90 &amp;amp;&amp;amp; c &amp;lt; 94) &amp;amp;&amp;amp;
+        c != b&#39;{&#39; &amp;amp;&amp;amp; c != b&#39;}&#39;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;which unrolls the loop into a big boolean conjunction.&lt;/p&gt;
+
+&lt;p&gt;On my machine, the benchmark with the original version takes about 106
+microseconds to parse a text file containing about 50 HTTP requests. The newer
+version takes 73 microseconds, which is about 30% faster.&lt;/p&gt;
+
+&lt;p&gt;After reading this, I started thinking something like “I know about CPUs, and
+branches are bad because of mispredictions or something”, and “LOOK &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; AT
+&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; ALL &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; THOSE &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; BRANCHES!”, and imagining fame and fortune for making
+it even faster.&lt;/p&gt;
+
+&lt;p&gt;This led me down a path of trying to replace that function with a
+straight-through series of bitwise operations. First off, let’s unpack what’s
+actually being checked in this function:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;c &amp;lt; 128&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; represents asn ASCII character&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;c &amp;gt; 32&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; is not a control character or space&lt;/li&gt;
+  &lt;li&gt;all the &lt;code&gt;!=&lt;/code&gt; comparisons: that &lt;code&gt;c&lt;/code&gt; isn’t any of those characters&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;!(c &amp;gt; 57 &amp;amp;&amp;amp; c &amp;lt; 65)&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; is none of &lt;code&gt;:;&amp;lt;=&amp;gt;?@&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;!(c &amp;gt; 90 &amp;amp;&amp;amp; c &amp;lt; 94)&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; is none of &lt;code&gt;[\]&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;eliminate-almost-all-the-branches&quot;&gt;Eliminate (almost) ALL THE BRANCHES&lt;/h1&gt;
+
+&lt;p&gt;My basic idea was to replace all the equality checks with XOR, and all the
+boolean ands with bitwise ands. Boolean ands (&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt;) and ors (&lt;code&gt;||&lt;/code&gt;) have short
+circuiting semantics: their right hand sides are only evaluated if necessary.
+This means that &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; has to be implemented as a conditional jump to avoid
+evaluating the right hand side if the left hand side is false.&lt;/p&gt;
+
+&lt;p&gt;To check I was making any sense, I used the fantastic Godbolt interactive
+compiler, which &lt;a href=&quot;http://rust.godbolt.org/&quot;&gt;has Rust support&lt;/a&gt;. This confirmed that at least
+some of the boolean ands were compiling to conditional jumps, which was enough
+for me to go down the bitwise operation path.&lt;/p&gt;
+
+&lt;p&gt;After spending a bunch of time on translating it to be purely bitwise
+operations, I ended up with this performance result:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;test bench_http ... bench:     230,030 ns/iter (+/- 6,303)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;About three times slower. This was… disappointing. Especially because along
+the way, a broken benchmark setup had me convinced I sped things up by 60%!&lt;/p&gt;
+
+&lt;h1 id=&quot;why-so-slow&quot;&gt;Why so slow?&lt;/h1&gt;
+
+&lt;p&gt;I talked about my results with Dan Luu, since he’s written about this kind of
+thing before. He mentioned that on Haswell, the missed branch prediction
+penalty is about 14 cycles. Optimally organised bitwise operations can be
+about 4 per cycle.&lt;/p&gt;
+
+&lt;p&gt;The original version had about 30 instructions, of which about 6 were branches.
+Assuming one instruction per cycle, a really bad branch predictor miss rate
+like 50% would be somewhere around 75 cycles.  The bitwise version had about
+130 instructions, of which one was a branch. Assume the branch predictor is
+always right, that still puts me at 40+ cycles if 3 are in parallel.&lt;/p&gt;
+
+&lt;p&gt;In summary, unless the branch predictor was abysmally bad at this code, or I
+was amazingly excellent at organizing the bitwise operations, there was no
+strong reason to expect my my bitwise version to be faster.&lt;/p&gt;
+
+&lt;p&gt;This got me to run &lt;code&gt;perf stat&lt;/code&gt; on the benchmark to get a look at the branch
+prediction hit rate. This turned out to be above 99.5%, which is far from
+‘abysmal’.&lt;/p&gt;
+
+&lt;h1 id=&quot;another-approach-a-lookup-table&quot;&gt;Another approach: a lookup table&lt;/h1&gt;
+
+&lt;p&gt;The discussion also suggested implementing this as a lookup table. This would
+reduce &lt;code&gt;is_token&lt;/code&gt; to a single load which can be inlined wherever it’s used.
+Rust represents boolean values as bytes, so the table will be 256 bytes which
+should mean we’ll rarely have to go too far down the cache hierarchy.&lt;/p&gt;
+
+&lt;p&gt;Indeed, implementing that gave a modest 6-7%  performance improvement over the
+version that sent me off on this investigation:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;test bench_http ... bench:      67,890 ns/iter (+/- 1,913)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;So at least there was a somewhat satisfactory result at the end!&lt;/p&gt;
+
+&lt;h1 id=&quot;the-moral-of-the-story-validate-assumptions-and-know-more-numbers&quot;&gt;The moral of the story: validate assumptions, and know more numbers!&lt;/h1&gt;
+
+&lt;p&gt;There were a couple of big takeaways for me. The first is I could have saved
+myself a whole bunch of time if I’d investigated the branch prediction
+performance before embarking on this adventure. Instead of assuming the
+branching was slowing things down, I would know that it probably wasn’t.&lt;/p&gt;
+
+&lt;p&gt;The other was knowing some performance numbers offhand could have helped a lot
+here. I have a rough idea of L1 / L2 latency, and main memory latency. But I
+had no idea how many bitwise operations to expect per cycle, or how bad a
+branch misprediction was. I’ve now added these to my collection, but knowing a
+few more rough figures like that would certainly be good!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;em&gt;Thanks to Dan Luu, Anton Dubrau, and David Turner for useful and interesting
+discussions, and to Julia Evans for reading drafts of this post.&lt;/em&gt;&lt;/p&gt;
+
+&lt;!--
+
+# How I implemented a bitwise version
+Here&#39;s how I built up my bitwise version. For my own sanity, and ease of
+translation, I decided to use `0x0` as false and `0x1` as true. Implement first
+and improve afterwards if it seems hopeful. I started off using the fact that
+`x ^ y` is all zeros if and only if `x` and `y` are equal. Or, put another way,
+if `x != y` at least one bit in `x ^ y` is set. This will be handy since most
+of our comparisons are checking inequality with a fixed byte. This lets us
+write
+
+~~~
+fn eq(x: u8, y: u8) -&gt; u8 {
+    not(is_non_zero(x ^ y))
+~~~
+
+We need `is_non_zero` to return `0x1` or `0x0`; we&#39;ll get to that in a second.
+Once it does, the `not` operation is easy: just XOR with `0x1`:
+
+~~~
+fn not(x: u8) -&gt; u8 {
+    x ^ 1
+}
+~~~
+
+As for this `is_non_zero` operation, that&#39;s a bit trickier. Fortunately, [the
+internet][stackoverflow]! Here&#39;s the implementation:
+
+~~~
+fn is_non_zero(x: u8) -&gt; u8 {
+    ((x | ((!x).wrapping_add(1))) &gt;&gt; 7)
+}
+~~~
+
+What we want to do is return `0x1` if any bit of `x` is set, and otherwise
+return `0x0`. We&#39;ll work out how this works from the outside in. If we can get the most signicant bit set in The way this works is to force the most significant bit to be set
+if any bit is set. Then the `&gt;&gt; 7` will bring the most significant bit down to
+be the least significant bit, and we&#39;ll have 
+
+Finally, we&#39;ve got comparisons with `128` and `32`. Both of these are powers of
+two, which makes it a bit easier to check! If the most significant bit is set,
+then the number is greater than or equal to `128`, so we bitwise and with `128`
+and check if that&#39;s non-zero:
+
+
+~~~
+pub fn ge_128(x: u8) -&gt; u8 {
+    is_non_zero(128 &amp; x)
+}
+~~~
+
+For checking a number is less than `32`, we need to check that none of the upper 3 bits are set. For this, we can bitwise and with the bitwise compelement of 31, which has all the lower 5 bits set.
+
+~~~
+pub fn lt_32(x: u8) -&gt; u8 {
+    not(is_non_zero(!0x1f &amp; x))
+}
+~~~
+
+Finally, we need a way to go from `0x1` and `0x0` to `true` and `false`. Since we only have
+
+This let me put the whole thing together:
+
+
+[stackoverflow]: http://stackoverflow.com/questions/3912112/check-if-a-number-is-non-zero-using-bitwise-operators-in-c
+--&gt;
+</description>
+        <pubDate>Tue, 15 Sep 2015 00:00:00 +0200</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Kubernetes from the ground up: the API server</title>
@@ -335,7 +536,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 &lt;p&gt;&lt;em&gt;Thanks to Johannes Alkjær, Julia Evans, Ray Bejjani, and Tavish Armstrong for
 reviewing drafts of this post.&lt;/em&gt;&lt;/p&gt;
 </description>
-        <pubDate>Sun, 06 Sep 2015 12:02:47 -0400</pubDate>
+        <pubDate>Sun, 06 Sep 2015 18:02:47 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</guid>
         
@@ -609,7 +810,7 @@ around until the kubelet brings it down. It’s pretty cool, check the
   &lt;/ol&gt;
 &lt;/div&gt;
 </description>
-        <pubDate>Thu, 27 Aug 2015 00:00:00 -0400</pubDate>
+        <pubDate>Thu, 27 Aug 2015 00:00:00 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</guid>
         
@@ -673,7 +874,7 @@ tools. This should be done fairly soon, then I’ll go back to the Kythe code
 browser.&lt;/p&gt;
 
 </description>
-        <pubDate>Wed, 29 Jul 2015 00:01:49 -0400</pubDate>
+        <pubDate>Wed, 29 Jul 2015 06:01:49 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</guid>
         
@@ -721,7 +922,7 @@ out of that. Let’s see!&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;Thanks to David Albert for telling me about the play, and to the fellow
 recursers who joined me at the play.&lt;/em&gt;&lt;/p&gt;
 </description>
-        <pubDate>Sun, 26 Jul 2015 00:00:00 -0400</pubDate>
+        <pubDate>Sun, 26 Jul 2015 00:00:00 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/26/preludes/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/26/preludes/</guid>
         
@@ -788,7 +989,7 @@ ran a command called &lt;code&gt;tpm_takeownership&lt;/code&gt;. I’m going to 
 added as a security device in Firefox. That way, when the time comes, I’ll be
 able to store my client certificates in there. Or something!&lt;/p&gt;
 </description>
-        <pubDate>Wed, 15 Jul 2015 00:00:00 -0400</pubDate>
+        <pubDate>Wed, 15 Jul 2015 00:00:00 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</guid>
         
@@ -859,7 +1060,7 @@ then figure out a way to interleave the different kinds of work.&lt;/p&gt;
   &lt;/ol&gt;
 &lt;/div&gt;
 </description>
-        <pubDate>Tue, 14 Jul 2015 00:00:00 -0400</pubDate>
+        <pubDate>Tue, 14 Jul 2015 00:00:00 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</guid>
         
@@ -883,7 +1084,7 @@ build rules for Rust…&lt;/p&gt;
 &lt;p&gt;The rest of the day was taken up by being non-productive, followed by doing
 some more ES6, followed by napping for too long. We’ll try again tomorrow!&lt;/p&gt;
 </description>
-        <pubDate>Wed, 08 Jul 2015 00:00:00 -0400</pubDate>
+        <pubDate>Wed, 08 Jul 2015 00:00:00 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</guid>
         
@@ -967,7 +1168,7 @@ port the build over.  Building these tools is pretty slow going…&lt;/p&gt;
 &lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
 </description>
-        <pubDate>Tue, 07 Jul 2015 00:00:00 -0400</pubDate>
+        <pubDate>Tue, 07 Jul 2015 00:00:00 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/07/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/07/recurse-center-lab-notes</guid>
         
@@ -1077,187 +1278,9 @@ putting it into a Cap’n Proto message builder that writes directly to a memory
 mapped file. Wish me luck!&lt;/p&gt;
 
 </description>
-        <pubDate>Mon, 06 Jul 2015 00:00:00 -0400</pubDate>
+        <pubDate>Mon, 06 Jul 2015 00:00:00 +0200</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/06/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/06/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>My favourite bug so far at the Recurse Center!</title>
-        <description>&lt;p&gt;&lt;a href=&quot;http://kamalmarhubi.com/blog/2015/06/29/recurse-center-lab-notes/#python-shell-writing-weirdness&quot;&gt;Yesterday’s shell weirdness mystery&lt;/a&gt;: solved! This was definitely my favourite
-bug so far here at &lt;a href=&quot;https://www.recurse.com/&quot;&gt;RC&lt;/a&gt;, so it gets its own post!&lt;/p&gt;
-
-&lt;p&gt;As a quick recap, &lt;a href=&quot;http://sfrapoport.github.io/&quot;&gt;Sophie&lt;/a&gt; and I were trying to get pipes to work in the shell
-she was writing in Python. We ended up in a situation where &lt;code&gt;ls | head&lt;/code&gt; and &lt;code&gt;ls
-| wc&lt;/code&gt; worked, but &lt;code&gt;yes | head&lt;/code&gt; did not. &lt;code&gt;head&lt;/code&gt; would terminate just fine, and
-only ten lines of &lt;code&gt;y&lt;/code&gt; were printed, but &lt;code&gt;yes&lt;/code&gt; continued to run and consume lots
-of CPU.&lt;/p&gt;
-
-&lt;p&gt;Oh, and this happened on Sophie’s OS X machine, but not on my Linux one. Both were
-running Python 2.7.10.&lt;/p&gt;
-
-&lt;p&gt;To break this down a bit more, we’ve got four commands we’re dealing with: two
-which produce data on standard output—&lt;code&gt;ls&lt;/code&gt; and &lt;code&gt;yes&lt;/code&gt;—and two which consume
-data on standard input—&lt;code&gt;wc&lt;/code&gt; and &lt;code&gt;head&lt;/code&gt; &lt;sup id=&quot;fnref:wc-head-stdout&quot;&gt;&lt;a href=&quot;#fn:wc-head-stdout&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;. We can divide these
-by whether they produce or consume a bounded or unbounded amount of data:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;producers
-    &lt;ul&gt;
-      &lt;li&gt;&lt;code&gt;ls&lt;/code&gt;: bounded&lt;/li&gt;
-      &lt;li&gt;&lt;code&gt;yes&lt;/code&gt;: unbounded&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;consumers:
-    &lt;ul&gt;
-      &lt;li&gt;&lt;code&gt;head&lt;/code&gt;: bounded&lt;/li&gt;
-      &lt;li&gt;&lt;code&gt;wc&lt;/code&gt;: unbounded&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Now let’s look at the pipelines we were running again:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt; &lt;/th&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt;producer&lt;/th&gt;
-      &lt;th style=&quot;text-align: center&quot;&gt;consumer&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;ls | head&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;ls | wc&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;unbounded&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;yes | head&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;unbounded&lt;/td&gt;
-      &lt;td style=&quot;text-align: center&quot;&gt;bounded&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;Our issue comes up when we have an unbounded producer with a bounded consumer.
-But only on OS X.&lt;/p&gt;
-
-&lt;p&gt;So now we’re all caught up, here’s what happened today. Sophie messaged me this
-morning saying:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;I think I found something that will help us:
-&lt;a href=&quot;http://www.chiark.greenend.org.uk/~cjwatson/blog/python-sigpipe.html&quot;&gt;http://www.chiark.greenend.org.uk/~cjwatson/blog/python-sigpipe.html&lt;/a&gt;&lt;/p&gt;
-
-  &lt;p&gt;PS: I wouldn’t have found this if you hadn’t mentioned exploring SIGPIPE in
-your blog post. I read about it and said, ‘I think we have a problem with
-SIGPIPE on OSX/Python!’&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;I &lt;em&gt;love&lt;/em&gt; this because that wasn’t in the part of the post about our shell bug:
-it was just pure coincidence!&lt;/p&gt;
-
-&lt;p&gt;That page links to a &lt;a href=&quot;http://bugs.python.org/issue1615376&quot;&gt;bug against Python 3.2&lt;/a&gt;. She did some further
-investigation and turned up a &lt;a href=&quot;http://bugs.python.org/issue1652&quot;&gt;bug against Python 2.7&lt;/a&gt; about this.
-Sadly, this was closed as wontfix ‘because it is too late to backport this to 2.7.’&lt;/p&gt;
-
-&lt;p&gt;The gist of the bugs is this:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Python sets the disposition for &lt;code&gt;SIGPIPE&lt;/code&gt; to ignore, and instead checks the
-return value of all its writes for errors; this allows raising exceptions in
-Python code instead of requiring installation of a signal handler&lt;/li&gt;
-  &lt;li&gt;signal dispositions and handlers are inherited by the child after &lt;code&gt;fork&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;execve&lt;/code&gt; resets signals with handlers to their default dispositions;
-otherwise it leaves their dispositions alone&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;This results in a process &lt;code&gt;execve&lt;/code&gt;‘d from Python starting off ignoring
-&lt;code&gt;SIGPIPE&lt;/code&gt;. Unless it resets its signal dispositions to the default, it will
-receive errors instead of signals on writes to broken pipes. There are a couple
-of fixes suggested in the bugs, but neither are applied in Python 2.7. Our
-shell launches programs which ignore &lt;code&gt;SIGPIPE&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;We’re getting closer!  All this sounds great, but it doesn’t explain the
-works-on-Linux-but-not-on-OS X part. This is where it gets really fun. To quote
-myself, just a few sentences ago: ‘Python sets the disposition for &lt;code&gt;SIGPIPE&lt;/code&gt; to
-ignore, and &lt;em&gt;instead checks the return value of all its writes for errors&lt;/em&gt;’.
-That last part is really important.&lt;/p&gt;
-
-&lt;p&gt;At this point we realised we needed to check what &lt;code&gt;yes&lt;/code&gt; was actually doing. The
-version on my machine comes from GNU coreutils. We can take a look at &lt;a href=&quot;https://sources.debian.net/src/coreutils/8.23-4/src/yes.c/#L80&quot;&gt;the loop
-where it writes its output&lt;/a&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-c&quot;&gt;  while (true)
-    {
-      int i;
-      for (i = optind; i &amp;lt; argc; i++)
-        if (fputs (argv[i], stdout) == EOF
-            || putchar (i == argc - 1 ? &#39;\n&#39; : &#39; &#39;) == EOF)
-          error (EXIT_FAILURE, errno, _(&quot;standard output&quot;));
-    }
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Look at all that error checking! From &lt;a href=&quot;http://man7.org/linux/man-pages/man3/puts.3.html#RETURN_VALUE&quot;&gt;&lt;code&gt;man 3 puts&lt;/code&gt;&lt;/a&gt;, which
-covers both &lt;code&gt;fputs&lt;/code&gt; and &lt;code&gt;putchar&lt;/code&gt;, we can see that they return &lt;code&gt;EOF&lt;/code&gt; on error;
-and &lt;a href=&quot;http://man7.org/linux/man-pages/man3/error.3.html&quot;&gt;&lt;code&gt;error(3)&lt;/code&gt;&lt;/a&gt; prints out a nice error message.&lt;/p&gt;
-
-&lt;p&gt;The &lt;a href=&quot;http://www.opensource.apple.com/source/shell_cmds/shell_cmds-170/yes/yes.c&quot;&gt;implementation of &lt;code&gt;yes&lt;/code&gt; on OS X&lt;/a&gt; is short enough that I can excerpt its entire &lt;code&gt;main&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-c&quot;&gt;int
-main(argc, argv)
-    int argc;
-    char **argv;
-{
-    if (argc &amp;gt; 1)
-        for(;;)
-            (void)puts(argv[1]);
-    else for (;;)
-        (void)puts(&quot;y&quot;);
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Look at those unchecked calls to &lt;code&gt;puts&lt;/code&gt;! At last we have our answer! And to be
-sure, I compiled the OS X version on my machine, and we got the same behaviour!
-Mystery solved!&lt;/p&gt;
-
-&lt;p&gt;I love this bug for so many reasons. In particular, I love that it involves so
-many parties. There’s the Python bug. There’s the OS X &lt;code&gt;yes&lt;/code&gt; implementation
-that doesn’t check its &lt;code&gt;puts&lt;/code&gt; calls’ return values. And it shouldn’t have to
-for the pipe case since it can reasonably expect &lt;code&gt;SIGPIPE&lt;/code&gt; to have its default
-action of terminating the process. Where this got confusing is that the GNU
-implementation &lt;em&gt;does&lt;/em&gt; check for errors, so we got the OS difference. If Sophie
-had been using Linux, we never would have encountered this!&lt;/p&gt;
-
-&lt;p&gt;A big takeaway for me here is that it’s up to us as developers to deal with
-idiosyncrasies in our platform. The fact that there’s an acknowledged bug in
-Python doesn’t mean we can just throw up our hands in a big ¯\_(ツ)_/¯.&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:wc-head-stdout&quot;&gt;
-
-      &lt;p&gt;&lt;code&gt;wc&lt;/code&gt; and &lt;code&gt;head&lt;/code&gt; both also produce data on standard output, but only in
-response to data on standard input; this isn’t interesting because of which
-side of the pipe we put them on &lt;a href=&quot;#fnref:wc-head-stdout&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Tue, 30 Jun 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/06/30/my-favourite-bug-so-far-at-the-recurse-center/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/06/30/my-favourite-bug-so-far-at-the-recurse-center/</guid>
         
         
       </item>
