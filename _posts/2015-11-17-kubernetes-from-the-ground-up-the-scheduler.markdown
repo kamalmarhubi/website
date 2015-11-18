@@ -96,27 +96,34 @@ node2     kubernetes.io/hostname=node2   Ready     4s
 
 Excellent.
 
+
 # Running something on the cluster
 
-Kubernetes runs *pods*, which are collections of caontainers that execute
-together.  To start, we'll create a pod specifying which node it should run on.
-Get [the pod manifest][nginx-with-nodename], which specifies which containers
-to run, and change the `nodeName` to the name of one of your nodes.  I picked
-`node2`. Now create the pod:
+Kubernetes runs *pods*, which are collections of containers that execute
+together.  To start, we'll create a pod and specify which node it should run
+on.
+
+We'll continue running our nginx example pod. Get [the pod
+manifest][nginx-with-nodename], which specifies which containers to run. We
+specify the node to run on by setting the `nodeName` field. Edit the file and
+set it to run on one of your nodes.  I picked `node2`.
 
 ~~~
 master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml
 master$ $EDITOR nginx-with-nodename.yaml  # edit the nodeName field to match a node
+~~~
+
+Now create the pod:
+
+~~~
 master$ ./kubectl create --filename nginx-with-nodename.yaml
 ~~~
 
 [nginx-with-nodename]: https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml
 
-The kubelet on each node is constantly watching for pods to run. We said it
-should run on `node2`, and when we check with `kubectl get pods` we see that it
-got picked up. If you're quicker than me, you might catch it in the `Pending`
-state, before the kubelet starts it, but it should end up `Running` fairly
-quickly.
+We can check with `kubectl get pods` we see that it got picked up. If you're
+quicker than me, you might catch it in the `Pending` state, before the kubelet
+starts it, but it should end up `Running` fairly quickly.
 
 ~~~
 master$ ./kubectl get pods
@@ -124,17 +131,24 @@ NAME                  READY     STATUS    RESTARTS   AGE
 nginx-with-nodename   2/2       Running   0          7s
 ~~~
 
-Just to be sure it's actually on `node2` as we said, we can `kubectl describe` the pod:
+Just to be sure it's actually on `node2` as we said, we can `kubectl describe`
+the pod:
 
 ~~~
 master$ ./kubectl describe pods/nginx-with-nodename | grep ^Node
 Node:                           node2/10.240.0.4
 ~~~
 
+We can break down what happened here:
+
+- initially, the kubelets on each node are watching the API server for pods
+  they are meant to be running
+- `kubectl` created a a pod on the API server that's meant to run on `node2`
+- the kubelet on `node2` noticed the new pod, and so started running it.
+
 We can also try [a pod manifest][nginx-without-nodename] that doesn't specify a
-`nodeName`. In our current setup, this pod will forever sit in the `Pending`
-state. because each kubelet is only interested in pods with their name as
-`nodeName`. Let's try anyway:
+node to run on. In our current setup, this pod will forever sit in the `Pending`
+state. Let's try anyway:
 
 
 ~~~
@@ -158,12 +172,24 @@ nginx-with-nodename      2/2       Running   0          18m
 nginx-without-nodename   0/2       Pending   0          15m
 ~~~
 
+Breaking it down in the same way:
+
+- initially, the kubelets on each node are watching the API server for pods
+  they are meant to be running
+- `kubectl` created a a pod on the API server without specifying which node to
+  run on
+- ...
+- ...
+- ... yeah, nothing's going to happen.
+
 
 # The scheduler
 
 This is where the sheduler comes in: its job is to take pods that aren't bound
-to a node, and assign them one. Once the pod has a `nodeName`, the normal
-behavior of the kubelet kicks in, and the pod gets started. Back on the master:
+to a node, and assign them one. Once the pod has a node assigned, the normal
+behavior of the kubelet kicks in, and the pod gets started.
+
+Let's get the scheduler binary and start it running on `master`:
 
 ~~~
 master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-scheduler
@@ -181,21 +207,23 @@ nginx-with-nodename      2/2       Running   0          1h
 nginx-without-nodename   2/2       Running   0          1h
 ~~~
 
-If we `describe` it, we can see which node it ended up on:
+If we `describe` it, we can see which node it got scheduled on:
 
 ~~~
-master$ ./kubectl describe pods/nginx-without-nodename | head -4
-Name:                           nginx-without-nodename
-Namespace:                      default
-Image(s):                       nginx,busybox
+master$ ./kubectl describe pods/nginx-without-nodename | grep ^Node
 Node:                           node1/10.240.0.3
 ~~~
+
+It ended up on `node1`! The scheduler tries to spread out pods evenly across
+the nodes we have available, so that makes sense. If you're interested in more
+about how the scheduler places pods, there's a really good [Stack
+Overflow](http://stackoverflow.com/a/28874577) answer with some details.
 
 We can also get a list of ‘events’ related to the pod. These are state changes
 through the pods lifetime:
 
 ~~~
-master$ ./kubectl describe pods/nginx-without-nodename | grep -A5 ^Events
+master$ ./kubectl describe pods/nginx-without-nodename | grep --after-context=5 ^Events
 Events:
   FirstSeen     LastSeen        Count   From            SubobjectPath                           Reason                  Message
   ─────────     ────────        ─────   ────            ─────────────                           ──────                  ───────
@@ -207,10 +235,19 @@ Events:
 The first one shows it getting scheduled, then others are related to the pod
 starting up on the node.
 
+At this point, if you create another pod without specifying a node for it to
+run on, the scheduler will place it right away. Try it out!
 
-# What's next?
 
+# Sneak peak: Kubernetes' networking model
 TODO: bad title
+
+This is all seeming pretty great. We've got our little cluster running, and we
+can declaratively say what pods we want running, and they run.
+
+There's just one little issue we can't actually connect to any of these nginx servers we have running. Let's get the IP of one of nginx pods we have
+
+Let's t
 
 describe a pod, try to connect to the pod IP
 
