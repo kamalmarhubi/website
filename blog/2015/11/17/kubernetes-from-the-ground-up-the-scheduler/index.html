@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Kubernetes from the ground up: the scheduler</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2015/11/17/kubernetes-from-the-ground-up-the-scheduler/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Kamal Marhubi</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Kubernetes from the ground up: the scheduler</h1>
+    <p class="post-meta">Nov 17, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p><em>This is the third post in a series on <a href="https://kubernetes.io/">Kubernetes</a>, the open source cluster
+manager. The earlier posts were about <a href="http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/">the kubelet</a>, and <a href="http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/">the API
+server</a>.</em></p>
+
+<p>It’s been a while since the last post, but I’m excited to finally finish this
+one off. This is about the scheduler, which is the first part of what makes
+Kubernetes Kubernetes. The scheduler’s job is to decide where in the cluster to
+run our workloads. This lets us stop thinking about which host should run what,
+and just declaratively say ‘I want this to be running’.</p>
+
+<p>When we left off last time, we were able to run a collection of containers on a
+specific Kubernetes node by posting a JSON manifest to the API server. We also
+got a look at the <code>kubectl</code>, the command line client for Kubernetes, which
+makes it much easier to interact with the cluster.</p>
+
+<p>Oh, except that until now we haven’t had a cluster, at least not in the sense
+of multiple machines. In this post we’re going to change that. To follow along,
+you’ll need a few machines—virtual, real, cloud, it doesn’t matter.
+What does matter is</p>
+
+<ul>
+  <li>they are all on the same network</li>
+  <li>they all have Docker installed</li>
+</ul>
+
+<p>I’ve got a few machines in the examples below: the master is <code>master</code>, while
+the nodes are <code>node1</code>, <code>node2</code>. I’m assuming they can all be reached
+via their hostnames; feel free to substitute in their IPs instead!</p>
+
+<h1 id="starting-the-api-server">Starting the API server</h1>
+
+<p>We’re going to breeze through starting the API server, since it’s
+all <a href="http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/#starting-the-api-server">straight out of the last post</a>.</p>
+
+<pre><code>master$ mkdir etcd-data
+master$ docker run --volume=$PWD/etcd-data:/default.etcd \
+--detach --net=host quay.io/coreos/etcd &gt; etcd-container-id
+master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-apiserver
+master$ chmod +x kube-apiserver
+master$ ./kube-apiserver \
+--etcd-servers=http://127.0.0.1:2379 \
+--service-cluster-ip-range=10.0.0.0/16 \
+--insecure-bind-address=0.0.0.0
+</code></pre>
+
+<p>The only difference is we’ve added <code>--insecure-bind-address=0.0.0.0</code>. This
+allows the kubelets running on the nodes to connect to the API server remotely
+without any authentication. Ordinarily, unauthenticated connections are only
+allowed from localhost.</p>
+
+<p>Just to be clear, you <em>really</em> don’t want to do this in production!</p>
+
+<p>While we’re here, let’s also get <code>kubectl</code>, the command line client <a href="http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/#the-kubernetes-command-line-client-kubectl">we looked
+at in the last post</a>:</p>
+
+<pre><code>master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kubectl
+master$ chmod +x kubectl
+</code></pre>
+
+<h1 id="launching-some-nodes">Launching some nodes</h1>
+
+<p>This will be quick too, as we’ve done this a couple of times before. The only
+difference here is that the API server isn’t running on localhost, so we need
+to include its address. I’ve got two nodes, but I’ll just show this once below.
+If you’re following along, do this on as many nodes as you want!</p>
+
+<pre><code>node1$ ./kubelet --api-servers=http://master:8080
+</code></pre>
+
+<p>Now back on <code>master</code>:</p>
+
+<pre><code>master$ ./kubectl get nodes
+NAME      LABELS                         STATUS    AGE
+node1     kubernetes.io/hostname=node1   Ready     2m
+node2     kubernetes.io/hostname=node2   Ready     4s
+</code></pre>
+
+<p>Excellent.</p>
+
+<h1 id="running-something-on-the-cluster">Running something on the cluster</h1>
+
+<p>Kubernetes runs <em>pods</em>, which are collections of containers that execute
+together.  To start, we’ll create a pod and specify which node it should run
+on.</p>
+
+<p>We’ll continue running our nginx example pod from the earlier posts. Get <a href="https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml">the
+pod manifest</a>, which specifies which containers to run. We
+specify the node to run on by setting the <code>nodeName</code> field. Edit the file and
+set it to run on one of your nodes.  I picked <code>node2</code>.</p>
+
+<pre><code>master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml
+master$ $EDITOR nginx-with-nodename.yaml  # edit the nodeName field to match a node
+</code></pre>
+
+<p>Now create the pod:</p>
+
+<pre><code>master$ ./kubectl create --filename nginx-with-nodename.yaml
+</code></pre>
+
+<p>We can check with <code>kubectl get pods</code> we see that it got picked up. If you’re
+quicker than me, you might catch it in the <code>Pending</code> state, before the kubelet
+starts it, but it should end up <code>Running</code> fairly quickly.</p>
+
+<pre><code>master$ ./kubectl get pods
+NAME                  READY     STATUS    RESTARTS   AGE
+nginx-with-nodename   2/2       Running   0          7s
+</code></pre>
+
+<p>Just to be sure it’s actually on <code>node2</code> as we said, we can <code>kubectl describe</code>
+the pod:</p>
+
+<pre><code>master$ ./kubectl describe pods/nginx-with-nodename | grep ^Node
+Node:                           node2/10.240.0.4
+</code></pre>
+
+<p>We can break down what happened here:</p>
+
+<ul>
+  <li>initially, the kubelets on each node are watching the API server for pods
+they are meant to be running</li>
+  <li><code>kubectl</code> created a pod on the API server that’s meant to run on <code>node2</code></li>
+  <li>the kubelet on <code>node2</code> noticed the new pod, and so started running it.</li>
+</ul>
+
+<p>We can also try <a href="https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-without-nodename.yaml">a pod manifest</a> that doesn’t specify a
+node to run on. In our current setup, this pod will forever sit in the
+<code>Pending</code> state. Let’s try anyway:</p>
+
+<pre><code>master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-without-nodename.yaml
+master$ ./kubectl create --filename nginx-without-nodename.yaml
+master$ ./kubectl get pods
+NAME                     READY     STATUS    RESTARTS   AGE
+nginx-with-nodename      2/2       Running   0          3m
+nginx-without-nodename   0/2       Pending   0          20s
+</code></pre>
+
+<p>Even if you take a break and read the internet for 15 minutes, it’ll still be
+there, <code>Pending</code>:</p>
+
+<pre><code>master$ ./kubectl get pods
+NAME                     READY     STATUS    RESTARTS   AGE
+nginx-with-nodename      2/2       Running   0          18m
+nginx-without-nodename   0/2       Pending   0          15m
+</code></pre>
+
+<p>Breaking it down in the same way:</p>
+
+<ul>
+  <li>initially, the kubelets on each node are watching the API server for pods
+they are meant to be running</li>
+  <li><code>kubectl</code> created a pod on the API server without specifying which node to
+run on</li>
+  <li>…</li>
+  <li>…</li>
+  <li>… yeah, nothing’s going to happen.</li>
+</ul>
+
+<h1 id="the-scheduler">The scheduler</h1>
+
+<p>This is where the sheduler comes in: its job is to take pods that aren’t bound
+to a node, and assign them one. Once the pod has a node assigned, the normal
+behavior of the kubelet kicks in, and the pod gets started.</p>
+
+<p>Let’s get the scheduler binary and start it running on <code>master</code>:</p>
+
+<pre><code>master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-scheduler
+master$ chmod +x kubectl
+master$ ./kube-scheduler --master=hp://localhost:8080
+</code></pre>
+
+<p>Not long after starting the scheduler, the <code>nginx-without-nodename</code> pod should
+get assigned a node and start running.</p>
+
+<pre><code>master$ ./kubectl get pods
+NAME                     READY     STATUS    RESTARTS   AGE
+nginx-with-nodename      2/2       Running   0          1h
+nginx-without-nodename   2/2       Running   0          1h
+</code></pre>
+
+<p>If we <code>describe</code> it, we can see which node it got scheduled on:</p>
+
+<pre><code>master$ ./kubectl describe pods/nginx-without-nodename | grep ^Node
+Node:                           node1/10.240.0.3
+</code></pre>
+
+<p>It ended up on <code>node1</code>! The scheduler tries to spread out pods evenly across
+the nodes we have available, so that makes sense. If you’re interested in more
+about how the scheduler places pods, there’s a really good <a href="http://stackoverflow.com/a/28874577">Stack
+Overflow</a> answer with some details.</p>
+
+<p>We can also get a list of ‘events’ related to the pod. These are state changes
+through the pods lifetime:</p>
+
+<pre><code>master$ ./kubectl describe pods/nginx-without-nodename | grep -A5 ^Events
+Events:
+  FirstSeen     LastSeen        Count   From            SubobjectPath                           Reason                  Message
+  ─────────     ────────        ─────   ────            ─────────────                           ──────                  ───────
+  25m           25m             1       {scheduler }                                            Scheduled               Successfully assigned nginx-without-nodename to node1
+  23m           23m             1       {kubelet node1} implicitly required container POD       Pulling                 Pulling image "gcr.io/google_containers/pause:0.8.0"
+  23m           23m             1       {kubelet node1} implicitly required container POD       Pulled                  Successfully pulled image "gcr.io/google_containers/pause:0.8.0"
+</code></pre>
+
+<p>The first one shows it getting scheduled, then others are related to the pod
+starting up on the node.</p>
+
+<p>At this point, if you create another pod without specifying a node for it to
+run on, the scheduler will place it right away. Try it out!</p>
+
+<h1 id="wrapping-up">Wrapping up</h1>
+
+<p>So now we are able to declaratively specify workloads, and get them scheduled
+across our cluster, which is great! But if we actually try connecting to the
+nginx servers we have running, we’ll see we have a little problem:</p>
+
+<pre><code>master$ ./kubectl describe pods/nginx-with-nodename | grep ^IP
+IP:                             172.17.0.2
+master$ curl http://172.17.0.2
+curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
+</code></pre>
+
+<p>This pod is running on <code>node2</code>. If we go over to that machine,
+we get through:</p>
+
+<pre><code>node2$ curl --stderr /dev/null http://172.17.0.2 | head -4
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Welcome to nginx!&lt;/title&gt;
+</code></pre>
+
+<p>But our other node can’t reach it:</p>
+
+<pre><code>node1$ curl http://172.17.0.2
+curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
+</code></pre>
+
+<p>In the next post, we’ll take a little detour into Kubernetes networking, and
+make it possible for containers to talk to each other over the network.</p>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:kamal@marhubi.com">kamal@marhubi.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/kamalmarhubi">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/kamalmarhubi">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text"></p>
+      </div>
+    </div>
+
+  </div>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-39994628-3', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</footer>
+
+
+  </body>
+
+</html>

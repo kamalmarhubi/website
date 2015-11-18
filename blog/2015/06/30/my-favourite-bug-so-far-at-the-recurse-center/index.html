@@ -169,15 +169,18 @@ That last part is really important.</p>
 version on my machine comes from GNU coreutils. We can take a look at <a href="https://sources.debian.net/src/coreutils/8.23-4/src/yes.c/#L80">the loop
 where it writes its output</a>:</p>
 
-<pre><code class="language-c">  while (true)
-    {
-      int i;
-      for (i = optind; i &lt; argc; i++)
-        if (fputs (argv[i], stdout) == EOF
-            || putchar (i == argc - 1 ? '\n' : ' ') == EOF)
-          error (EXIT_FAILURE, errno, _("standard output"));
-    }
-</code></pre>
+<div class="highlighter-coderay"><div class="CodeRay">
+  <div class="code"><pre><span class="line-numbers"><a href="#n1" name="n1">1</a></span>  <span style="color:#080;font-weight:bold">while</span> (<span style="color:#069">true</span>)
+<span class="line-numbers"><a href="#n2" name="n2">2</a></span>    {
+<span class="line-numbers"><a href="#n3" name="n3">3</a></span>      <span style="color:#0a8;font-weight:bold">int</span> i;
+<span class="line-numbers"><a href="#n4" name="n4">4</a></span>      <span style="color:#080;font-weight:bold">for</span> (i = optind; i &lt; argc; i++)
+<span class="line-numbers"><a href="#n5" name="n5">5</a></span>        <span style="color:#080;font-weight:bold">if</span> (fputs (argv[i], stdout) == <span style="color:#069">EOF</span>
+<span class="line-numbers"><a href="#n6" name="n6">6</a></span>            || putchar (i == argc - <span style="color:#00D">1</span> ? <span style="color:#D20">'\n'</span> : <span style="color:#D20">' '</span>) == <span style="color:#069">EOF</span>)
+<span class="line-numbers"><a href="#n7" name="n7">7</a></span>          error (EXIT_FAILURE, errno, _(<span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#710">&quot;</span><span style="color:#D20">standard output</span><span style="color:#710">&quot;</span></span>));
+<span class="line-numbers"><a href="#n8" name="n8">8</a></span>    }
+</pre></div>
+</div>
+</div>
 
 <p>Look at all that error checking! From <a href="http://man7.org/linux/man-pages/man3/puts.3.html#RETURN_VALUE"><code>man 3 puts</code></a>, which
 covers both <code>fputs</code> and <code>putchar</code>, we can see that they return <code>EOF</code> on error;
@@ -185,18 +188,21 @@ and <a href="http://man7.org/linux/man-pages/man3/error.3.html"><code>error(3)</
 
 <p>The <a href="http://www.opensource.apple.com/source/shell_cmds/shell_cmds-170/yes/yes.c">implementation of <code>yes</code> on OS X</a> is short enough that I can excerpt its entire <code>main</code>:</p>
 
-<pre><code class="language-c">int
-main(argc, argv)
-    int argc;
-    char **argv;
-{
-    if (argc &gt; 1)
-        for(;;)
-            (void)puts(argv[1]);
-    else for (;;)
-        (void)puts("y");
-}
-</code></pre>
+<div class="highlighter-coderay"><div class="CodeRay">
+  <div class="code"><pre><span class="line-numbers"> <a href="#n1" name="n1">1</a></span><span style="color:#0a8;font-weight:bold">int</span>
+<span class="line-numbers"> <a href="#n2" name="n2">2</a></span>main(argc, argv)
+<span class="line-numbers"> <a href="#n3" name="n3">3</a></span>    <span style="color:#0a8;font-weight:bold">int</span> argc;
+<span class="line-numbers"> <a href="#n4" name="n4">4</a></span>    <span style="color:#0a8;font-weight:bold">char</span> **argv;
+<span class="line-numbers"> <a href="#n5" name="n5">5</a></span>{
+<span class="line-numbers"> <a href="#n6" name="n6">6</a></span>    <span style="color:#080;font-weight:bold">if</span> (argc &gt; <span style="color:#00D">1</span>)
+<span class="line-numbers"> <a href="#n7" name="n7">7</a></span>        <span style="color:#080;font-weight:bold">for</span>(;;)
+<span class="line-numbers"> <a href="#n8" name="n8">8</a></span>            (<span style="color:#088;font-weight:bold">void</span>)puts(argv[<span style="color:#00D">1</span>]);
+<span class="line-numbers"> <a href="#n9" name="n9">9</a></span>    <span style="color:#080;font-weight:bold">else</span> <span style="color:#080;font-weight:bold">for</span> (;;)
+<span class="line-numbers"><strong><a href="#n10" name="n10">10</a></strong></span>        (<span style="color:#088;font-weight:bold">void</span>)puts(<span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#710">&quot;</span><span style="color:#D20">y</span><span style="color:#710">&quot;</span></span>);
+<span class="line-numbers"><a href="#n11" name="n11">11</a></span>}
+</pre></div>
+</div>
+</div>
 
 <p>Look at those unchecked calls to <code>puts</code>! At last we have our answer! And to be
 sure, I compiled the OS X version on my machine, and we got the same behaviour!

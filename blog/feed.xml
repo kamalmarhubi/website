@@ -5,9 +5,257 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 15 Sep 2015 21:31:42 +0200</pubDate>
-    <lastBuildDate>Tue, 15 Sep 2015 21:31:42 +0200</lastBuildDate>
+    <pubDate>Wed, 18 Nov 2015 16:41:07 -0500</pubDate>
+    <lastBuildDate>Wed, 18 Nov 2015 16:41:07 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Kubernetes from the ground up: the scheduler</title>
+        <description>&lt;p&gt;&lt;em&gt;This is the third post in a series on &lt;a href=&quot;https://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt;, the open source cluster
+manager. The earlier posts were about &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/&quot;&gt;the kubelet&lt;/a&gt;, and &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/&quot;&gt;the API
+server&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;It’s been a while since the last post, but I’m excited to finally finish this
+one off. This is about the scheduler, which is the first part of what makes
+Kubernetes Kubernetes. The scheduler’s job is to decide where in the cluster to
+run our workloads. This lets us stop thinking about which host should run what,
+and just declaratively say ‘I want this to be running’.&lt;/p&gt;
+
+&lt;p&gt;When we left off last time, we were able to run a collection of containers on a
+specific Kubernetes node by posting a JSON manifest to the API server. We also
+got a look at the &lt;code&gt;kubectl&lt;/code&gt;, the command line client for Kubernetes, which
+makes it much easier to interact with the cluster.&lt;/p&gt;
+
+&lt;p&gt;Oh, except that until now we haven’t had a cluster, at least not in the sense
+of multiple machines. In this post we’re going to change that. To follow along,
+you’ll need a few machines—virtual, real, cloud, it doesn’t matter.
+What does matter is&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;they are all on the same network&lt;/li&gt;
+  &lt;li&gt;they all have Docker installed&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I’ve got a few machines in the examples below: the master is &lt;code&gt;master&lt;/code&gt;, while
+the nodes are &lt;code&gt;node1&lt;/code&gt;, &lt;code&gt;node2&lt;/code&gt;. I’m assuming they can all be reached
+via their hostnames; feel free to substitute in their IPs instead!&lt;/p&gt;
+
+&lt;h1 id=&quot;starting-the-api-server&quot;&gt;Starting the API server&lt;/h1&gt;
+
+&lt;p&gt;We’re going to breeze through starting the API server, since it’s
+all &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/#starting-the-api-server&quot;&gt;straight out of the last post&lt;/a&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ mkdir etcd-data
+master$ docker run --volume=$PWD/etcd-data:/default.etcd \
+--detach --net=host quay.io/coreos/etcd &amp;gt; etcd-container-id
+master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-apiserver
+master$ chmod +x kube-apiserver
+master$ ./kube-apiserver \
+--etcd-servers=http://127.0.0.1:2379 \
+--service-cluster-ip-range=10.0.0.0/16 \
+--insecure-bind-address=0.0.0.0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The only difference is we’ve added &lt;code&gt;--insecure-bind-address=0.0.0.0&lt;/code&gt;. This
+allows the kubelets running on the nodes to connect to the API server remotely
+without any authentication. Ordinarily, unauthenticated connections are only
+allowed from localhost.&lt;/p&gt;
+
+&lt;p&gt;Just to be clear, you &lt;em&gt;really&lt;/em&gt; don’t want to do this in production!&lt;/p&gt;
+
+&lt;p&gt;While we’re here, let’s also get &lt;code&gt;kubectl&lt;/code&gt;, the command line client &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/#the-kubernetes-command-line-client-kubectl&quot;&gt;we looked
+at in the last post&lt;/a&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kubectl
+master$ chmod +x kubectl
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&quot;launching-some-nodes&quot;&gt;Launching some nodes&lt;/h1&gt;
+
+&lt;p&gt;This will be quick too, as we’ve done this a couple of times before. The only
+difference here is that the API server isn’t running on localhost, so we need
+to include its address. I’ve got two nodes, but I’ll just show this once below.
+If you’re following along, do this on as many nodes as you want!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;node1$ ./kubelet --api-servers=http://master:8080
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now back on &lt;code&gt;master&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl get nodes
+NAME      LABELS                         STATUS    AGE
+node1     kubernetes.io/hostname=node1   Ready     2m
+node2     kubernetes.io/hostname=node2   Ready     4s
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Excellent.&lt;/p&gt;
+
+&lt;h1 id=&quot;running-something-on-the-cluster&quot;&gt;Running something on the cluster&lt;/h1&gt;
+
+&lt;p&gt;Kubernetes runs &lt;em&gt;pods&lt;/em&gt;, which are collections of containers that execute
+together.  To start, we’ll create a pod and specify which node it should run
+on.&lt;/p&gt;
+
+&lt;p&gt;We’ll continue running our nginx example pod from the earlier posts. Get &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml&quot;&gt;the
+pod manifest&lt;/a&gt;, which specifies which containers to run. We
+specify the node to run on by setting the &lt;code&gt;nodeName&lt;/code&gt; field. Edit the file and
+set it to run on one of your nodes.  I picked &lt;code&gt;node2&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml
+master$ $EDITOR nginx-with-nodename.yaml  # edit the nodeName field to match a node
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now create the pod:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl create --filename nginx-with-nodename.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can check with &lt;code&gt;kubectl get pods&lt;/code&gt; we see that it got picked up. If you’re
+quicker than me, you might catch it in the &lt;code&gt;Pending&lt;/code&gt; state, before the kubelet
+starts it, but it should end up &lt;code&gt;Running&lt;/code&gt; fairly quickly.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl get pods
+NAME                  READY     STATUS    RESTARTS   AGE
+nginx-with-nodename   2/2       Running   0          7s
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Just to be sure it’s actually on &lt;code&gt;node2&lt;/code&gt; as we said, we can &lt;code&gt;kubectl describe&lt;/code&gt;
+the pod:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-with-nodename | grep ^Node
+Node:                           node2/10.240.0.4
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can break down what happened here:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;initially, the kubelets on each node are watching the API server for pods
+they are meant to be running&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;kubectl&lt;/code&gt; created a pod on the API server that’s meant to run on &lt;code&gt;node2&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;the kubelet on &lt;code&gt;node2&lt;/code&gt; noticed the new pod, and so started running it.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We can also try &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-without-nodename.yaml&quot;&gt;a pod manifest&lt;/a&gt; that doesn’t specify a
+node to run on. In our current setup, this pod will forever sit in the
+&lt;code&gt;Pending&lt;/code&gt; state. Let’s try anyway:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-without-nodename.yaml
+master$ ./kubectl create --filename nginx-without-nodename.yaml
+master$ ./kubectl get pods
+NAME                     READY     STATUS    RESTARTS   AGE
+nginx-with-nodename      2/2       Running   0          3m
+nginx-without-nodename   0/2       Pending   0          20s
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Even if you take a break and read the internet for 15 minutes, it’ll still be
+there, &lt;code&gt;Pending&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl get pods
+NAME                     READY     STATUS    RESTARTS   AGE
+nginx-with-nodename      2/2       Running   0          18m
+nginx-without-nodename   0/2       Pending   0          15m
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Breaking it down in the same way:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;initially, the kubelets on each node are watching the API server for pods
+they are meant to be running&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;kubectl&lt;/code&gt; created a pod on the API server without specifying which node to
+run on&lt;/li&gt;
+  &lt;li&gt;…&lt;/li&gt;
+  &lt;li&gt;…&lt;/li&gt;
+  &lt;li&gt;… yeah, nothing’s going to happen.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;the-scheduler&quot;&gt;The scheduler&lt;/h1&gt;
+
+&lt;p&gt;This is where the sheduler comes in: its job is to take pods that aren’t bound
+to a node, and assign them one. Once the pod has a node assigned, the normal
+behavior of the kubelet kicks in, and the pod gets started.&lt;/p&gt;
+
+&lt;p&gt;Let’s get the scheduler binary and start it running on &lt;code&gt;master&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-scheduler
+master$ chmod +x kubectl
+master$ ./kube-scheduler --master=hp://localhost:8080
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Not long after starting the scheduler, the &lt;code&gt;nginx-without-nodename&lt;/code&gt; pod should
+get assigned a node and start running.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl get pods
+NAME                     READY     STATUS    RESTARTS   AGE
+nginx-with-nodename      2/2       Running   0          1h
+nginx-without-nodename   2/2       Running   0          1h
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If we &lt;code&gt;describe&lt;/code&gt; it, we can see which node it got scheduled on:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-without-nodename | grep ^Node
+Node:                           node1/10.240.0.3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It ended up on &lt;code&gt;node1&lt;/code&gt;! The scheduler tries to spread out pods evenly across
+the nodes we have available, so that makes sense. If you’re interested in more
+about how the scheduler places pods, there’s a really good &lt;a href=&quot;http://stackoverflow.com/a/28874577&quot;&gt;Stack
+Overflow&lt;/a&gt; answer with some details.&lt;/p&gt;
+
+&lt;p&gt;We can also get a list of ‘events’ related to the pod. These are state changes
+through the pods lifetime:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-without-nodename | grep -A5 ^Events
+Events:
+  FirstSeen     LastSeen        Count   From            SubobjectPath                           Reason                  Message
+  ─────────     ────────        ─────   ────            ─────────────                           ──────                  ───────
+  25m           25m             1       {scheduler }                                            Scheduled               Successfully assigned nginx-without-nodename to node1
+  23m           23m             1       {kubelet node1} implicitly required container POD       Pulling                 Pulling image &quot;gcr.io/google_containers/pause:0.8.0&quot;
+  23m           23m             1       {kubelet node1} implicitly required container POD       Pulled                  Successfully pulled image &quot;gcr.io/google_containers/pause:0.8.0&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The first one shows it getting scheduled, then others are related to the pod
+starting up on the node.&lt;/p&gt;
+
+&lt;p&gt;At this point, if you create another pod without specifying a node for it to
+run on, the scheduler will place it right away. Try it out!&lt;/p&gt;
+
+&lt;h1 id=&quot;wrapping-up&quot;&gt;Wrapping up&lt;/h1&gt;
+
+&lt;p&gt;So now we are able to declaratively specify workloads, and get them scheduled
+across our cluster, which is great! But if we actually try connecting to the
+nginx servers we have running, we’ll see we have a little problem:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-with-nodename | grep ^IP
+IP:                             172.17.0.2
+master$ curl http://172.17.0.2
+curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This pod is running on &lt;code&gt;node2&lt;/code&gt;. If we go over to that machine,
+we get through:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;node2$ curl --stderr /dev/null http://172.17.0.2 | head -4
+&amp;lt;!DOCTYPE html&amp;gt;
+&amp;lt;html&amp;gt;
+&amp;lt;head&amp;gt;
+&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;But our other node can’t reach it:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;node1$ curl http://172.17.0.2
+curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In the next post, we’ll take a little detour into Kubernetes networking, and
+make it possible for containers to talk to each other over the network.&lt;/p&gt;
+</description>
+        <pubDate>Tue, 17 Nov 2015 17:41:57 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/11/17/kubernetes-from-the-ground-up-the-scheduler/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/17/kubernetes-from-the-ground-up-the-scheduler/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Eliminating branches in Rust for fun... but not much profit</title>
@@ -203,7 +451,7 @@ This let me put the whole thing together:
 [stackoverflow]: http://stackoverflow.com/questions/3912112/check-if-a-number-is-non-zero-using-bitwise-operators-in-c
 --&gt;
 </description>
-        <pubDate>Tue, 15 Sep 2015 00:00:00 +0200</pubDate>
+        <pubDate>Tue, 15 Sep 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</guid>
         
@@ -536,7 +784,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 &lt;p&gt;&lt;em&gt;Thanks to Johannes Alkjær, Julia Evans, Ray Bejjani, and Tavish Armstrong for
 reviewing drafts of this post.&lt;/em&gt;&lt;/p&gt;
 </description>
-        <pubDate>Sun, 06 Sep 2015 18:02:47 +0200</pubDate>
+        <pubDate>Sun, 06 Sep 2015 12:02:47 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</guid>
         
@@ -570,17 +818,20 @@ logging or metrics infrastructure.&lt;/p&gt;
 &lt;p&gt;Pods are defined by a JSON or YAML file called a pod manifest. A simple one
 with one container looks like this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 80
-&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;highlighter-coderay&quot;&gt;&lt;div class=&quot;CodeRay&quot;&gt;
+  &lt;div class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n1&quot; name=&quot;n1&quot;&gt;1&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;apiVersion&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;v1&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n2&quot; name=&quot;n2&quot;&gt;2&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;kind&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;Pod&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n3&quot; name=&quot;n3&quot;&gt;3&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;metadata&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n4&quot; name=&quot;n4&quot;&gt;4&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n5&quot; name=&quot;n5&quot;&gt;5&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;spec&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n6&quot; name=&quot;n6&quot;&gt;6&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;containers&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n7&quot; name=&quot;n7&quot;&gt;7&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: nginx&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n8&quot; name=&quot;n8&quot;&gt;8&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;image&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n9&quot; name=&quot;n9&quot;&gt;9&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;ports&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;strong&gt;&lt;a href=&quot;#n10&quot; name=&quot;n10&quot;&gt;10&lt;/a&gt;&lt;/strong&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;containerPort: 80&lt;/span&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
 
 &lt;p&gt;The container’s &lt;code&gt;image&lt;/code&gt; is a Docker image name. The &lt;code&gt;containerPort&lt;/code&gt; exposes
 that port from the nginx container so we can connect to the nginx server at the
@@ -596,31 +847,34 @@ exits, but will persist across restarts of the component containers.&lt;/p&gt;
 
 &lt;p&gt;Here’s the updated pod manifest:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 80
-    volumeMounts:
-    - mountPath: /var/log/nginx
-      name: nginx-logs
-  - name: log-truncator
-    image: busybox
-    command:
-    - /bin/sh
-    args: [-c, &#39;while true; do cat /dev/null &amp;gt; /logdir/access.log; sleep 10; done&#39;]
-    volumeMounts:
-    - mountPath: /logdir
-      name: nginx-logs
-  volumes:
-  - name: nginx-logs
-    emptyDir: {}
-&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;highlighter-coderay&quot;&gt;&lt;div class=&quot;CodeRay&quot;&gt;
+  &lt;div class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n1&quot; name=&quot;n1&quot;&gt;1&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;apiVersion&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;v1&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n2&quot; name=&quot;n2&quot;&gt;2&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;kind&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;Pod&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n3&quot; name=&quot;n3&quot;&gt;3&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;metadata&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n4&quot; name=&quot;n4&quot;&gt;4&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n5&quot; name=&quot;n5&quot;&gt;5&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;spec&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n6&quot; name=&quot;n6&quot;&gt;6&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;containers&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n7&quot; name=&quot;n7&quot;&gt;7&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: nginx&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n8&quot; name=&quot;n8&quot;&gt;8&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;image&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n9&quot; name=&quot;n9&quot;&gt;9&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;ports&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;strong&gt;&lt;a href=&quot;#n10&quot; name=&quot;n10&quot;&gt;10&lt;/a&gt;&lt;/strong&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;containerPort: 80&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n11&quot; name=&quot;n11&quot;&gt;11&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;volumeMounts&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n12&quot; name=&quot;n12&quot;&gt;12&lt;/a&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;mountPath: /var/log/nginx&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n13&quot; name=&quot;n13&quot;&gt;13&lt;/a&gt;&lt;/span&gt;      &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx-logs&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n14&quot; name=&quot;n14&quot;&gt;14&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: log-truncator&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n15&quot; name=&quot;n15&quot;&gt;15&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;image&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;busybox&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n16&quot; name=&quot;n16&quot;&gt;16&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;command&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n17&quot; name=&quot;n17&quot;&gt;17&lt;/a&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;/bin/sh&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n18&quot; name=&quot;n18&quot;&gt;18&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;args&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;[-c, &#39;while true; do cat /dev/null &amp;gt; /logdir/access.log; sleep 10; done&#39;]&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n19&quot; name=&quot;n19&quot;&gt;19&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;volumeMounts&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;strong&gt;&lt;a href=&quot;#n20&quot; name=&quot;n20&quot;&gt;20&lt;/a&gt;&lt;/strong&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;mountPath: /logdir&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n21&quot; name=&quot;n21&quot;&gt;21&lt;/a&gt;&lt;/span&gt;      &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx-logs&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n22&quot; name=&quot;n22&quot;&gt;22&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;volumes&lt;/span&gt;:
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n23&quot; name=&quot;n23&quot;&gt;23&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: nginx-logs&lt;/span&gt;&lt;/span&gt;
+&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n24&quot; name=&quot;n24&quot;&gt;24&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;emptyDir&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;{}&lt;/span&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
 
 &lt;p&gt;We’ve added an &lt;code&gt;emptyDir&lt;/code&gt; volume named &lt;code&gt;nginx-logs&lt;/code&gt;. nginx writes its logs at
 /var/log/nginx, so we mount that volume at that location in the &lt;code&gt;nginx&lt;/code&gt;
@@ -810,7 +1064,7 @@ around until the kubelet brings it down. It’s pretty cool, check the
   &lt;/ol&gt;
 &lt;/div&gt;
 </description>
-        <pubDate>Thu, 27 Aug 2015 00:00:00 +0200</pubDate>
+        <pubDate>Thu, 27 Aug 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</guid>
         
@@ -874,7 +1128,7 @@ tools. This should be done fairly soon, then I’ll go back to the Kythe code
 browser.&lt;/p&gt;
 
 </description>
-        <pubDate>Wed, 29 Jul 2015 06:01:49 +0200</pubDate>
+        <pubDate>Wed, 29 Jul 2015 00:01:49 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</guid>
         
@@ -922,7 +1176,7 @@ out of that. Let’s see!&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;Thanks to David Albert for telling me about the play, and to the fellow
 recursers who joined me at the play.&lt;/em&gt;&lt;/p&gt;
 </description>
-        <pubDate>Sun, 26 Jul 2015 00:00:00 +0200</pubDate>
+        <pubDate>Sun, 26 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/26/preludes/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/26/preludes/</guid>
         
@@ -989,7 +1243,7 @@ ran a command called &lt;code&gt;tpm_takeownership&lt;/code&gt;. I’m going to 
 added as a security device in Firefox. That way, when the time comes, I’ll be
 able to store my client certificates in there. Or something!&lt;/p&gt;
 </description>
-        <pubDate>Wed, 15 Jul 2015 00:00:00 +0200</pubDate>
+        <pubDate>Wed, 15 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</guid>
         
@@ -1060,7 +1314,7 @@ then figure out a way to interleave the different kinds of work.&lt;/p&gt;
   &lt;/ol&gt;
 &lt;/div&gt;
 </description>
-        <pubDate>Tue, 14 Jul 2015 00:00:00 +0200</pubDate>
+        <pubDate>Tue, 14 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</guid>
         
@@ -1084,7 +1338,7 @@ build rules for Rust…&lt;/p&gt;
 &lt;p&gt;The rest of the day was taken up by being non-productive, followed by doing
 some more ES6, followed by napping for too long. We’ll try again tomorrow!&lt;/p&gt;
 </description>
-        <pubDate>Wed, 08 Jul 2015 00:00:00 +0200</pubDate>
+        <pubDate>Wed, 08 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</guid>
         
@@ -1168,119 +1422,9 @@ port the build over.  Building these tools is pretty slow going…&lt;/p&gt;
 &lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
 </description>
-        <pubDate>Tue, 07 Jul 2015 00:00:00 +0200</pubDate>
+        <pubDate>Tue, 07 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/07/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/07/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-07-06: new Recursers, ES15, planning</title>
-        <description>&lt;p&gt;Today was day one of the Summer 2 batch, meaning we got thirty new people! This
-also means we had our first day without the Spring 2 batch, who I’ll definitely
-miss. But several of them showed up for a games night so it’s almost like
-they’re still here.&lt;/p&gt;
-
-&lt;p&gt;It was interesting to see the intro talks again from six weeks in. A bit of
-deja vu, and a good point to really stop and reflect. The advice from
-the faculty was different the second time, even though the words were the same.
-Our batch also gave advice or other thoughts to the new Recursers—Sophie
-&lt;a href=&quot;https://sfrapoport.github.io/2015/07/06/Advice-for-Summer-2s.html&quot;&gt;jotted it all down&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;ecmascript-15&quot;&gt;EcmaScript 15&lt;/h2&gt;
-
-&lt;p&gt;The morning was taken up with welcoming the new batch, so it was a while until
-I got back to programming. I decided to start learning JavaScript / ES15 with
-[es6katas][]. There’s a lot of interdependence between the exercises! I started
-off with the Arrays collection, but had to take a detour into destructuring. I
-should have also taken a detour into iterables, as I wasn’t clear on what an
-ES15 iterator was, and it was needed.&lt;/p&gt;
-
-&lt;p&gt;So far ES15 looks pretty nice! I’m almost glad I put off learning JS for so
-long. Destructuring is especially good. It’s similar to Python, but a bit more
-versatile. The big features I noticed:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;
-    &lt;p&gt;fields of objects can be destructured like so:&lt;/p&gt;
-
-    &lt;pre&gt;&lt;code&gt;let dessert = { name: &quot;eton mess&quot;, tasty: true };
-let {name} = dessert;
-console.log(name);  // =&amp;gt; &quot;eton mess&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-    &lt;p&gt;It was a bit mysterious to me at first, but this also applies to fields on
-builtin types, eg, &lt;code&gt;length&lt;/code&gt; on &lt;code&gt;String&lt;/code&gt;:&lt;/p&gt;
-
-    &lt;pre&gt;&lt;code&gt;let a = &quot;hi&quot;;
-let {length} = a;
-console.log(length);  // =&amp;gt; 2
-&lt;/code&gt;&lt;/pre&gt;
-
-    &lt;p&gt;(I just realised I should check if this works for properties with getters or
- not.)&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;you can choose a name to bind to different from the attribute name with a
-colon, eg,&lt;/p&gt;
-
-    &lt;pre&gt;&lt;code&gt;let a = &quot;hi&quot;;
-let {length:l} = a;
-console.log(l);  // =&amp;gt; 2
-&lt;/code&gt;&lt;/pre&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;you can supply defaults when destructuring which is cool! It works when you
-use the default name for a binding, as well as when you change it, eg,&lt;/p&gt;
-
-    &lt;pre&gt;&lt;code&gt;let dessert = { name: &quot;eton mess&quot;, tasty: true };
-let {dairyFree=false} = dessert;  // be safe and assume desserts contain dairy
-console.log(dairyFree);  // =&amp;gt; false
-&lt;/code&gt;&lt;/pre&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;all of this comes together most excellently in using destructuring on a
-function argument, eg,&lt;/p&gt;
-
-    &lt;pre&gt;&lt;code&gt;let dessert = { name: &quot;eton mess&quot;, tasty: true };
-let eat = {name:n, tasty, dairyFree:df=false} =&amp;gt; {
-    if (!df || !tasty) { console.log(&quot;no thanks!&quot;); return; }
-
-    console.log(`mmm yes, I&#39;ll eat some ${n}!`);
-}
-
-eat(dessert);  // =&amp;gt; &quot;no thanks!&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-    &lt;p&gt;The default arguments let you have default values in a nice succinct way, and
-the binding renaming lets you have nice descriptive names in the interface but
-abbreviate in the implementation.&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;planning-the-second-half-of-rc&quot;&gt;Planning the second half of RC&lt;/h2&gt;
-
-&lt;p&gt;Towards the end of the day, I had a worry session with Tom, one of the
-facilitators. The short of it is I’m worried I’m not going to complete as many
-things as I want to. I’ve been getting a fair amount of stuff done, but aside
-from &lt;a href=&quot;https://github.com/kamalmarhubi/lsaddr/&quot;&gt;&lt;code&gt;lsaddr&lt;/code&gt;&lt;/a&gt; I haven’t got much to show for it. While at RC I want
-to get more comfortable completing things.&lt;/p&gt;
-
-&lt;p&gt;Part of this is being afraid of spending too much time on a project that ends
-up being too big for RC. Of course, at the other end of this, I’m also afraid
-of spending too much of my time flitting between things. We ended up at the
-idea of spending a solid day on each of 2-3 projects I have in mind to see
-where I can get them.&lt;/p&gt;
-
-&lt;p&gt;So, my plan for tomorrow is to take &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/06/24/recurse-center-lab-notes/&quot;&gt;what I’ve learned about &lt;code&gt;mmap&lt;/code&gt;&lt;/a&gt; and start
-putting it into a Cap’n Proto message builder that writes directly to a memory
-mapped file. Wish me luck!&lt;/p&gt;
-
-</description>
-        <pubDate>Mon, 06 Jul 2015 00:00:00 +0200</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/07/06/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/06/recurse-center-lab-notes</guid>
         
         
       </item>

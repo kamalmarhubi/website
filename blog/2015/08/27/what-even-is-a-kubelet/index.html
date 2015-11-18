@@ -84,17 +84,20 @@ logging or metrics infrastructure.</p>
 <p>Pods are defined by a JSON or YAML file called a pod manifest. A simple one
 with one container looks like this:</p>
 
-<pre><code class="language-yaml">apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 80
-</code></pre>
+<div class="highlighter-coderay"><div class="CodeRay">
+  <div class="code"><pre><span class="line-numbers"> <a href="#n1" name="n1">1</a></span><span style="color:#606">apiVersion</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">v1</span></span>
+<span class="line-numbers"> <a href="#n2" name="n2">2</a></span><span style="color:#606">kind</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">Pod</span></span>
+<span class="line-numbers"> <a href="#n3" name="n3">3</a></span><span style="color:#606">metadata</span>:
+<span class="line-numbers"> <a href="#n4" name="n4">4</a></span>  <span style="color:#606">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">nginx</span></span>
+<span class="line-numbers"> <a href="#n5" name="n5">5</a></span><span style="color:#606">spec</span>:
+<span class="line-numbers"> <a href="#n6" name="n6">6</a></span>  <span style="color:#606">containers</span>:
+<span class="line-numbers"> <a href="#n7" name="n7">7</a></span>  - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">name: nginx</span></span>
+<span class="line-numbers"> <a href="#n8" name="n8">8</a></span>    <span style="color:#606">image</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">nginx</span></span>
+<span class="line-numbers"> <a href="#n9" name="n9">9</a></span>    <span style="color:#606">ports</span>:
+<span class="line-numbers"><strong><a href="#n10" name="n10">10</a></strong></span>    - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">containerPort: 80</span></span>
+</pre></div>
+</div>
+</div>
 
 <p>The container’s <code>image</code> is a Docker image name. The <code>containerPort</code> exposes
 that port from the nginx container so we can connect to the nginx server at the
@@ -110,31 +113,34 @@ exits, but will persist across restarts of the component containers.</p>
 
 <p>Here’s the updated pod manifest:</p>
 
-<pre><code class="language-yaml">apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 80
-    volumeMounts:
-    - mountPath: /var/log/nginx
-      name: nginx-logs
-  - name: log-truncator
-    image: busybox
-    command:
-    - /bin/sh
-    args: [-c, 'while true; do cat /dev/null &gt; /logdir/access.log; sleep 10; done']
-    volumeMounts:
-    - mountPath: /logdir
-      name: nginx-logs
-  volumes:
-  - name: nginx-logs
-    emptyDir: {}
-</code></pre>
+<div class="highlighter-coderay"><div class="CodeRay">
+  <div class="code"><pre><span class="line-numbers"> <a href="#n1" name="n1">1</a></span><span style="color:#606">apiVersion</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">v1</span></span>
+<span class="line-numbers"> <a href="#n2" name="n2">2</a></span><span style="color:#606">kind</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">Pod</span></span>
+<span class="line-numbers"> <a href="#n3" name="n3">3</a></span><span style="color:#606">metadata</span>:
+<span class="line-numbers"> <a href="#n4" name="n4">4</a></span>  <span style="color:#606">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">nginx</span></span>
+<span class="line-numbers"> <a href="#n5" name="n5">5</a></span><span style="color:#606">spec</span>:
+<span class="line-numbers"> <a href="#n6" name="n6">6</a></span>  <span style="color:#606">containers</span>:
+<span class="line-numbers"> <a href="#n7" name="n7">7</a></span>  - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">name: nginx</span></span>
+<span class="line-numbers"> <a href="#n8" name="n8">8</a></span>    <span style="color:#606">image</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">nginx</span></span>
+<span class="line-numbers"> <a href="#n9" name="n9">9</a></span>    <span style="color:#606">ports</span>:
+<span class="line-numbers"><strong><a href="#n10" name="n10">10</a></strong></span>    - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">containerPort: 80</span></span>
+<span class="line-numbers"><a href="#n11" name="n11">11</a></span>    <span style="color:#606">volumeMounts</span>:
+<span class="line-numbers"><a href="#n12" name="n12">12</a></span>    - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">mountPath: /var/log/nginx</span></span>
+<span class="line-numbers"><a href="#n13" name="n13">13</a></span>      <span style="color:#606">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">nginx-logs</span></span>
+<span class="line-numbers"><a href="#n14" name="n14">14</a></span>  - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">name: log-truncator</span></span>
+<span class="line-numbers"><a href="#n15" name="n15">15</a></span>    <span style="color:#606">image</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">busybox</span></span>
+<span class="line-numbers"><a href="#n16" name="n16">16</a></span>    <span style="color:#606">command</span>:
+<span class="line-numbers"><a href="#n17" name="n17">17</a></span>    - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">/bin/sh</span></span>
+<span class="line-numbers"><a href="#n18" name="n18">18</a></span>    <span style="color:#606">args</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">[-c, 'while true; do cat /dev/null &gt; /logdir/access.log; sleep 10; done']</span></span>
+<span class="line-numbers"><a href="#n19" name="n19">19</a></span>    <span style="color:#606">volumeMounts</span>:
+<span class="line-numbers"><strong><a href="#n20" name="n20">20</a></strong></span>    - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">mountPath: /logdir</span></span>
+<span class="line-numbers"><a href="#n21" name="n21">21</a></span>      <span style="color:#606">name</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">nginx-logs</span></span>
+<span class="line-numbers"><a href="#n22" name="n22">22</a></span>  <span style="color:#606">volumes</span>:
+<span class="line-numbers"><a href="#n23" name="n23">23</a></span>  - <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">name: nginx-logs</span></span>
+<span class="line-numbers"><a href="#n24" name="n24">24</a></span>    <span style="color:#606">emptyDir</span>: <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#D20">{}</span></span>
+</pre></div>
+</div>
+</div>
 
 <p>We’ve added an <code>emptyDir</code> volume named <code>nginx-logs</code>. nginx writes its logs at
 /var/log/nginx, so we mount that volume at that location in the <code>nginx</code>

@@ -70,12 +70,15 @@ the pipes and eventfd programs I wrote have the same structure. They start a
 child process that acts as a server that responds as soon as it receives a
 message. The child just runs a loop like this:</p>
 
-<pre><code class="language-C">for (;;) {
-  char msg;
-  read(rx_fd, &amp;msg, 1);
-  write(tx_fd, "1", 1);
-}
-</code></pre>
+<div class="highlighter-coderay"><div class="CodeRay">
+  <div class="code"><pre><span class="line-numbers"><a href="#n1" name="n1">1</a></span><span style="color:#080;font-weight:bold">for</span> (;;) {
+<span class="line-numbers"><a href="#n2" name="n2">2</a></span>  <span style="color:#0a8;font-weight:bold">char</span> msg;
+<span class="line-numbers"><a href="#n3" name="n3">3</a></span>  read(rx_fd, &amp;msg, <span style="color:#00D">1</span>);
+<span class="line-numbers"><a href="#n4" name="n4">4</a></span>  write(tx_fd, <span style="background-color:hsla(0,100%,50%,0.05)"><span style="color:#710">&quot;</span><span style="color:#D20">1</span><span style="color:#710">&quot;</span></span>, <span style="color:#00D">1</span>);
+<span class="line-numbers"><a href="#n5" name="n5">5</a></span>}
+</pre></div>
+</div>
+</div>
 
 <p>I implemented this for pipes first, and this works great. A <code>read</code> on a pipe
 whose write end is closed will return 0 to signal end of file. A <code>write</code> on a
