@@ -78,8 +78,8 @@ master$ chmod +x kubectl
 
 This will be quick too, as we've done this a couple of times before. The only
 difference here is that the API server isn't running on localhost, so we need
-to include its address. I'll just show this once below, but do this on as many
-nodes as you want!
+to include its address. I've got two nodes, but I'll just show this once below.
+If you're following along, do this on as many nodes as you want!
 
 ~~~
 node1$ ./kubelet --api-servers=http://master:8080
@@ -223,7 +223,7 @@ We can also get a list of ‘events’ related to the pod. These are state chang
 through the pods lifetime:
 
 ~~~
-master$ ./kubectl describe pods/nginx-without-nodename | grep --after-context=5 ^Events
+master$ ./kubectl describe pods/nginx-without-nodename | grep -A5 ^Events
 Events:
   FirstSeen     LastSeen        Count   From            SubobjectPath                           Reason                  Message
   ─────────     ────────        ─────   ────            ─────────────                           ──────                  ───────
@@ -239,26 +239,42 @@ At this point, if you create another pod without specifying a node for it to
 run on, the scheduler will place it right away. Try it out!
 
 
-# Sneak peak: Kubernetes' networking model
-TODO: bad title
+# Wrapping up
 
-This is all seeming pretty great. We've got our little cluster running, and we
-can declaratively say what pods we want running, and they run.
+So now we are able to declaratively specify workloads, and get them scheduled
+across our cluster, which is great! But if we actually try connecting to the
+nginx servers we have running, we'll see we have a little problem:
 
-There's just one little issue we can't actually connect to any of these nginx servers we have running. Let's get the IP of one of nginx pods we have
+~~~
+master$ ./kubectl describe pods/nginx-with-nodename | grep ^IP
+IP:                             172.17.0.2
+master$ curl http://172.17.0.2
+curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
+~~~
 
-Let's t
+This pod is running on `node2`. If we go over to that machine,
+we get through:
 
-describe a pod, try to connect to the pod IP
+~~~
+node2$ curl --stderr /dev/null http://172.17.0.2 | head -4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+~~~
 
-uh... hrm
+But our other node can't reach it:
 
-do the same over on the node it's running on
+~~~
+node1$ curl http://172.17.0.2
+curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
+~~~
 
-do the same from another node
+In our current setup, pods are only reachable from the node they are running
+on! Kubernetes has a networking model  where each pod gets its own IP, and
+these IPs must be routable across the cluster.
 
-ruh-roh!
+In the next post, we'll take a little detour into Kubernetes networking, and
+set up our cluster's network using CoreOS' [flannel][] project.
 
-kubernetes assumes that the IPs that the pods get from docker are routable across the cluster
-the next post will be a little detour into getting that working
-next time 
+[flannel]: https://github.com/coreos/flannel
