@@ -103,8 +103,8 @@ Kubernetes runs *pods*, which are collections of containers that execute
 together.  To start, we'll create a pod and specify which node it should run
 on.
 
-We'll continue running our nginx example pod. Get [the pod
-manifest][nginx-with-nodename], which specifies which containers to run. We
+We'll continue running our nginx example pod from the earlier posts. Get [the
+pod manifest][nginx-with-nodename], which specifies which containers to run. We
 specify the node to run on by setting the `nodeName` field. Edit the file and
 set it to run on one of your nodes.  I picked `node2`.
 
@@ -143,13 +143,12 @@ We can break down what happened here:
 
 - initially, the kubelets on each node are watching the API server for pods
   they are meant to be running
-- `kubectl` created a a pod on the API server that's meant to run on `node2`
+- `kubectl` created a pod on the API server that's meant to run on `node2`
 - the kubelet on `node2` noticed the new pod, and so started running it.
 
 We can also try [a pod manifest][nginx-without-nodename] that doesn't specify a
-node to run on. In our current setup, this pod will forever sit in the `Pending`
-state. Let's try anyway:
-
+node to run on. In our current setup, this pod will forever sit in the
+`Pending` state. Let's try anyway:
 
 ~~~
 master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-without-nodename.yaml
@@ -176,7 +175,7 @@ Breaking it down in the same way:
 
 - initially, the kubelets on each node are watching the API server for pods
   they are meant to be running
-- `kubectl` created a a pod on the API server without specifying which node to
+- `kubectl` created a pod on the API server without specifying which node to
   run on
 - ...
 - ...
@@ -270,11 +269,5 @@ node1$ curl http://172.17.0.2
 curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
 ~~~
 
-In our current setup, pods are only reachable from the node they are running
-on! Kubernetes has a networking model  where each pod gets its own IP, and
-these IPs must be routable across the cluster.
-
 In the next post, we'll take a little detour into Kubernetes networking, and
-set up our cluster's network using CoreOS' [flannel][] project.
-
-[flannel]: https://github.com/coreos/flannel
+make it possible for containers to talk to each other over the network.
