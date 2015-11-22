@@ -76,4 +76,5 @@ the existing protocol code would see only the part up before it, presumably
 letting it worked unchanged!
 
 And when I copied it using `xsel`, the stuff past the null byte got skipped.
+
 Cute hack, and mystery solved!
