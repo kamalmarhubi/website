@@ -1,6 +1,7 @@
 ---
 layout: post
-title: How git pull over SSH works
+title: Using strace to figure out how git push over SSH works
+date: 2015-11-21T23:48:22-05:00
 ---
 
 Yesterday I was curious about how `git push` works over SSH. I'm getting more
@@ -11,8 +12,8 @@ If I `strace` pushing to this site's repository, this shows up:
 [pid 15943] execve("/usr/bin/ssh", ["ssh", "git@github.com", "git-receive-pack 'kamalmarhubi/w"...], [/* 51 vars */]) = 0
 ~~~
 
-So `git push` eventually calls `ssh git@github.com git-receive-pack
-<repo-path>`. Trying this out at my terminal gives me this:
+So `git push` eventually calls `ssh git@github.com git-receive-pack <repo-path>`.
+Trying this out at my terminal gives me this:
 
 ~~~
 $ ssh git@github.com git-receive-pack kamalmarhubi/website
@@ -42,7 +43,7 @@ line without all the metadata!
 ~~~
 
 Looking at the entire output through `hexdump -C`, it turns out that there's a
-null byte after `refs/heads/gh-pages`, and then a newline at the end:
+null byte after `refs/heads/gh-pages`, and then a newline at the end (marked with `*` below):
 
 ~~~
 00000000  30 30 62 62 32 39 37 39  33 63 33 39 63 38 65 34  |00bb29793c39c8e4|
