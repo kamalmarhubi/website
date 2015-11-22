@@ -5,9 +5,89 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 18 Nov 2015 16:41:07 -0500</pubDate>
-    <lastBuildDate>Wed, 18 Nov 2015 16:41:07 -0500</lastBuildDate>
+    <pubDate>Sat, 21 Nov 2015 23:52:21 -0500</pubDate>
+    <lastBuildDate>Sat, 21 Nov 2015 23:52:21 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Using strace to figure out how git push over SSH works</title>
+        <description>&lt;p&gt;Yesterday I was curious about how &lt;code&gt;git push&lt;/code&gt; works over SSH. I’m getting more
+used to using &lt;code&gt;strace&lt;/code&gt; to figure this kind of thing out, so I gave it a shot.
+If I &lt;code&gt;strace&lt;/code&gt; pushing to this site’s repository, this shows up:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[pid 15943] execve(&quot;/usr/bin/ssh&quot;, [&quot;ssh&quot;, &quot;git@github.com&quot;, &quot;git-receive-pack &#39;kamalmarhubi/w&quot;...], [/* 51 vars */]) = 0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;So &lt;code&gt;git push&lt;/code&gt; eventually calls &lt;code&gt;ssh git@github.com git-receive-pack &amp;lt;repo-path&amp;gt;&lt;/code&gt;.
+Trying this out at my terminal gives me this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ssh git@github.com git-receive-pack kamalmarhubi/website
+00bb29793c39c8e4bfec627d60938c4ed2086cc60bb1 refs/heads/gh-pagesreport-status delete-refs side-band-64k quiet atomic ofs-delta agent=git/2:2.4.8~upload-pack-wrapper-script-1211-gc27b061
+003f04bfcb3e238e5660ae9e71a6ce99f472211fe85f refs/heads/master
+0000
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;with the terminal waiting for my input. SSH is used to handle authentication
+and remote connection, and then it runs a command at the other end to handle
+the data exchange. These lines are the start of that exchange.&lt;/p&gt;
+
+&lt;p&gt;A tiny bit of looking around the internet told me that the protocol is made up
+of lines prefixed by their length as 4 hex digits. Then it looks like a commit
+SHA-1 and a ref. The sender terminates with &lt;code&gt;0000&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;There are a couple of lines here, one for each branch in the repository. The
+first line additionally has a bunch of stuff at the end that looks like a
+description of what the sending program is and some features it supports.&lt;/p&gt;
+
+&lt;p&gt;While I was looking into this, I used &lt;code&gt;xsel&lt;/code&gt; to copy the output to paste into
+an editor. This was really confusing, because all that got pasted was the first
+line without all the metadata!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;00bb29793c39c8e4bfec627d60938c4ed2086cc60bb1 refs/heads/gh-pages
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Looking at the entire output through &lt;code&gt;hexdump -C&lt;/code&gt;, it turns out that there’s a
+null byte after &lt;code&gt;refs/heads/gh-pages&lt;/code&gt;, and then a newline at the end (marked with &lt;code&gt;*&lt;/code&gt; below):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;00000000  30 30 62 62 32 39 37 39  33 63 33 39 63 38 65 34  |00bb29793c39c8e4|
+00000010  62 66 65 63 36 32 37 64  36 30 39 33 38 63 34 65  |bfec627d60938c4e|
+00000020  64 32 30 38 36 63 63 36  30 62 62 31 20 72 65 66  |d2086cc60bb1 ref|
+00000030  73 2f 68 65 61 64 73 2f  67 68 2d 70 61 67 65 73  |s/heads/gh-pages|
+00000040 *00*72 65 70 6f 72 74 2d  73 74 61 74 75 73 20 64  |.report-status d|
+00000050  65 6c 65 74 65 2d 72 65  66 73 20 73 69 64 65 2d  |elete-refs side-|
+00000060  62 61 6e 64 2d 36 34 6b  20 71 75 69 65 74 20 61  |band-64k quiet a|
+00000070  74 6f 6d 69 63 20 6f 66  73 2d 64 65 6c 74 61 20  |tomic ofs-delta |
+00000080  61 67 65 6e 74 3d 67 69  74 2f 32 3a 32 2e 34 2e  |agent=git/2:2.4.|
+00000090  38 7e 75 70 6c 6f 61 64  2d 70 61 63 6b 2d 77 72  |8~upload-pack-wr|
+000000a0  61 70 70 65 72 2d 73 63  72 69 70 74 2d 31 32 31  |apper-script-121|
+000000b0  31 2d 67 63 32 37 62 30  36 31*0a*30 30 33 66 37  |1-gc27b061.003f7|
+000000c0  39 32 66 34 39 36 65 37  35 33 64 62 39 33 33 30  |92f496e753db9330|
+000000d0  66 30 61 34 65 38 32 39  30 62 38 61 36 63 62 61  |f0a4e8290b8a6cba|
+000000e0  38 61 62 36 64 61 62 20  72 65 66 73 2f 68 65 61  |8ab6dab refs/hea|
+000000f0  64 73 2f 6d 61 73 74 65  72 0a 30 30 30 30        |ds/master.0000|
+000000fe
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Without doing any research, here’s what I think happened. The git folks defined
+the fairly simple length-prefixed, newline-separated protocol. Then at some
+point they wanted to add some metadata to the protocol without breaking
+compatibility with older versions of git. They came up with a nifty hack that
+exploits C’s null-terminated strings: add the metadata after a null byte but
+before the newline. This way, reading up to a newline will get all the
+metadata. The metadata-processing code knows to look past the null byte, but
+the existing protocol code would see only the part up before it, presumably
+letting it worked unchanged!&lt;/p&gt;
+
+&lt;p&gt;And when I copied it using &lt;code&gt;xsel&lt;/code&gt;, the stuff past the null byte got skipped.&lt;/p&gt;
+
+&lt;p&gt;Cute hack, and mystery solved!&lt;/p&gt;
+</description>
+        <pubDate>Sat, 21 Nov 2015 23:48:22 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2015/11/21/using-strace-to-figure-out-how-git-push-over-ssh-works/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/21/using-strace-to-figure-out-how-git-push-over-ssh-works/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Kubernetes from the ground up: the scheduler</title>
@@ -1341,90 +1421,6 @@ some more ES6, followed by napping for too long. We’ll try again tomorrow!&lt;
         <pubDate>Wed, 08 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/08/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-07-07: back to mmap; other people&#39;s code; things I&#39;m not meant to do while at RC</title>
-        <description>&lt;p&gt;I went back to &lt;code&gt;mmap&lt;/code&gt; today. I am finally attempting to put together what I
-picked up from experimenting in the last while towards writing a memory mapped
-file message builder for Cap’n Proto. Current status:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;I’ve created a new class with a constructor &lt;code&gt;MmapMessageBuilder(int
-fd)&lt;/code&gt; that maps the file descriptor&lt;/li&gt;
-  &lt;li&gt;Things mostly magically work because I’m supplying an alternate
-implementation of an interface&lt;/li&gt;
-  &lt;li&gt;I am not yet handling the resizing of the backing file in any way&lt;/li&gt;
-  &lt;li&gt;I am not yet including a segment table at the front of the file&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;The last one means I can’t get the files read back in with the existing
-deserializers. I was totally able to see it in the bytes though!&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;00000000  00 00 00 00 00 00 01 00  01 00 00 00 57 00 00 00  |............W...|
-00000010  08 00 00 00 01 00 04 00  7b 00 00 00 02 00 00 00  |........{.......|
-00000020  21 00 00 00 32 00 00 00  21 00 00 00 92 00 00 00  |!...2...!.......|
-00000030  29 00 00 00 17 00 00 00  39 00 00 00 22 00 00 00  |).......9...&quot;...|
-00000040  c8 01 00 00 00 00 00 00  35 00 00 00 22 00 00 00  |........5...&quot;...|
-00000050  35 00 00 00 82 00 00 00  39 00 00 00 27 00 00 00  |5.......9...&#39;...|
-00000060  00 00 00 00 00 00 00 00  41 6c 69 63 65 00 00 00  |........Alice...|
-00000070  61 6c 69 63 65 40 65 78  61 6d 70 6c 65 2e 63 6f  |alice@example.co|
-00000080  6d 00 00 00 00 00 00 00  04 00 00 00 01 00 01 00  |m...............|
-00000090  00 00 00 00 00 00 00 00  01 00 00 00 4a 00 00 00  |............J...|
-000000a0  35 35 35 2d 31 32 31 32  00 00 00 00 00 00 00 00  |555-1212........|
-000000b0  4d 49 54 00 00 00 00 00  42 6f 62 00 00 00 00 00  |MIT.....Bob.....|
-000000c0  62 6f 62 40 65 78 61 6d  70 6c 65 2e 63 6f 6d 00  |bob@example.com.|
-000000d0  08 00 00 00 01 00 01 00  01 00 00 00 00 00 00 00  |................|
-000000e0  09 00 00 00 4a 00 00 00  02 00 00 00 00 00 00 00  |....J...........|
-000000f0  09 00 00 00 4a 00 00 00  35 35 35 2d 34 35 36 37  |....J...555-4567|
-00000100  00 00 00 00 00 00 00 00  35 35 35 2d 37 36 35 34  |........555-7654|
-00000110  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
-*
-00001000
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Writing out the segment table mostly requires trawling through someone else’s
-code base. The Cap’n Proto code is fairly clear and well documented, especially
-the user interfaces. Some key innards are not as well documented, however. In
-particular, the &lt;a href=&quot;https://github.com/sandstorm-io/capnproto/blob/1702050903e1038acf0556c6eabcf8f99702690d/c%2B%2B/src/capnp/arena.h#L197&quot;&gt;arena abstraction&lt;/a&gt; used to look after the
-allocated segments could do with a short overview. I’m most of the way to
-understanding how it fits together, but it’s been slower than I would have
-liked.&lt;/p&gt;
-
-&lt;p&gt;The process of understanding the code has been slowed by needing to learn the
-&lt;a href=&quot;https://github.com/sandstorm-io/capnproto/tree/master/c%2B%2B/src/kj&quot;&gt;&lt;code&gt;kj&lt;/code&gt;&lt;/a&gt; library that Cap’n Proto makes heavy use of. I’m trying to find out
-the boundaries of what &lt;code&gt;kj&lt;/code&gt; aims to be, but so far it looks to include:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;replacements for some standard library classes, eg, &lt;a href=&quot;https://github.com/sandstorm-io/capnproto/blob/1702050903e1038acf0556c6eabcf8f99702690d/c%2B%2B/src/kj/memory.h#L99&quot;&gt;&lt;code&gt;kj::Own&lt;/code&gt;&lt;/a&gt;
-is used where you might use&lt;a href=&quot;http://en.cppreference.com/w/cpp/memory/unique_ptr&quot;&gt; &lt;code&gt;std::unique_ptr&lt;/code&gt;&lt;/a&gt;, and
-there is a separate &lt;a href=&quot;https://github.com/sandstorm-io/capnproto/blob/master/c%2B%2B/src/kj/io.h&quot;&gt;stream abstraction&lt;/a&gt; that is used instead of
-&lt;a href=&quot;http://en.cppreference.com/w/cpp/io&quot;&gt;the standard one&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;an event loop—the C++ standard library still has nothing here; it may
-in 2017 though!&lt;/li&gt;
-  &lt;li&gt;some templated array classes that seem to be a pointer-length pair;
-there is some macro magic to allow allocating such an array on the
-stack&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;An overview of this library would also be really nice to have. My life
-would be a bit easier if this was all STL stuff.&lt;/p&gt;
-
-&lt;p&gt;All this frustration has me trying to use Google’s &lt;a href=&quot;http://www.kythe.io/&quot;&gt;Kythe code indexing
-project&lt;/a&gt; on Cap’n Proto. This in turn has me messing around with their
-&lt;a href=&quot;http://bazel.io/&quot;&gt;Bazel build tool&lt;/a&gt;.  Both of these tools are up there on my
-not-while-at-RC list, but I’m giving myself a very short pass to see if I can
-port the build over.  Building these tools is pretty slow going…&lt;/p&gt;
-
-&lt;blockquote class=&quot;twitter-tweet&quot; lang=&quot;en&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;current status: waiting for llvm to compile :/&lt;/p&gt;&amp;mdash; Kamal Marhubi (@kamalmarhubi) &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/618613903593996289&quot;&gt;July 8, 2015&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-
-</description>
-        <pubDate>Tue, 07 Jul 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/07/07/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/07/recurse-center-lab-notes</guid>
         
         
       </item>
