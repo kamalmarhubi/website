@@ -5,9 +5,148 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Fri, 27 Nov 2015 15:47:03 -0500</pubDate>
-    <lastBuildDate>Fri, 27 Nov 2015 15:47:03 -0500</lastBuildDate>
+    <pubDate>Mon, 25 Jan 2016 17:12:50 -0500</pubDate>
+    <lastBuildDate>Mon, 25 Jan 2016 17:12:50 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>100:10:1</title>
+        <description>&lt;p&gt;Last week I decided to join &lt;a href=&quot;https://writing.natwelch.com/&quot;&gt;Nat&lt;/a&gt; and &lt;a href=&quot;http://redlua.com/&quot;&gt;Steve&lt;/a&gt; and make an attempt at the
+100:10:1 project idea generation / implementation idea &lt;a href=&quot;http://blog.fogus.me/2015/11/04/the-100101-method-my-approach-to-open-source/&quot;&gt;fogus wrote about a
+little while ago&lt;/a&gt;. It’s a three step process:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;come up with 100 project ideas&lt;/li&gt;
+  &lt;li&gt;build MVPs for 10 of them&lt;/li&gt;
+  &lt;li&gt;develop 1 of them into a complete thing&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;I’m playing catch up with Nat and Steve, who both have their 100 and 10 already
+picked out! But I’ve got my 100 ideas together now, which are listed at the end
+of this post without any organization.&lt;/p&gt;
+
+&lt;p&gt;Some takeaways from doing this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;I’m &lt;em&gt;really&lt;/em&gt; interested in lower level / infrastructure / systems stuff at
+the moment&lt;/li&gt;
+  &lt;li&gt;I really like Rust&lt;/li&gt;
+  &lt;li&gt;I really like Kubernetes&lt;/li&gt;
+  &lt;li&gt;and some other things&lt;/li&gt;
+  &lt;li&gt;not much in the way of producty or goofy ideas as compared to the other two, but there you go!&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;section&quot;&gt;100&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;heroku clone on kubernetes&lt;/li&gt;
+  &lt;li&gt;container thing for running commands in container context without privileges&lt;/li&gt;
+  &lt;li&gt;rust high perf networking http server (techempower benchmarks, haywire)&lt;/li&gt;
+  &lt;li&gt;rust async library experiments: curio, asyncio, folly, util::Task&lt;/li&gt;
+  &lt;li&gt;rust ideas around cancellation for async: util::Task, golang.org/x/net/context, C# CancellationToken&lt;/li&gt;
+  &lt;li&gt;rust lib to restart without dropping connections&lt;/li&gt;
+  &lt;li&gt;tuf + rust + crates&lt;/li&gt;
+  &lt;li&gt;kythe extractor / indexer for rust&lt;/li&gt;
+  &lt;li&gt;kythe (?) based github search that doesn’t suck&lt;/li&gt;
+  &lt;li&gt;kythe browser that works nice&lt;/li&gt;
+  &lt;li&gt;package pageshot for sandstorm&lt;/li&gt;
+  &lt;li&gt;static site generator using service worker / amp / … ?&lt;/li&gt;
+  &lt;li&gt;graphiql / graphql for jsonapi&lt;/li&gt;
+  &lt;li&gt;“cloud” load balancer for kubernetes&lt;/li&gt;
+  &lt;li&gt;criu + cap’n proto (?) for magic on-demand lb&lt;/li&gt;
+  &lt;li&gt;implement tcp/ip (in rust?)&lt;/li&gt;
+  &lt;li&gt;build reliable communication on top of udp&lt;/li&gt;
+  &lt;li&gt;cap’n proto shared memory transport&lt;/li&gt;
+  &lt;li&gt;cap’n proto mmap message builder&lt;/li&gt;
+  &lt;li&gt;figure out userfaultfd for the above&lt;/li&gt;
+  &lt;li&gt;ebpf based strace&lt;/li&gt;
+  &lt;li&gt;seccomp (bpf) for rust&lt;/li&gt;
+  &lt;li&gt;multiprocess lib for rust&lt;/li&gt;
+  &lt;li&gt;pledge clone for linux using seccomp-bpf + namespaces&lt;/li&gt;
+  &lt;li&gt;extend roaring bitmap rust to handle runs&lt;/li&gt;
+  &lt;li&gt;rust clap bash completions&lt;/li&gt;
+  &lt;li&gt;x_things twitter bot generator – creates bot, heroku app, sends credentials&lt;/li&gt;
+  &lt;li&gt;window tiny lfu (w-tinylfu) cache gh/ben-manes/caffeine/wiki/efficiency&lt;/li&gt;
+  &lt;li&gt;cap’n proto compiler bootstrapping with json&lt;/li&gt;
+  &lt;li&gt;debugger (500 lines)&lt;/li&gt;
+  &lt;li&gt;test tool at syscall interface (ptrace / seccomp bpf?)&lt;/li&gt;
+  &lt;li&gt;explore allowing overlayfs with namespace owned mounts&lt;/li&gt;
+  &lt;li&gt;kubernetes + timely dataflow&lt;/li&gt;
+  &lt;li&gt;rustfmt line range &amp;amp; diff reading (format a patch)&lt;/li&gt;
+  &lt;li&gt;rustdoc improvements: stable since, target differences&lt;/li&gt;
+  &lt;li&gt;package firefox sync for sandstorm&lt;/li&gt;
+  &lt;li&gt;fuzz cap’n proto rust&lt;/li&gt;
+  &lt;li&gt;AFL + quickcheck: coverage directed fuzzing for rust / testing&lt;/li&gt;
+  &lt;li&gt;markdown editor with gdoc like commenting and suggesting&lt;/li&gt;
+  &lt;li&gt;port rustc build to bazel&lt;/li&gt;
+  &lt;li&gt;port cap’n proto build to bazel&lt;/li&gt;
+  &lt;li&gt;port sandstorm build to bazel&lt;/li&gt;
+  &lt;li&gt;web-based handbell ringing app&lt;/li&gt;
+  &lt;li&gt;bazel docker improvements&lt;/li&gt;
+  &lt;li&gt;bazel appc rules&lt;/li&gt;
+  &lt;li&gt;kubernetes appc support&lt;/li&gt;
+  &lt;li&gt;bazel rust rules support cross compilation&lt;/li&gt;
+  &lt;li&gt;csmith for rust (generate random programs)&lt;/li&gt;
+  &lt;li&gt;blue line cenerator / viewer for web&lt;/li&gt;
+  &lt;li&gt;composition checker&lt;/li&gt;
+  &lt;li&gt;ringing social app (a la ravelry?) with peal &amp;amp; qp reports&lt;/li&gt;
+  &lt;li&gt;octopus holdings zulip bot&lt;/li&gt;
+  &lt;li&gt;two corpus twitter bot generator (a la erowidrecruiter)&lt;/li&gt;
+  &lt;li&gt;rust crate version vs rust language version&lt;/li&gt;
+  &lt;li&gt;hybrid logical clock implementation (rust?)&lt;/li&gt;
+  &lt;li&gt;impelemnt a crdt&lt;/li&gt;
+  &lt;li&gt;implement a consensus protocol&lt;/li&gt;
+  &lt;li&gt;create an official backport for debian – nodejs?&lt;/li&gt;
+  &lt;li&gt;create an official package for debian – watchman?&lt;/li&gt;
+  &lt;li&gt;egit shallow clone OR allow shallow clone via git for bazel&lt;/li&gt;
+  &lt;li&gt;swagger client generator for rust&lt;/li&gt;
+  &lt;li&gt;implement perfect consistent hashing arXiv:1503:04988&lt;/li&gt;
+  &lt;li&gt;elevator algorithm competition site&lt;/li&gt;
+  &lt;li&gt;port google research benchmark thing to rust (r/rust/comments/42fnw7)&lt;/li&gt;
+  &lt;li&gt;clocks traits for rust&lt;/li&gt;
+  &lt;li&gt;rust bridge project investigation – os?&lt;/li&gt;
+  &lt;li&gt;rust cstring ergonomics improvements&lt;/li&gt;
+  &lt;li&gt;pure rust ssh2 implementation&lt;/li&gt;
+  &lt;li&gt;server side bindings for libssh2 rust&lt;/li&gt;
+  &lt;li&gt;rust ci iuld for windows on appveyor&lt;/li&gt;
+  &lt;li&gt;lmax disruptor implementation&lt;/li&gt;
+  &lt;li&gt;implement some lock free data structures&lt;/li&gt;
+  &lt;li&gt;cache friendly data structures for rust&lt;/li&gt;
+  &lt;li&gt;figure out swagger &amp;amp; json api&lt;/li&gt;
+  &lt;li&gt;something like scapy for network playing around but in rust&lt;/li&gt;
+  &lt;li&gt;rust take on jgc’s little parallel do stuff library&lt;/li&gt;
+  &lt;li&gt;memcached speaking thing&lt;/li&gt;
+  &lt;li&gt;redis speaking thing&lt;/li&gt;
+  &lt;li&gt;spliterator for rust (if it makes sense)&lt;/li&gt;
+  &lt;li&gt;gitsync w/ray&lt;/li&gt;
+  &lt;li&gt;ssh multiplexer / proxy thing (?)&lt;/li&gt;
+  &lt;li&gt;custom replacement of the screen-on app thing on android with timeouts built in&lt;/li&gt;
+  &lt;li&gt;hyper log log on timely dataflow&lt;/li&gt;
+  &lt;li&gt;command line client for banq&lt;/li&gt;
+  &lt;li&gt;command line client for tangerine&lt;/li&gt;
+  &lt;li&gt;token bucket in rust&lt;/li&gt;
+  &lt;li&gt;rethinkdb client in rust&lt;/li&gt;
+  &lt;li&gt;rust config library using command line flags, env vars, config files (w/overriding)&lt;/li&gt;
+  &lt;li&gt;SHIM tracing framework… high frequency sampling profiler&lt;/li&gt;
+  &lt;li&gt;prometheus client for rust&lt;/li&gt;
+  &lt;li&gt;hdr histograms for prometheus&lt;/li&gt;
+  &lt;li&gt;stats / metrics for rust (gh/rust-lang/rfcs/issue/843)&lt;/li&gt;
+  &lt;li&gt;fd transfer for cap’n proto&lt;/li&gt;
+  &lt;li&gt;trusted build service (toto)&lt;/li&gt;
+  &lt;li&gt;rust libc generator or test constants (&amp;amp; signatures?)&lt;/li&gt;
+  &lt;li&gt;sites &amp;amp; mobile app that lets my family track our locations&lt;/li&gt;
+  &lt;li&gt;something like the original hangouts – say you’re vailable to hangout (again, family)&lt;/li&gt;
+  &lt;li&gt;tool to blas through images and highlight some picks as video&lt;/li&gt;
+  &lt;li&gt;god bold rustc asm output thing (historical)&lt;/li&gt;
+  &lt;li&gt;grpc for rust&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 25 Jan 2016 17:03:49 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/01/25/100-10-1/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/01/25/100-10-1/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Squashing Docker images with Btrfs</title>
@@ -1399,77 +1538,6 @@ able to store my client certificates in there. Or something!&lt;/p&gt;
         <pubDate>Wed, 15 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Rethinking my rules</title>
-        <description>&lt;p&gt;After a conversation with &lt;a href=&quot;http://jvns.ca/&quot;&gt;Julia&lt;/a&gt; and &lt;a href=&quot;https://blog.gregbrockman.com/&quot;&gt;Greg&lt;/a&gt; about how to approach the
-Recurse Center, I’m revisiting my not-at-RC project list. I wrote about
-this early on in &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/06/02/goals-non-goals-and-anti-goals/&quot;&gt;Goals, non-goals, and anti-goals&lt;/a&gt;. The
-gist of it is that I wanted to avoid spending time on things that were
-mostly ‘busywork and configuration’. The list of not-at-RC projects was
-vaguely:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt;, &lt;a href=&quot;https://coreos.com/&quot;&gt;CoreOS&lt;/a&gt;, and other containery and clustery stuff&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://bazel.io/&quot;&gt;Bazel&lt;/a&gt;, Google’s recently open sourced build tool&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://kythe.io/&quot;&gt;Kythe&lt;/a&gt;, Google’s recently open sourced source code indexer&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://prometheus.io/&quot;&gt;Prometheus&lt;/a&gt;, a monitoring and alerting system&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;There’s a common thread here of wanting a Google-away-from-Google, at
-least in terms of the developer experience. This might be misguided,
-because not all problems are Google-sized. The developer experience of a
-great code search, unified build system, and cluster scheduler is really
-great though! The main problem is I’m not sure how many of these things
-require scale to be worthwhile.&lt;/p&gt;
-
-&lt;p&gt;Back to the conversation that made me think of changing my rules. Greg
-said it was valuable to explore and learn to use tools to give you a
-better understanding of how to judge similar things. That resonated with
-me: if I want to have informed opinions on things in this space, I have
-to use some of them!&lt;/p&gt;
-
-&lt;p&gt;With all that in mind, here’s what I’m working on at the moment:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;fixed an issue I’d been having with my CoreOS cluster, so that I no longer
-get complaints about failed systemd units on login&lt;/li&gt;
-  &lt;li&gt;reading up on what’s changed in Kubernetes since I read the original design
-docs when it was first released. There’s a lot of new concepts in there now,
-and they’re &lt;a href=&quot;http://kuberneteslaunch.com/&quot;&gt;gearing up for a 1.0 next week&lt;/a&gt;&lt;sup id=&quot;fnref:launch-site&quot;&gt;&lt;a href=&quot;#fn:launch-site&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;,
-so this seems like a good time to dig in!&lt;/li&gt;
-  &lt;li&gt;I installed &lt;a href=&quot;https://sandstorm.io/&quot;&gt;Sandstorm&lt;/a&gt; on a new server in GCE. Eventually I plan to move
-this to the Kubernetes cluster.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Of course, bringing in a new theme means something has to go to make room. I’m
-probably going to drop the priority on learning JavaScript / ES15. Unlike with
-the systems programming I was doing, I don’t have a strong and clear goal in
-mind there. I do expect to get back to &lt;code&gt;mmap&lt;/code&gt; and my other friends in that
-world though. I’ll treat Kubernetes and CoreOS as a little break for now, and
-then figure out a way to interleave the different kinds of work.&lt;/p&gt;
-
-&lt;p&gt;This should be fun!&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:launch-site&quot;&gt;
-
-      &lt;p&gt;Yes, apparently they got a domain just for the launch. &lt;a href=&quot;#fnref:launch-site&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Tue, 14 Jul 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/14/rethinking-my-rules</guid>
         
         
       </item>
