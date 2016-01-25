@@ -9,8 +9,8 @@ Bentley][nick-bentley-blog] wrote about in the context of game design, and
 [fogus adapted to open source projects][fogus-blog]. It's a three step process:
 
 1. come up with 100 project ideas
-3. build MVPs for 10 of them
-4. develop 1 of them into a complete thing
+2. build MVPs for 10 of them
+3. develop 1 of them into a complete thing
 
 [nat]: https://writing.natwelch.com/
 [steve]: http://redlua.com/
