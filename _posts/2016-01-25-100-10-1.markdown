@@ -1,0 +1,132 @@
+---
+title: "100:10:1"
+date: 2016-01-25T17:03:49-05:00
+---
+
+Last week I decided to join [Nat] and [Steve] and make an attempt at the
+100:10:1 project idea generation / implementation idea [fogus wrote about a
+little while ago][fogus-blog]. It's a three step process:
+
+1. come up with 100 project ideas
+3. build MVPs for 10 of them
+4. develop 1 of them into a complete thing
+
+[nat]: https://writing.natwelch.com/
+[steve]: http://redlua.com/
+[fogus-blog]: http://blog.fogus.me/2015/11/04/the-100101-method-my-approach-to-open-source/
+
+I'm playing catch up with Nat and Steve, who both have their 100 and 10 already
+picked out! But I've got my 100 ideas together now, which are listed at the end
+of this post without any organization.
+
+Some takeaways from doing this:
+
+* I'm *really* interested in lower level / infrastructure / systems stuff at
+  the moment
+* I really like Rust
+* I really like Kubernetes
+* and some other things
+* not much in the way of producty or goofy ideas as compared to the other two, but there you go!
+
+# 100
+
+* heroku clone on kubernetes
+* container thing for running commands in container context without privileges
+* rust high perf networking http server (techempower benchmarks, haywire)
+* rust async library experiments: curio, asyncio, folly, util::Task
+* rust ideas around cancellation for async: util::Task, golang.org/x/net/context, C# CancellationToken
+* rust lib to restart without dropping connections
+* tuf + rust + crates
+* kythe extractor / indexer for rust
+* kythe (?) based github search that doesn't suck
+* kythe browser that works nice
+* package pageshot for sandstorm
+* static site generator using service worker / amp / ... ?
+* graphiql / graphql for jsonapi
+* "cloud" load balancer for kubernetes
+* criu + cap'n proto (?) for magic on-demand lb
+* implement tcp/ip (in rust?)
+* build reliable communication on top of udp
+* cap'n proto shared memory transport
+* cap'n proto mmap message builder
+* figure out userfaultfd for the above
+* ebpf based strace
+* seccomp (bpf) for rust
+* multiprocess lib for rust
+* pledge clone for linux using seccomp-bpf + namespaces
+* extend roaring bitmap rust to handle runs
+* rust clap bash completions
+* x_things twitter bot generator -- creates bot, heroku app, sends credentials
+* window tiny lfu (w-tinylfu) cache gh/ben-manes/caffeine/wiki/efficiency
+* cap'n proto compiler bootstrapping with json
+* debugger (500 lines)
+* test tool at syscall interface (ptrace / seccomp bpf?)
+* explore allowing overlayfs with namespace owned mounts
+* kubernetes + timely dataflow
+* rustfmt line range & diff reading (format a patch)
+* rustdoc improvements: stable since, target differences
+* package firefox sync for sandstorm
+* fuzz cap'n proto rust
+* AFL + quickcheck: coverage directed fuzzing for rust / testing
+* markdown editor with gdoc like commenting and suggesting
+* port rustc build to bazel
+* port cap'n proto build to bazel
+* port sandstorm build to bazel
+* web-based handbell ringing app
+* bazel docker improvements
+* bazel appc rules
+* kubernetes appc support
+* bazel rust rules support cross compilation
+* csmith for rust (generate random programs)
+* blue line cenerator / viewer for web
+* composition checker
+* ringing social app (a la ravelry?) with peal & qp reports
+* octopus holdings zulip bot
+* two corpus twitter bot generator (a la erowidrecruiter)
+* rust crate version vs rust language version
+* hybrid logical clock implementation (rust?)
+* impelemnt a crdt
+* implement a consensus protocol
+* create an official backport for debian -- nodejs?
+* create an official package for debian -- watchman?
+* egit shallow clone OR allow shallow clone via git for bazel
+* swagger client generator for rust
+* implement perfect consistent hashing arXiv:1503:04988
+* elevator algorithm competition site
+* port google research benchmark thing to rust (r/rust/comments/42fnw7)
+* clocks traits for rust
+* rust bridge project investigation -- os?
+* rust cstring ergonomics improvements
+* pure rust ssh2 implementation
+* server side bindings for libssh2 rust
+* rust ci iuld for windows on appveyor
+* lmax disruptor implementation
+* implement some lock free data structures
+* cache friendly data structures for rust
+* figure out swagger & json api
+* something like scapy for network playing around but in rust
+* rust take on jgc's little parallel do stuff library
+* memcached speaking thing
+* redis speaking thing
+* spliterator for rust (if it makes sense)
+* gitsync w/ray
+* ssh multiplexer / proxy thing (?)
+* custom replacement of the screen-on app thing on android with timeouts built in
+* hyper log log on timely dataflow
+* command line client for banq
+* command line client for tangerine
+* token bucket in rust
+* rethinkdb client in rust
+* rust config library using command line flags, env vars, config files (w/overriding)
+* SHIM tracing framework... high frequency sampling profiler
+* prometheus client for rust
+* hdr histograms for prometheus
+* stats / metrics for rust (gh/rust-lang/rfcs/issue/843)
+* fd transfer for cap'n proto
+* trusted build service (toto)
+* rust libc generator or test constants (& signatures?)
+* sites & mobile app that lets my family track our locations
+* something like the original hangouts -- say you're vailable to hangout (again, family)
+* tool to blas through images and highlight some picks as video
+* god bold rustc asm output thing (historical)
+* grpc for rust
