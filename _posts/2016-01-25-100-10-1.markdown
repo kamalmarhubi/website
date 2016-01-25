@@ -4,8 +4,9 @@ date: 2016-01-25T17:03:49-05:00
 ---
 
 Last week I decided to join [Nat] and [Steve] and make an attempt at the
-100:10:1 project idea generation / implementation idea [fogus wrote about a
-little while ago][fogus-blog]. It's a three step process:
+100:10:1 project idea generation / implementation idea [Nick
+Bentley][nick-bentley-blog] wrote about in the context of game design, and
+[fogus adapted to open source projects][fogus-blog]. It's a three step process:
 
 1. come up with 100 project ideas
 3. build MVPs for 10 of them
@@ -13,6 +14,7 @@ little while ago][fogus-blog]. It's a three step process:
 
 [nat]: https://writing.natwelch.com/
 [steve]: http://redlua.com/
+[nick-bentley-blog]: https://nickbentleygames.wordpress.com/2014/05/12/the-100-10-1-method-for-game-design/
 [fogus-blog]: http://blog.fogus.me/2015/11/04/the-100101-method-my-approach-to-open-source/
 
 I'm playing catch up with Nat and Steve, who both have their 100 and 10 already
