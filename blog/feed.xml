@@ -5,9 +5,108 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 25 Jan 2016 18:23:53 -0500</pubDate>
-    <lastBuildDate>Mon, 25 Jan 2016 18:23:53 -0500</lastBuildDate>
+    <pubDate>Tue, 26 Jan 2016 10:29:41 -0500</pubDate>
+    <lastBuildDate>Tue, 26 Jan 2016 10:29:41 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Eat your greens and read your man pages</title>
+        <description>&lt;p&gt;I’ve been working on a little tool to let unprivileged users run commands in
+the context of a container image’s filesystem on Linux.  I’m really bad at
+names, so let’s call it &lt;code&gt;containy-thing&lt;/code&gt;. That also evokes about the right
+level of completeness: it’s quite far from done.&lt;/p&gt;
+
+&lt;p&gt;Anyway, this is a little field report from working on it. Its moral is: read
+your man pages.&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;containy-thing&lt;/code&gt; uses a few Linux tricks to do its job, the main ones being
+&lt;a href=&quot;http://man7.org/linux/man-pages/man7/user_namespaces.7.html&quot;&gt;user&lt;/a&gt; and mount &lt;a href=&quot;http://man7.org/linux/man-pages/man7/namespaces.7.html&quot;&gt;namespaces&lt;/a&gt;. It takes a directory to use as the
+container root filesystem, and a command to run, and runs the command. If
+you’ve used docker,&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ containy-thing /path/to/rootfs /bin/ls -l
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;would be similar to&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# docker run my-image /bin/ls -l
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;(Note the &lt;code&gt;$&lt;/code&gt; vs &lt;code&gt;#&lt;/code&gt; prompts! The main point of this project is that you can
+run it as an unprivileged user; docker needs superuser privileges.)&lt;/p&gt;
+
+&lt;p&gt;I was trying to test it out and had an extracted root filesystem for an
+Ubuntu-derived image. I attempted to run &lt;code&gt;/bin/ls -l&lt;/code&gt;, but it kept failing.
+Investigating a bit, I found that the &lt;code&gt;execve(2)&lt;/code&gt; system call to start
+&lt;code&gt;/bin/ls&lt;/code&gt; was failing with &lt;code&gt;EACCES&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;read-your-man-pages&quot;&gt;read your man pages&lt;/h1&gt;
+
+&lt;p&gt;I’ve done bits and pieces of systems programming, and the man pages are pretty
+great most of the time. The man page for &lt;a href=&quot;http://man7.org/linux/man-pages/man2/execve.2.html#ERRORS&quot;&gt;&lt;code&gt;execve(2)&lt;/code&gt;&lt;/a&gt; definitely falls
+under ‘most of the time’, and is pretty exhaustive. It lists the circumstances
+that could result in &lt;code&gt;EACCES&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;       EACCES Search permission is denied on a component of the path prefix of
+              filename or the name of a script interpreter.  (See also
+              path_resolution(7).)
+
+       EACCES The file or a script interpreter is not a regular file.
+
+       EACCES Execute permission is denied for the file or a script or ELF
+              interpreter.
+
+       EACCES The filesystem is mounted noexec.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I went through these one by one:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;checked that all path components (namely, &lt;code&gt;/bin&lt;/code&gt;) had the search permission
+(&lt;code&gt;a+x&lt;/code&gt;) set (&lt;code&gt;/bin/ls&lt;/code&gt; is not a script, and so there was no script
+interpreter to check)&lt;/li&gt;
+  &lt;li&gt;checked that &lt;code&gt;/bin/ls&lt;/code&gt; was there, and was a file&lt;/li&gt;
+  &lt;li&gt;checked that &lt;code&gt;/bin/ls&lt;/code&gt;/ had the execute permission (&lt;code&gt;a+x&lt;/code&gt;)&lt;/li&gt;
+  &lt;li&gt;double checked the mount to be sure it wasn’t &lt;code&gt;noexec&lt;/code&gt;, which disallows
+execution of all files on the filesystem&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Nothing came up. I did this a bunch of times, and still nothing came up.&lt;/p&gt;
+
+&lt;h1 id=&quot;no-really-read-your-man-pages&quot;&gt;no really, read your man pages&lt;/h1&gt;
+
+&lt;p&gt;Eventually, I finally realized what the problem was. The third reason for
+&lt;code&gt;EACCES&lt;/code&gt; was&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;       EACCES Execute permission is denied for the file or a script or ELF
+              interpreter.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;but I was reading&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;       EACCES Execute permission is denied for the file or a script       
+              interpreter.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I didn’t even stop to think that something could be wrong with the ELF
+interpreter. I only even vaguely understand what an ELF interpreter does! But
+after wasting probably a day and a bit trying to figure this out, I finally
+took a look. The interpreter for x86-64 programs on Linux is at
+&lt;code&gt;/lib64/ld-linux-x86-64.so.2&lt;/code&gt;, at least on Debian and Ubuntu…. and its
+permissions were wrong.&lt;/p&gt;
+</description>
+        <pubDate>Tue, 26 Jan 2016 10:19:54 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/01/26/eat-your-greens-and-read-your-man-pages/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/01/26/eat-your-greens-and-read-your-man-pages/</guid>
+        
+        
+      </item>
     
       <item>
         <title>100:10:1</title>
@@ -1472,73 +1571,6 @@ recursers who joined me at the play.&lt;/em&gt;&lt;/p&gt;
         <pubDate>Sun, 26 Jul 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/26/preludes/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/26/preludes/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes 2015-07-15: X.509 PKI</title>
-        <description>&lt;p&gt;I spent today working towards my Kubernetes cluster. On the way, I decided I
-wanted to have client certificates to control access to the API server.&lt;/p&gt;
-
-&lt;p&gt;Here’s an overview of where I’m going:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;generate a root certificate and key, ideally stored offline and in a hardware
-security module (HSM)&lt;/li&gt;
-  &lt;li&gt;use that to sign an intermediate root certificate&lt;/li&gt;
-  &lt;li&gt;use the intermediate root to sign any client or server certificates&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;I’m just tinkering for now, and so I’m storing the root certificate on my
-laptop. I’m using easy-rsa to generate the setup. It’s a collection of
-scripts from the OpenVPN project to help set up a CA to use for VPN
-authentication.&lt;/p&gt;
-
-&lt;p&gt;I’m roughly following these guides, and doing peripheral reading up on what I’m
-actually doing:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://openvpn.net/index.php/open-source/documentation/miscellaneous/77-rsa-key-management.html&quot;&gt;https://openvpn.net/index.php/open-source/documentation/miscellaneous/77-rsa-key-management.html&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://wiki.archlinux.org/index.php/Create_a_Public_Key_Infrastructure_Using_the_easy-rsa_Scripts&quot;&gt;https://wiki.archlinux.org/index.php/Create_a_Public_Key_Infrastructure_Using_the_easy-rsa_Scripts&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;A fun part is I get to name my CA. I went with ‘Kamal Marhubi CA’, but I’m
-probably going to redo it. I also have to get a better handle on all these &lt;code&gt;O&lt;/code&gt;,
-&lt;code&gt;CN&lt;/code&gt;, &lt;code&gt;C&lt;/code&gt;, and other fields that show up in an X.509 certificate, and what’s
-allowed there. &lt;a href=&quot;https://tools.ietf.org/html/rfc5280&quot;&gt;RFC 5280&lt;/a&gt; is my friend here.&lt;/p&gt;
-
-&lt;p&gt;Once done, I’ll have to keep running these scipts whenever I need new
-certificates. That’s just fine for my small use case! I’ll need a server
-certificate for each of the API server nodes, client certificates for each
-worker node, and a client certificate for me to connect to the API server.&lt;/p&gt;
-
-&lt;p&gt;If you want to get fancy, CloudFlare have &lt;a href=&quot;https://blog.cloudflare.com/how-to-build-your-own-public-key-infrastructure/&quot;&gt;a good post on setting up fancier
-PKI&lt;/a&gt; using their &lt;a href=&quot;https://blog.cloudflare.com/how-to-build-your-own-public-key-infrastructure/&quot;&gt;CFSSL&lt;/a&gt; project. It includes an API server that can
-issue certificates automatically.  This would be useful if you wanted your
-services to be authenticated, but also to be able to spin new instances up and
-down dynamically.&lt;/p&gt;
-
-&lt;p&gt;The CloudFlare post talks about using multiple intermediate roots for different
-services. The example is that an API server only trusts certificates signed by
-the DB root CA, and vice versa. A comment there mentions using &lt;a href=&quot;https://tools.ietf.org/html/rfc5280#section-4.2.1.12&quot;&gt;Extended Key
-Usage (EKU)&lt;/a&gt; instead. This is a standard way to designate the type of use
-a certificate is valid for. This requires an OID. For external use, you’d have
-to register one. But in this use case, you can use aUUID based OID. Some more
-info for my future self: &lt;a href=&quot;http://www.itu.int/en/ITU-T/asn1/Pages/UUID/uuids.aspx&quot;&gt;one&lt;/a&gt;, &lt;a href=&quot;http://www.oid-info.com/get/2.25&quot;&gt;two&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;For maximal fanciness, you want to be using HSMs and TPMs where possible. Both
-are special hardware that stores keys, and is able to do cryptographic
-operations without the key ever leaving the device. You probably have a TPM in
-the computer you’re using right now, though it might be disabled. I enabled
-mine in the BIOS setup, and have ‘taken ownership’ of it. As in, I literally
-ran a command called &lt;code&gt;tpm_takeownership&lt;/code&gt;. I’m going to see if I can get it
-added as a security device in Firefox. That way, when the time comes, I’ll be
-able to store my client certificates in there. Or something!&lt;/p&gt;
-</description>
-        <pubDate>Wed, 15 Jul 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015-07-15/recurse-center-lab-notes</guid>
         
         
       </item>
