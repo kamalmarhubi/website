@@ -226,7 +226,7 @@ behavior of the kubelet kicks in, and the pod gets started.</p>
 
 <pre><code>master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-scheduler
 master$ chmod +x kubectl
-master$ ./kube-scheduler --master=hp://localhost:8080
+master$ ./kube-scheduler --master=http://localhost:8080
 </code></pre>
 
 <p>Not long after starting the scheduler, the <code>nginx-without-nodename</code> pod should
