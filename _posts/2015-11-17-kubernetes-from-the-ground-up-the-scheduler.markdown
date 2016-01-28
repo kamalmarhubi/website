@@ -193,7 +193,7 @@ Let's get the scheduler binary and start it running on `master`:
 ~~~
 master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-scheduler
 master$ chmod +x kubectl
-master$ ./kube-scheduler --master=hp://localhost:8080
+master$ ./kube-scheduler --master=http://localhost:8080
 ~~~
 
 Not long after starting the scheduler, the `nginx-without-nodename` pod should
