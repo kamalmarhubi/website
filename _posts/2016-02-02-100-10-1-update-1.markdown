@@ -1,0 +1,72 @@
+---
+title: "100:10:1 update 1"
+date: 2016-02-02T22:46:25-05:00
+---
+
+I'm going to try and write little updates as I work on [100:10:1][100-10-1].
+Here's the first!
+
+[100-10-1]: http://kamalmarhubi.com/blog/2016/01/25/100-10-1/
+
+# Picking 1 of the 10
+
+I haven't made my short list of 10 prototypes quite yet, but I have picked one
+of them. Loads of the projects I'm thinking of are in Rust, so I'm preemptively
+shaving a yak and working on making the [rustfmt] formatting tool work
+incrementally. This was in the original list of 100 as
+
+* rustfmt line range & diff reading (format a patch)
+
+[rustfmt]: https://github.com/rust-lang-nursery/rustfmt
+
+Translating from Kamal-scribble-speak: make it so that rustfmt can format only a
+specific set of lines. Then on top of that, make it format only the lines that
+have changed according to a diff. This way you can always run rustfmt, safe in
+the knowledge that it won't be sticking all kinds of style changes across the
+codebase along with your actual changes. It should even be possible to put it in
+a pre-commit hook.
+
+I actually [filed an issue][issue] about this back in October, and even started
+trying to work on it. It turns out it's really hard to implement something
+non-trivial in a codebase you're unfamiliar with in a language you don't know.
+
+[issue]: https://github.com/rust-lang-nursery/rustfmt/issues/434
+
+But I've been doing some Rust since then, including working on [a patch to the
+standard library][rust-pr]. I'm way more fluent now, though there are still some
+bits of the Rust library and type system I need to absorb further.
+
+[rust-pr]: https://github.com/rust-lang/rust/pull/31056
+
+Working myself up to the line ranges change, I've put [a bunch of improvements
+out][pr-search], mostly small. The big one was unifying the config object that
+is passed through all parts of the formatting process. This will give me a place
+to store the line ranges to be formatted. I'm waiting on [the
+review][mergeable-config] for it:
+
+[mergeable-config]: https://github.com/rust-lang-nursery/rustfmt/pull/801
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">tfw you want someone to review your code from 5 hours ago but they are in new zealand</p>&mdash; Kamal Marhubi (@kamalmarhubi) <a href="https://twitter.com/kamalmarhubi/status/694639801765527552">February 2, 2016</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+[pr-search]: https://github.com/rust-lang-nursery/rustfmt/pulls?utf8=%E2%9C%93&q=is%3Apr+author%3Akamalmarhubi+created%3A%3E%3D2016-01-31+created%3A%3C%3D2016-02-02
+
+# Up next
+
+Actually implement the thing! I'll probably write up some notes as I do this.
+I'm pretty glad to have picked this project because it involves getting to know
+a bit about how the Rust AST is organized.
+
+rustfmt is an AST-based formatter, rather than a token-based one. Instead of
+moving bits of text around, it actually parses the entire program, and then
+pretty prints it according to style rules. There's [a brief outline of the
+design][rustfmt-design] that's pretty good if you want to read about it.
+
+[rustfmt-design]: https://github.com/rust-lang-nursery/rustfmt/blob/master/Design.md
+
+For my change, the line ranges need to be translated to a set of AST nodes, and
+then selectively formatted. There will be some niggles around sets of lines that
+straddle node boundaries which I'll have to think about. And maybe even draw
+some ‘pictures’!
+
+*[AST]: abstract syntax tree
