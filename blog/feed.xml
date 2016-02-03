@@ -5,9 +5,73 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Thu, 28 Jan 2016 10:50:20 -0500</pubDate>
-    <lastBuildDate>Thu, 28 Jan 2016 10:50:20 -0500</lastBuildDate>
+    <pubDate>Tue, 02 Feb 2016 23:00:40 -0500</pubDate>
+    <lastBuildDate>Tue, 02 Feb 2016 23:00:40 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>100:10:1 update 1</title>
+        <description>&lt;p&gt;I’m going to try and write little updates as I work on &lt;a href=&quot;http://kamalmarhubi.com/blog/2016/01/25/100-10-1/&quot;&gt;100:10:1&lt;/a&gt;.
+Here’s the first!&lt;/p&gt;
+
+&lt;h1 id=&quot;picking-1-of-the-10&quot;&gt;Picking 1 of the 10&lt;/h1&gt;
+
+&lt;p&gt;I haven’t made my short list of 10 prototypes quite yet, but I have picked one
+of them. Loads of the projects I’m thinking of are in Rust, so I’m preemptively
+shaving a yak and working on making the &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt&quot;&gt;rustfmt&lt;/a&gt; formatting tool work
+incrementally. This was in the original list of 100 as&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;rustfmt line range &amp;amp; diff reading (format a patch)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Translating from Kamal-scribble-speak: make it so that rustfmt can format only a
+specific set of lines. Then on top of that, make it format only the lines that
+have changed according to a diff. This way you can always run rustfmt, safe in
+the knowledge that it won’t be sticking all kinds of style changes across the
+codebase along with your actual changes. It should even be possible to put it in
+a pre-commit hook.&lt;/p&gt;
+
+&lt;p&gt;I actually &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/issues/434&quot;&gt;filed an issue&lt;/a&gt; about this back in October, and even started
+trying to work on it. It turns out it’s really hard to implement something
+non-trivial in a codebase you’re unfamiliar with in a language you don’t know.&lt;/p&gt;
+
+&lt;p&gt;But I’ve been doing some Rust since then, including working on &lt;a href=&quot;https://github.com/rust-lang/rust/pull/31056&quot;&gt;a patch to the
+standard library&lt;/a&gt;. I’m way more fluent now, though there are still some
+bits of the Rust library and type system I need to absorb further.&lt;/p&gt;
+
+&lt;p&gt;Working myself up to the line ranges change, I’ve put &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pulls?utf8=%E2%9C%93&amp;amp;q=is%3Apr+author%3Akamalmarhubi+created%3A%3E%3D2016-01-31+created%3A%3C%3D2016-02-02&quot;&gt;a bunch of improvements
+out&lt;/a&gt;, mostly small. The big one was unifying the config object that
+is passed through all parts of the formatting process. This will give me a place
+to store the line ranges to be formatted. I’m waiting on &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/801&quot;&gt;the
+review&lt;/a&gt; for it:&lt;/p&gt;
+
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;tfw you want someone to review your code from 5 hours ago but they are in new zealand&lt;/p&gt;&amp;mdash; Kamal Marhubi (@kamalmarhubi) &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/694639801765527552&quot;&gt;February 2, 2016&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;up-next&quot;&gt;Up next&lt;/h1&gt;
+
+&lt;p&gt;Actually implement the thing! I’ll probably write up some notes as I do this.
+I’m pretty glad to have picked this project because it involves getting to know
+a bit about how the Rust &lt;abbr title=&quot;abstract syntax tree&quot;&gt;AST&lt;/abbr&gt; is organized.&lt;/p&gt;
+
+&lt;p&gt;rustfmt is an &lt;abbr title=&quot;abstract syntax tree&quot;&gt;AST&lt;/abbr&gt;-based formatter, rather than a token-based one. Instead of
+moving bits of text around, it actually parses the entire program, and then
+pretty prints it according to style rules. There’s &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/blob/master/Design.md&quot;&gt;a brief outline of the
+design&lt;/a&gt; that’s pretty good if you want to read about it.&lt;/p&gt;
+
+&lt;p&gt;For my change, the line ranges need to be translated to a set of &lt;abbr title=&quot;abstract syntax tree&quot;&gt;AST&lt;/abbr&gt; nodes, and
+then selectively formatted. There will be some niggles around sets of lines that
+straddle node boundaries which I’ll have to think about. And maybe even draw
+some ‘pictures’!&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 02 Feb 2016 22:46:25 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/02/02/100-10-1-update-1/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/02/100-10-1-update-1/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Eat your greens and read your man pages</title>
@@ -1523,54 +1587,6 @@ browser.&lt;/p&gt;
         <pubDate>Wed, 29 Jul 2015 00:01:49 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Preludes</title>
-        <description>&lt;p&gt;This evening I walked from the Lincoln Center at 66th and Broadway down
-to 40th street, all the while listening to Rachmaninoff’s 1929
-performance of his Piano Concerto № 2. My noise cancelling headphones
-masked the never ending cacophony of the city. The experience of the
-third movement was slightly surreal, coinciding with my traversal of
-Times Square.&lt;/p&gt;
-
-&lt;p&gt;This was brought on by having just watched &lt;a href=&quot;http://www.lct.org/shows/preludes/&quot;&gt;Preludes&lt;/a&gt;, ‘a musical fantasia
-set in the hypnotized mind of Russian composer Sergei Rachmaninoff’,
-which is playing at the Lincoln Center through to August second.
-Rachmaninoff suffered depression and writer’s block, and visited
-hypnotherapist Nikolai Dahl to help him break through it. Rachmaninoff
-dedicated the second Concerto to Dahl.&lt;/p&gt;
-
-&lt;p&gt;To say I really enjoyed the play would be a slight understatement. One
-of the actors was at a grand piano in center stage. He played pieces
-that came up in dialogue, as well as snatches of themes from Piano
-Concerto № 2 as the composer worked through his block. I experienced
-&lt;a href=&quot;http://www.bbc.com/future/story/20150721-when-was-the-last-time-music-gave-you-a-skin-orgasm&quot;&gt;musical frisson—or ‘skin orgasm’—&lt;/a&gt;several times; I hadn’t
-listened to any Rachmaninoff in a good while, but he is way up on my
-list of favourite composers. The C♯ minor and G minor preludes, both of
-which I love, were played in full.&lt;/p&gt;
-
-&lt;p&gt;Musical performances aside, there was plenty of food for thought.
-Creativity, performance anxiety, writer’s block, depression, a need to
-be ‘great’, obsession with how others perceive you and your work—all too
-familiar! I wish I’d had a notebook out to jot down some quotes to think
-over more, especially as I come to the last three weeks at the Recurse
-Center. I’ve not written here in about two weeks, and some of that is
-not feeling like I have something worthy of writing about. And the
-longer I go without writing, the more important it seems for the next
-writing to be, if not great, at least good. I hope the play will snap me
-out of that. Let’s see!&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;em&gt;Thanks to David Albert for telling me about the play, and to the fellow
-recursers who joined me at the play.&lt;/em&gt;&lt;/p&gt;
-</description>
-        <pubDate>Sun, 26 Jul 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/07/26/preludes/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/26/preludes/</guid>
         
         
       </item>
