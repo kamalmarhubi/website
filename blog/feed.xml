@@ -5,8 +5,8 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 02 Feb 2016 23:00:40 -0500</pubDate>
-    <lastBuildDate>Tue, 02 Feb 2016 23:00:40 -0500</lastBuildDate>
+    <pubDate>Wed, 03 Feb 2016 00:09:00 -0500</pubDate>
+    <lastBuildDate>Wed, 03 Feb 2016 00:09:00 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -40,7 +40,7 @@ non-trivial in a codebase you’re unfamiliar with in a language you don’t kno
 standard library&lt;/a&gt;. I’m way more fluent now, though there are still some
 bits of the Rust library and type system I need to absorb further.&lt;/p&gt;
 
-&lt;p&gt;Working myself up to the line ranges change, I’ve put &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pulls?utf8=%E2%9C%93&amp;amp;q=is%3Apr+author%3Akamalmarhubi+created%3A%3E%3D2016-01-31+created%3A%3C%3D2016-02-02&quot;&gt;a bunch of improvements
+&lt;p&gt;Working myself up to the line ranges change, I’ve put &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pulls?utf8=%E2%9C%93&amp;amp;q=is%3Apr+author%3Akamalmarhubi+created%3A2016-01-31..2016-02-02&quot;&gt;a bunch of improvements
 out&lt;/a&gt;, mostly small. The big one was unifying the config object that
 is passed through all parts of the formatting process. This will give me a place
 to store the line ranges to be formatted. I’m waiting on &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/801&quot;&gt;the
