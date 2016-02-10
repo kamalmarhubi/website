@@ -5,9 +5,51 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 03 Feb 2016 00:09:00 -0500</pubDate>
-    <lastBuildDate>Wed, 03 Feb 2016 00:09:00 -0500</lastBuildDate>
+    <pubDate>Tue, 09 Feb 2016 22:08:02 -0500</pubDate>
+    <lastBuildDate>Tue, 09 Feb 2016 22:08:02 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>100:10:1 update 2</title>
+        <description>&lt;p&gt;I’m still being slow on picking the 10, but I’ve added a new one to the list. It
+now stands at two items!&lt;/p&gt;
+
+&lt;h2 id=&quot;a-very-silly-key-value-store&quot;&gt;A very silly key-value store&lt;/h2&gt;
+&lt;p&gt;I’m really excited about the new idea. It’s a very silly key-value store. The
+exact nature of the silliness will wait until I’m further along. I’ll make it
+speak either the memcached or redis protocol—or both! This makes it fit under
+one or both of these items from the &lt;a href=&quot;http://kamalmarhubi.com/blog/2016/01/25/100-10-1/&quot;&gt;original 100&lt;/a&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;memcached speaking thing&lt;/li&gt;
+  &lt;li&gt;redis speaking thing&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I’ll be doing this in Rust—naturally. As a bit of preparation, I’ve already added
+&lt;a href=&quot;https://github.com/rust-lang-nursery/libc/pull/170&quot;&gt;&lt;code&gt;sendfile(2)&lt;/code&gt;&lt;/a&gt; and &lt;a href=&quot;https://github.com/rust-lang-nursery/libc/pull/172&quot;&gt;&lt;code&gt;splice(2)&lt;/code&gt;, &lt;code&gt;tee(2)&lt;/code&gt;, and
+&lt;code&gt;vmsplice(2)&lt;/code&gt;&lt;/a&gt; to the libc crate, and am working on adding them to
+&lt;a href=&quot;https://github.com/carllerche/nix-rust&quot;&gt;nix&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Once that’s done, I should be able to start on the silly part! :-)&lt;/p&gt;
+
+&lt;h2 id=&quot;rustfmt-diff-formatting&quot;&gt;rustfmt diff formatting&lt;/h2&gt;
+&lt;p&gt;I finally got &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/812&quot;&gt;a pull request&lt;/a&gt; tidying up some config stuff
+merged. This was neither my &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/795&quot;&gt;first attempt&lt;/a&gt; nor my &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/801&quot;&gt;second
+attempt&lt;/a&gt;, but it got there eventually!&lt;/p&gt;
+
+&lt;p&gt;I’ve exhausted what I’ve decided was some &lt;a href=&quot;http://composition.al/blog/2015/12/29/refactoring-as-a-way-to-understand-code/&quot;&gt;refactoring as a way to understand
+code&lt;/a&gt;, but have not made a start on the actual task quite yet. I’m
+working on a couple of other Rust developer infrastructure kinds of projects in
+the meantime, but should get on with this one. I &lt;em&gt;really&lt;/em&gt; want to be able to
+run &lt;code&gt;cargo fmt-diff&lt;/code&gt; or whatever the command ends up being.&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 09 Feb 2016 22:04:15 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/02/09/100-10-1-update-2/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/09/100-10-1-update-2/</guid>
+        
+        
+      </item>
     
       <item>
         <title>100:10:1 update 1</title>
@@ -1523,70 +1565,6 @@ around until the kubelet brings it down. It’s pretty cool, check the
         <pubDate>Thu, 27 Aug 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Recurse Center lab notes catch up</title>
-        <description>&lt;p&gt;I’m way behind on posting here. Here is a quick rundown of what I’ve been up to.&lt;/p&gt;
-
-&lt;p&gt;The biggest thing is that I managed to run &lt;a href=&quot;http://kythe.io/&quot;&gt;Kythe&lt;/a&gt;! It took me half a week to
-get it to work with a hello world program, but once I had that I was good to
-go. This meant I got to play with &lt;a href=&quot;http://bazel.io/&quot;&gt;Bazel&lt;/a&gt; again, which was nicely familiar.&lt;/p&gt;
-
-&lt;p&gt;A lot of the confusion was that remote Bazel repositories don’t quite work for
-C++ in the current state. My approach of referring to the Kythe indexer from a
-Bazel repository with my hello world program just wasn’t going to work, even
-though I kept trying. In the end, I just copied the binaries into my tree and
-set up the configuration needed to run them.&lt;/p&gt;
-
-&lt;p&gt;I gave a demo of the web UI that comes with Kythe, run against some data
-structure code that had Alice written. There’s a somewhat hilarious blowup in
-size: 7 kB of source results in a couple of serving database tables. I also did
-a hackish port of the SQLite build over to Bazel so I could run Kythe over it.
-The 1.5 MB of source resulted in a ~80 MB database. The flipside is that the
-API server responds to most queries in a few milliseconds.&lt;/p&gt;
-
-&lt;p&gt;Keeping with Kythe, I’m currently working on an alternative web UI. The
-provided one is really good to understand how nodes are linked together in the
-graph structure that Kythe builds up, but it’s too noisy and clunky to use as a
-day-to-day code exploration tool. As an example, it shows the syntactic
-relationship of a variable reference being a child of the function it occurs
-in.&lt;/p&gt;
-
-&lt;p&gt;I’m pretty excited about this project because one of the things I wanted to do
-at RC was to learn JavaScript (well, ECMAScript 2015). The &lt;a href=&quot;https://github.com/google/kythe/tree/master/kythe/web/ui/src-cljs/ui&quot;&gt;Kythe web
-UI&lt;/a&gt; is in &lt;a href=&quot;https://github.com/clojure/clojurescript&quot;&gt;Clojurescript&lt;/a&gt; using &lt;a href=&quot;https://github.com/omcljs/om&quot;&gt;Om&lt;/a&gt;, which I’m not currently
-interested in learning, so I’ll be starting my own from scratch.&lt;/p&gt;
-
-&lt;p&gt;Just to keep things slightly weird, I’m using &lt;a href=&quot;https://github.com/Reactive-Extensions/RxJS&quot;&gt;RxJS&lt;/a&gt;, the Reactive Extensions
-for JavaScript. I’m trying to emulate the architecture used in &lt;a href=&quot;http://elm-lang.org/&quot;&gt;Elm&lt;/a&gt; in place
-of the &lt;a href=&quot;http://facebook.github.io/flux/&quot;&gt;Flux&lt;/a&gt; architecture that’s more commonly used with React. The &lt;a href=&quot;https://github.com/evancz/elm-architecture-tutorial/&quot;&gt;Elm
-architecture&lt;/a&gt; is pleasantly functional, consisting of&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;a model type &lt;code&gt;Model&lt;/code&gt;;&lt;/li&gt;
-  &lt;li&gt;an action type &lt;code&gt;Action&lt;/code&gt; that specifies all the kinds of actions that exist;&lt;/li&gt;
-  &lt;li&gt;an update function &lt;code&gt;update :: Action -&amp;gt; Model -&amp;gt; Model&lt;/code&gt;; and&lt;/li&gt;
-  &lt;li&gt;a view function &lt;code&gt;view :: Model -&amp;gt; Html&lt;/code&gt; that renders the model.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;These are all wired up with functional reactive stuff—&lt;a href=&quot;http://package.elm-lang.org/packages/elm-lang/core/2.1.0/Signal&quot;&gt;Signals&lt;/a&gt; in Elm,
-&lt;a href=&quot;https://github.com/Reactive-Extensions/RxJS/blob/master/doc/api/core/observable.md&quot;&gt;Observables&lt;/a&gt; in RxJS. The user input events are translated into a stream of
-actions. A stream of models is created by folding the update function over the
-action stream. Finally, the view is kept up to date by mapping the view
-function over the model stream.&lt;/p&gt;
-
-&lt;p&gt;I have no real idea what I’m doing, so I’m starting off with translating the
-&lt;a href=&quot;https://github.com/evancz/elm-todomvc&quot;&gt;Elm TodoMVC&lt;/a&gt; implementation to this cobbled together set of
-tools. This should be done fairly soon, then I’ll go back to the Kythe code
-browser.&lt;/p&gt;
-
-</description>
-        <pubDate>Wed, 29 Jul 2015 00:01:49 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/07/29/recurse-center-lab-notes-catch-up/</guid>
         
         
       </item>
