@@ -1,0 +1,44 @@
+---
+title: "100:10:1 update 2"
+date: 2016-02-09T22:04:15-05:00
+---
+
+I'm still being slow on picking the 10, but I've added a new one to the list. It
+now stands at two items!
+
+## A very silly key-value store
+I'm really excited about the new idea. It's a very silly key-value store. The
+exact nature of the silliness will wait until I'm further along. I'll make it
+speak either the memcached or redis protocol—or both! This makes it fit under
+one or both of these items from the [original 100][100-10-1]:
+
+- memcached speaking thing
+- redis speaking thing
+
+I'll be doing this in Rust—naturally. As a bit of preparation, I've already added
+[`sendfile(2)`][sendfile-pr] and [`splice(2)`, `tee(2)`, and
+`vmsplice(2)`][splice-pr] to the libc crate, and am working on adding them to
+[nix].
+
+[100-10-1]: http://kamalmarhubi.com/blog/2016/01/25/100-10-1/
+[sendfile-pr]: https://github.com/rust-lang-nursery/libc/pull/170
+[splice-pr]: https://github.com/rust-lang-nursery/libc/pull/172
+[nix]: https://github.com/carllerche/nix-rust
+
+Once that's done, I should be able to start on the silly part! :-)
+
+## rustfmt diff formatting
+I finally got [a pull request][write_mode-pr] tidying up some config stuff
+merged. This was neither my [first attempt][config-pr1] nor my [second
+attempt][config-pr2], but it got there eventually!
+
+I've exhausted what I've decided was some [refactoring as a way to understand
+code][refactoring], but have not made a start on the actual task quite yet. I'm
+working on a couple of other Rust developer infrastructure kinds of projects in
+the meantime, but should get on with this one. I *really* want to be able to
+run `cargo fmt-diff` or whatever the command ends up being.
+
+[write_mode-pr]: https://github.com/rust-lang-nursery/rustfmt/pull/812
+[config-pr1]: https://github.com/rust-lang-nursery/rustfmt/pull/795
+[config-pr2]: https://github.com/rust-lang-nursery/rustfmt/pull/801
+[refactoring]: http://composition.al/blog/2015/12/29/refactoring-as-a-way-to-understand-code/
