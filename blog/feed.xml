@@ -5,9 +5,58 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 09 Feb 2016 22:08:02 -0500</pubDate>
-    <lastBuildDate>Tue, 09 Feb 2016 22:08:02 -0500</lastBuildDate>
+    <pubDate>Tue, 23 Feb 2016 16:50:37 -0500</pubDate>
+    <lastBuildDate>Tue, 23 Feb 2016 16:50:37 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>rust-bisect: tracking down the Rust nightly that changed some behavior</title>
+        <description>&lt;p&gt;After a bit more tinkering that expected, I’m finally (almost&lt;sup id=&quot;fnref:almost&quot;&gt;&lt;a href=&quot;#fn:almost&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;) releasing my first
+Rust crate!&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect&quot;&gt;rust-bisect&lt;/a&gt; helps track down when a change—usually a bug!—was
+introduced into Rust. Rather than &lt;code&gt;git bisect&lt;/code&gt; directly on the Rust repository,
+it uses nightly builds to speed up the process. This is faster in at least a
+couple of ways:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;at over 100 pull requests merged per week, there are far more commits
+to bisect than there are nightly builds&lt;/li&gt;
+  &lt;li&gt;to run an individual test, all rust-bisect needs to do is download the
+nightly: no slow Rust build at each step!&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This was a really fun project to work on! I made a few changes to related
+crates, and even had to solve a stereotypical &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/blob/master/src/bisect.rs&quot;&gt;algorithms interview
+problem&lt;/a&gt;. And of course, there’s something extremely satisfying about
+seeing it bisect and actually find the right nightly…&lt;/p&gt;
+
+&lt;h1 id=&quot;try-it-out&quot;&gt;Try it out!&lt;/h1&gt;
+
+&lt;p&gt;If you want to give it a shot, check out &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect&quot;&gt;the repository&lt;/a&gt;—especially the
+&lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect#example&quot;&gt;example&lt;/a&gt;!  I’d &lt;em&gt;really&lt;/em&gt; love to hear if this is useful to you. And please &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/issues&quot;&gt;open
+issues&lt;/a&gt; if you come across any bugs!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:almost&quot;&gt;
+
+      &lt;p&gt;It’s not on &lt;a href=&quot;https://crates.io/&quot;&gt;crates.io&lt;/a&gt; yet because it’s using some unreleased changes to
+&lt;a href=&quot;https://github.com/Diggsey/multirust-rs&quot;&gt;multirust-rs&lt;/a&gt;… &lt;a href=&quot;https://github.com/Diggsey/multirust-rs/issues/54&quot;&gt;soon though&lt;/a&gt;! &lt;a href=&quot;#fnref:almost&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Tue, 23 Feb 2016 16:36:47 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/02/23/rust-bisect-tracking-down-the-rust-nightly-that-changed-some-behavior/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/23/rust-bisect-tracking-down-the-rust-nightly-that-changed-some-behavior/</guid>
+        
+        
+      </item>
     
       <item>
         <title>100:10:1 update 2</title>
@@ -1285,286 +1334,6 @@ reviewing drafts of this post.&lt;/em&gt;&lt;/p&gt;
         <pubDate>Sun, 06 Sep 2015 12:02:47 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>What even is a kubelet?</title>
-        <description>&lt;p&gt;&lt;a href=&quot;http://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt; is Google’s open source, container-focused cluster management
-thing.  I see it as their attempt to tell everyone how they think containers
-and clusters fit together. The Kubernetes documentation is quite good, but it’s
-divided up in a way that makes it great as a reference. I want to understand
-both the concepts Kubernetes introduces, and the components that make up a
-Kubernetes cluster, and I want to learn by doing. I’m planning to build up a
-cluster from scratch, documenting the moving parts and concepts as I go.&lt;/p&gt;
-
-&lt;p&gt;I’ll start of with a look at the &lt;em&gt;&lt;a href=&quot;http://kubernetes.io/v1.0/docs/admin/kubelet.html&quot;&gt;kubelet&lt;/a&gt;&lt;/em&gt;, which is the lowest level component
-in Kubernetes. It’s responsible for what’s running on an individual machine.
-You can think of it as a process watcher like &lt;a href=&quot;http://supervisord.org/&quot;&gt;supervisord&lt;/a&gt;, but focused on
-running containers. It has one job: given a set of containers to run, make sure
-they are all running.&lt;/p&gt;
-
-&lt;h1 id=&quot;kubelets-run-pods&quot;&gt;Kubelets run pods&lt;/h1&gt;
-
-&lt;p&gt;The unit of execution that Kubernetes works with is the &lt;em&gt;&lt;a href=&quot;http://kubernetes.io/v1.0/docs/user-guide/pods.html&quot;&gt;pod&lt;/a&gt;&lt;/em&gt;. A pod is a
-collection of containers that share some resources: they have a single IP, and
-can share volumes. For example, a web server pod could have a container for the
-server itself, and a container that tails the logs and ships them off to your
-logging or metrics infrastructure.&lt;/p&gt;
-
-&lt;p&gt;Pods are defined by a JSON or YAML file called a pod manifest. A simple one
-with one container looks like this:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-coderay&quot;&gt;&lt;div class=&quot;CodeRay&quot;&gt;
-  &lt;div class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n1&quot; name=&quot;n1&quot;&gt;1&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;apiVersion&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;v1&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n2&quot; name=&quot;n2&quot;&gt;2&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;kind&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;Pod&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n3&quot; name=&quot;n3&quot;&gt;3&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;metadata&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n4&quot; name=&quot;n4&quot;&gt;4&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n5&quot; name=&quot;n5&quot;&gt;5&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;spec&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n6&quot; name=&quot;n6&quot;&gt;6&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;containers&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n7&quot; name=&quot;n7&quot;&gt;7&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: nginx&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n8&quot; name=&quot;n8&quot;&gt;8&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;image&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n9&quot; name=&quot;n9&quot;&gt;9&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;ports&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;strong&gt;&lt;a href=&quot;#n10&quot; name=&quot;n10&quot;&gt;10&lt;/a&gt;&lt;/strong&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;containerPort: 80&lt;/span&gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-
-&lt;p&gt;The container’s &lt;code&gt;image&lt;/code&gt; is a Docker image name. The &lt;code&gt;containerPort&lt;/code&gt; exposes
-that port from the nginx container so we can connect to the nginx server at the
-pod’s IP. By default, the &lt;a href=&quot;http://docs.docker.com/reference/builder/#entrypoint&quot;&gt;entrypoint&lt;/a&gt; defined in the image is what will run; in
-the nginx image, that’s the nginx server.&lt;/p&gt;
-
-&lt;p&gt;Let’s add a log truncator container to this pod. This will take care of the
-nginx access log, truncating it every 10 seconds—who needs those anyway? To do
-this, we’ll need nginx to write its logs to a volume that can be shared to the
-log truncator. We’ll set this volume up as an &lt;code&gt;emptyDir&lt;/code&gt; volume: it will start
-off as an empty directory when the pod starts, and be cleaned up when the pod
-exits, but will persist across restarts of the component containers.&lt;/p&gt;
-
-&lt;p&gt;Here’s the updated pod manifest:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-coderay&quot;&gt;&lt;div class=&quot;CodeRay&quot;&gt;
-  &lt;div class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n1&quot; name=&quot;n1&quot;&gt;1&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;apiVersion&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;v1&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n2&quot; name=&quot;n2&quot;&gt;2&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;kind&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;Pod&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n3&quot; name=&quot;n3&quot;&gt;3&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;metadata&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n4&quot; name=&quot;n4&quot;&gt;4&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n5&quot; name=&quot;n5&quot;&gt;5&lt;/a&gt;&lt;/span&gt;&lt;span style=&quot;color:#606&quot;&gt;spec&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n6&quot; name=&quot;n6&quot;&gt;6&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;containers&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n7&quot; name=&quot;n7&quot;&gt;7&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: nginx&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n8&quot; name=&quot;n8&quot;&gt;8&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;image&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt; &lt;a href=&quot;#n9&quot; name=&quot;n9&quot;&gt;9&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;ports&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;strong&gt;&lt;a href=&quot;#n10&quot; name=&quot;n10&quot;&gt;10&lt;/a&gt;&lt;/strong&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;containerPort: 80&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n11&quot; name=&quot;n11&quot;&gt;11&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;volumeMounts&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n12&quot; name=&quot;n12&quot;&gt;12&lt;/a&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;mountPath: /var/log/nginx&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n13&quot; name=&quot;n13&quot;&gt;13&lt;/a&gt;&lt;/span&gt;      &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx-logs&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n14&quot; name=&quot;n14&quot;&gt;14&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: log-truncator&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n15&quot; name=&quot;n15&quot;&gt;15&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;image&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;busybox&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n16&quot; name=&quot;n16&quot;&gt;16&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;command&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n17&quot; name=&quot;n17&quot;&gt;17&lt;/a&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;/bin/sh&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n18&quot; name=&quot;n18&quot;&gt;18&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;args&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;[-c, &#39;while true; do cat /dev/null &amp;gt; /logdir/access.log; sleep 10; done&#39;]&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n19&quot; name=&quot;n19&quot;&gt;19&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;volumeMounts&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;strong&gt;&lt;a href=&quot;#n20&quot; name=&quot;n20&quot;&gt;20&lt;/a&gt;&lt;/strong&gt;&lt;/span&gt;    - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;mountPath: /logdir&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n21&quot; name=&quot;n21&quot;&gt;21&lt;/a&gt;&lt;/span&gt;      &lt;span style=&quot;color:#606&quot;&gt;name&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;nginx-logs&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n22&quot; name=&quot;n22&quot;&gt;22&lt;/a&gt;&lt;/span&gt;  &lt;span style=&quot;color:#606&quot;&gt;volumes&lt;/span&gt;:
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n23&quot; name=&quot;n23&quot;&gt;23&lt;/a&gt;&lt;/span&gt;  - &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;name: nginx-logs&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;line-numbers&quot;&gt;&lt;a href=&quot;#n24&quot; name=&quot;n24&quot;&gt;24&lt;/a&gt;&lt;/span&gt;    &lt;span style=&quot;color:#606&quot;&gt;emptyDir&lt;/span&gt;: &lt;span style=&quot;background-color:hsla(0,100%,50%,0.05)&quot;&gt;&lt;span style=&quot;color:#D20&quot;&gt;{}&lt;/span&gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-
-&lt;p&gt;We’ve added an &lt;code&gt;emptyDir&lt;/code&gt; volume named &lt;code&gt;nginx-logs&lt;/code&gt;. nginx writes its logs at
-/var/log/nginx, so we mount that volume at that location in the &lt;code&gt;nginx&lt;/code&gt;
-container. For the &lt;code&gt;log-truncator&lt;/code&gt; container, we’re using the &lt;a href=&quot;https://hub.docker.com/_/busybox/&quot;&gt;busybox&lt;/a&gt; image.
-It’s a tiny Linux command line environment, which provides everything we need
-for a robust log truncator. Inside that container, we’ve mounted the
-&lt;code&gt;nginx-logs&lt;/code&gt; volume at &lt;code&gt;/logdir&lt;/code&gt;. We set its &lt;code&gt;command&lt;/code&gt; and &lt;code&gt;args&lt;/code&gt; up to run a
-shell loop that truncates the log file every 10 seconds.&lt;/p&gt;
-
-&lt;p&gt;Now we’ve got this paragon of production infrastructure configured, it’s time
-to run it!&lt;/p&gt;
-
-&lt;h1 id=&quot;running-a-pod&quot;&gt;Running a pod&lt;/h1&gt;
-
-&lt;p&gt;There are a few ways the kubelet finds pods to run:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;a directory it polls for new pod manifests to run&lt;/li&gt;
-  &lt;li&gt;a URL it polls and downloads pod manifests from&lt;/li&gt;
-  &lt;li&gt;from the Kubernetes API server&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;The first of these is definitely the simplest: to run a pod, we just put a
-manifest file in the watched directory. Every 20 seconds, the kubelet checks
-for changes in the directory, and adjusts what it’s running based on what it
-finds.  This means both launching pods that are added, as well as killing ones
-that are removed.&lt;/p&gt;
-
-&lt;p&gt;The kubelet is such a low level component with such limited responsibilities
-that we can actually use it independently of Kubernetes—all we have to do is
-not tell it about a Kubernetes API server. The kubelet supports &lt;a href=&quot;https://github.com/docker/docker&quot;&gt;Docker&lt;/a&gt; and
-&lt;a href=&quot;https://github.com/coreos/rkt&quot;&gt;rkt&lt;/a&gt; as continer runtimes. The default is Docker, and that’s what we’ll use in
-the examples here. You’ll need a machine with Docker installed and running to
-try this out.&lt;/p&gt;
-
-&lt;p&gt;First off, let’s get the kubelet binary from Google.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ wget https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/kubelet
-$ chmod +x kubelet
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;If you run &lt;code&gt;./kubelet --help&lt;/code&gt;, you’ll get an overwhelming list of options. For
-what we’re about to do, we only need one of them though: the &lt;code&gt;--config&lt;/code&gt; option.
-This is the directory that the kubelet will watch for pod manifests to run.
-We’ll create a directory for this, and then start the kubelet. You might need
-to run it under &lt;code&gt;sudo&lt;/code&gt; so that it can talk to the docker daemon.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ mkdir manifests
-$ ./kubelet --config=$PWD/manifests
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now let’s stick the example nginx pod manifest from above in an &lt;code&gt;nginx.yaml&lt;/code&gt;
-file, and then drop it in the &lt;code&gt;manifests&lt;/code&gt; directory. After a short wait, the
-kubelet will notice the file and fire up the pod.&lt;/p&gt;
-
-&lt;p&gt;We can check the list of running containers with &lt;code&gt;docker ps&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ docker ps
-CONTAINER ID        IMAGE                                  COMMAND                CREATED             STATUS              PORTS               NAMES
-f1a27680e401        busybox:latest                         &quot;/bin/sh -c &#39;while t   6 seconds ago       Up 5 seconds                            k8s_log-truncator.72cfff7a_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_401a4c94   
-c5e357fc981a        nginx:latest                           &quot;nginx -g &#39;daemon of   6 seconds ago       Up 6 seconds                            k8s_nginx.515d0778_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_cd02602b           
-b2692643c372        gcr.io/google_containers/pause:0.8.0   &quot;/pause&quot;               6 seconds ago       Up 6 seconds                            k8s_POD.ef28e851_nginx-kx_default_419bc51e985b6bb5e53ea305e2c1e737_836cadc7             
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;There are three containers running: the &lt;code&gt;nginx&lt;/code&gt; and &lt;code&gt;log-truncator&lt;/code&gt; containers
-we defined, as well as the pod infrastructure container.&lt;sup id=&quot;fnref:pause&quot;&gt;&lt;a href=&quot;#fn:pause&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; The
-infrastructure container is where the kubelet puts all the resources that are
-shared across containers in the pod. This includes the IP, as well as any
-volumes we’ve defined. We can poke around with &lt;code&gt;docker inspect&lt;/code&gt; to see how
-they’re configured and hooked up to each other:&lt;/p&gt;
-
-&lt;!-- annoying quoting needed because liquid templates use  for something --&gt;
-&lt;pre&gt;&lt;code&gt;$ docker inspect --format &#39;{{ .NetworkSettings.IPAddress  }}&#39; f1a27680e401
-
-$ docker inspect --format &#39;{{ .NetworkSettings.IPAddress  }}&#39; c5e357fc981a
-
-$ docker inspect --format &#39;{{ .NetworkSettings.IPAddress  }}&#39; b2692643c372
-172.17.0.2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The nginx and log trunctator containers have no IP, but the infrastructure container does. Taking a
-closer look at at the containers we defined, we can see their &lt;code&gt;NetworkMode&lt;/code&gt; is set to
-use the infrastructure container’s network:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ docker inspect --format &#39;{{ .HostConfig.NetworkMode  }}&#39; c5e357fc981a
-container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
-$ docker inspect --format &#39;{{ .HostConfig.NetworkMode  }}&#39; f1a27680e401
-container:b2692643c37216c3f1650b4a5b96254270e0489b96c022c9873ad63c4809ce93
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Since we exposed port 80 from the nginx container with &lt;code&gt;containerPort&lt;/code&gt;,
-we can connect to the nginx server at port 80 at the pod’s IP:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://172.17.0.2 | head -4
-&amp;lt;!DOCTYPE html&amp;gt;
-&amp;lt;html&amp;gt;
-&amp;lt;head&amp;gt;
-&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;It really is running! And just to check the log truncator is doing what we
-expect, let’s watch the log file and make some requests with&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ docker exec -tty f1a27680e401 watch cat /logdir/access.log
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;while we make a few requests. The log lines accumulate for a bit, but then they
-all disappear: the truncator doing its job!&lt;/p&gt;
-
-&lt;h1 id=&quot;kubelet-introspection&quot;&gt;Kubelet introspection&lt;/h1&gt;
-
-&lt;p&gt;The kubelet also has an internal HTTP server. We won’t go into it in detail,
-except to say that it serves a read-only view at port
-10255.  There’s a health check endpoint at &lt;code&gt;/healthz&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl http://localhost:10255/healthz
-ok
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;There are also a few status endpoints. For example, you can get a list
-of running pods at &lt;code&gt;/pods&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://localhost:10255/pods | jq . | head
-{
-  &quot;kind&quot;: &quot;PodList&quot;,
-  &quot;apiVersion&quot;: &quot;v1&quot;,
-  &quot;metadata&quot;: {},
-  &quot;items&quot;: [
-    {
-      &quot;metadata&quot;: {
-        &quot;name&quot;: &quot;nginx-kx&quot;,
-        &quot;namespace&quot;: &quot;default&quot;,
-        &quot;selfLink&quot;: &quot;/api/v1/pods/namespaces/nginx-kx/default&quot;,
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;You can also get specs of the machine the kubelet is running on at
-&lt;code&gt;/spec/&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null  http://localhost:10255/spec/ | jq . | head
-{
-  &quot;num_cores&quot;: 4,
-  &quot;cpu_frequency_khz&quot;: 2700000,
-  &quot;memory_capacity&quot;: 4051689472,
-  &quot;machine_id&quot;: &quot;9eacc5220f4b41e0a22972d8a47ccbe1&quot;,
-  &quot;system_uuid&quot;: &quot;818B908B-D053-CB11-BC8B-EEA826EBA090&quot;,
-  &quot;boot_id&quot;: &quot;a95a337d-6b54-4359-9a02-d50fb7377dd1&quot;,
-  &quot;filesystems&quot;: [
-    {
-      &quot;device&quot;: &quot;/dev/mapper/kx--vg-root&quot;,
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;tearing-things-down&quot;&gt;Tearing things down&lt;/h1&gt;
-
-&lt;p&gt;Finally, we can clean up after ourselves. Just deleting the nginx pod
-manifest will result in the kubelet stopping the containers.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ rm $PWD/manifests/nginx.yaml
-$ sleep 20  # wait for the kublet to spot the removed manifest
-$ docker ps
-CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
-$ curl --stderr /dev/null http://localhost:10255/pods
-{&quot;kind&quot;:&quot;PodList&quot;,&quot;apiVersion&quot;:&quot;v1&quot;,&quot;metadata&quot;:{},&quot;items&quot;:null}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;All gone!&lt;/p&gt;
-
-&lt;p&gt;We’ve seen that while the kubelet is a part of Kubernetes, at heart it’s a
-container-oriented process watcher. You can use it in isolation to manage
-containers running on a single host. In fact, the Kubernetes &lt;a href=&quot;http://kubernetes.io/v1.0/docs/getting-started-guides/docker.html#step-two-run-the-master&quot;&gt;getting started
-guides for Docker&lt;/a&gt; run the kubelet under Docker and
-use the kubelet to manage the Kubernetes master components. In a later post,
-we’ll do something similar!&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:pause&quot;&gt;
-
-      &lt;p&gt;The &lt;code&gt;pause&lt;/code&gt; command that the infrastructure container runs is a 129 byte
-ELF binary that just calls the &lt;a href=&quot;http://man7.org/linux/man-pages/man2/pause.2.html&quot;&gt;&lt;code&gt;pause&lt;/code&gt; system call&lt;/a&gt;, and
-exits when a signal is received. This keeps the infrastructure container
-around until the kubelet brings it down. It’s pretty cool, check the
-&lt;a href=&quot;https://github.com/kubernetes/kubernetes/blob/88317efb42db763b9fb97cd1d9ac1465e62009d0/third_party/pause/pause.asm&quot;&gt;source&lt;/a&gt;! &lt;a href=&quot;#fnref:pause&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Thu, 27 Aug 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/</guid>
         
         
       </item>
