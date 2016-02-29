@@ -27,6 +27,7 @@ style-oriented analogue of not rocket science:
 > **The Not Rocket Science Rule Of Software Engineering:**
 > 
 > automatically maintain a repository of code that always passes all the tests
+
 ―[Graydon Hoare](http://graydon2.dreamwidth.org/1597.html)
 
 A (very!) rough plan of how I intend to get this done:
