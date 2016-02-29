@@ -5,9 +5,115 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 29 Feb 2016 14:25:52 -0500</pubDate>
-    <lastBuildDate>Mon, 29 Feb 2016 14:25:52 -0500</lastBuildDate>
+    <pubDate>Mon, 29 Feb 2016 17:40:50 -0500</pubDate>
+    <lastBuildDate>Mon, 29 Feb 2016 17:40:50 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>My git aliases</title>
+        <description>&lt;p&gt;I have a few little aliases in &lt;a href=&quot;https://github.com/kamalmarhubi/dotfiles-git/blob/master/.gitconfig&quot;&gt;my &lt;code&gt;.gitconfig&lt;/code&gt;&lt;/a&gt; that I find useful
+and that I thought I’d share.&lt;/p&gt;
+
+&lt;h1 id=&quot;git-root-print-the-absolute-path-of-the-repository-root-directory&quot;&gt;git root: print the absolute path of the repository root directory&lt;/h1&gt;
+
+&lt;p&gt;&lt;code&gt;
+	# Print absolute path of repo root directory
+	root = rev-parse --show-toplevel
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;This is useful in the shell if you end up &lt;code&gt;cd&lt;/code&gt;ed to somewhere deeper in the
+repository but want to apply a command at the root, eg for a rename:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
+somewhere/in/repo$ sed -i &#39;s/oldname/newname/g&#39; $(git root)/**
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;git-detach-get-to-a-detached-head-state-on-purpose&quot;&gt;git detach: get to a detached HEAD state on purpose&lt;/h1&gt;
+
+&lt;p&gt;&lt;code&gt;
+	# Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
+	detach = !sh -c &#39;git checkout $(git rev-parse ${1:-HEAD})&#39; --
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Usually a detached HEAD state is something you don’t want to be in, but I’ve
+wanted this in a few instances, so I added it as an alias. Eg, sometimes I want
+to experiment but not actually create a branch. Running &lt;code&gt;git detach&lt;/code&gt; gives me a
+‘branch’ I can make changes to, but without needing to name it, and without needing
+to delete it afterwards. If it turns out I do want to save the work I did, I
+can always &lt;code&gt;git checkout -b new-branch-name&lt;/code&gt;, or &lt;code&gt;git checkout old-branch-name
+&amp;amp;&amp;amp; git merge --ff-only HEAD@{1}&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;This alias uses shell expansion by invoking &lt;code&gt;sh -c&lt;/code&gt;. The bang runs a shell
+command, then &lt;code&gt;sh -c&lt;/code&gt; runs the rest through &lt;code&gt;sh&lt;/code&gt;. The final &lt;code&gt;--&lt;/code&gt; is necessary
+to send any additional arguments to go to &lt;code&gt;git checkout&lt;/code&gt; rather than &lt;code&gt;sh&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;git-sha1-print-short-sha1-of-a-commit&quot;&gt;git sha1: print short sha1 of a commit&lt;/h1&gt;
+
+&lt;p&gt;&lt;code&gt;
+	# Print short sha1; usage: `git sha1 [REF]`
+	sha1 = !sh -c &#39;git rev-parse --short ${1:-HEAD}&#39; --
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Most often used with &lt;code&gt;xsel&lt;/code&gt; or &lt;code&gt;pbcopy&lt;/code&gt;, as in &lt;code&gt;git sha1 | xsel -i&lt;/code&gt; to copy the
+current commit’s short sha1 to the clipboard.&lt;/p&gt;
+
+&lt;p&gt;I use &lt;code&gt;sh -c&lt;/code&gt; for shell expansion again, though here it’s just for supplying a
+default ref.&lt;/p&gt;
+
+&lt;h1 id=&quot;git-gh-url-get-the-github-url-for-a-repository&quot;&gt;git gh-url: get the GitHub URL for a repository&lt;/h1&gt;
+
+&lt;p&gt;&lt;code&gt;
+	# Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
+	gh-url = &quot;!f() { \
+		if ! remote=${1:-$(git config --get \
+			branch.$(git symbolic-ref --short HEAD).remote)}; \
+		then \
+			echo no remote specified and could not get remote for HEAD; \
+			exit; \
+		fi; \
+		if ! remote_url=$(git config --get remote.$remote.url); \
+		then \
+			echo &quot;could not get URL for remote \\`$remote\\`&quot;; \
+			exit; \
+		fi; \
+		case $remote_url in \
+			git@github.com:*.git) \
+				repo=$(echo $remote_url \
+					| sed &#39;s/git@github.com:\\(.*\\).git/\\1/&#39;);; \
+			https://github.com/*) \
+				repo=$(echo $remote_url \
+					| sed &#39;s+https://github.com/\\(.*\\).git+\\1+&#39;);; \
+			*) \
+				echo &quot;\\`$remote\\` does not appear to have &quot; \
+					&quot;a GitHub remote url: $remote_url&quot;; \
+				exit 1;; \
+		esac; \
+		echo https://github.com/$repo; \
+	}; \
+	f&quot;
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;This one is pretty self-explanatory in terms of usage, but it illustrates
+another pattern of git aliases: defining shell function and immediately calling
+it. The general pattern is this:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
+	my-alias = &quot;!f() { \
+		echo COMMANDS GO HERE, ESCAPING NEWLINES WITH
+			BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
+	}; \
+	f&quot;
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Because we’re in a string inside a config file, there’s an annoying amount of
+escaping necessary, but you get the hang of it fairly quickly.&lt;/p&gt;
+</description>
+        <pubDate>Mon, 29 Feb 2016 14:26:27 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/02/29/my-git-aliases/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/29/my-git-aliases/</guid>
+        
+        
+      </item>
     
       <item>
         <title>100:10:1 update 3</title>
@@ -891,207 +997,6 @@ make it possible for containers to talk to each other over the network.&lt;/p&gt
         <pubDate>Tue, 17 Nov 2015 17:41:57 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/11/17/kubernetes-from-the-ground-up-the-scheduler/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/17/kubernetes-from-the-ground-up-the-scheduler/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Eliminating branches in Rust for fun... but not much profit</title>
-        <description>&lt;p&gt;Last week, I nerd-sniped myself after reading a &lt;a href=&quot;http://m4rw3r.github.io/parser-combinator-experiments-part-3/&quot;&gt;blog post&lt;/a&gt; about
-performance of parser combinators in Rust, and the associated &lt;a href=&quot;https://www.reddit.com/r/rust/comments/3k0d0d/parser_combinator_experiments_part_3_performance/&quot;&gt;Reddit
-discussion&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;The benchmark in the post was parsing a bunch of HTTP requests. The focus was
-on improving performance of a function determining if a character formed part
-of a token. In the post, it was changed from&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;fn is_token(c: u8) -&amp;gt; bool {
-    c &amp;lt; 128 &amp;amp;&amp;amp; c &amp;gt; 31 &amp;amp;&amp;amp; b&quot;()&amp;lt;&amp;gt;@,;:\\\&quot;/[]?={} \t&quot;.iter()
-                           .position(|&amp;amp;i| i == c).is_none()
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;which iterates over a list of characters, to&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;fn is_token(c: u8) -&amp;gt; bool {
-    // roughly follows the order of ascii chars: &quot;\&quot;(),/:;&amp;lt;=&amp;gt;?@[\\]{} \t&quot;
-    c &amp;lt; 128 &amp;amp;&amp;amp; c &amp;gt; 32 &amp;amp;&amp;amp; c != b&#39;\t&#39; &amp;amp;&amp;amp; c != b&#39;&quot;&#39; &amp;amp;&amp;amp; c != b&#39;(&#39; &amp;amp;&amp;amp; c != b&#39;)&#39; &amp;amp;&amp;amp;
-        c != b&#39;,&#39; &amp;amp;&amp;amp; c != b&#39;/&#39; &amp;amp;&amp;amp; !(c &amp;gt; 57 &amp;amp;&amp;amp; c &amp;lt; 65) &amp;amp;&amp;amp; !(c &amp;gt; 90 &amp;amp;&amp;amp; c &amp;lt; 94) &amp;amp;&amp;amp;
-        c != b&#39;{&#39; &amp;amp;&amp;amp; c != b&#39;}&#39;
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;which unrolls the loop into a big boolean conjunction.&lt;/p&gt;
-
-&lt;p&gt;On my machine, the benchmark with the original version takes about 106
-microseconds to parse a text file containing about 50 HTTP requests. The newer
-version takes 73 microseconds, which is about 30% faster.&lt;/p&gt;
-
-&lt;p&gt;After reading this, I started thinking something like “I know about CPUs, and
-branches are bad because of mispredictions or something”, and “LOOK &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; AT
-&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; ALL &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; THOSE &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; BRANCHES!”, and imagining fame and fortune for making
-it even faster.&lt;/p&gt;
-
-&lt;p&gt;This led me down a path of trying to replace that function with a
-straight-through series of bitwise operations. First off, let’s unpack what’s
-actually being checked in this function:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code&gt;c &amp;lt; 128&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; represents asn ASCII character&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;c &amp;gt; 32&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; is not a control character or space&lt;/li&gt;
-  &lt;li&gt;all the &lt;code&gt;!=&lt;/code&gt; comparisons: that &lt;code&gt;c&lt;/code&gt; isn’t any of those characters&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;!(c &amp;gt; 57 &amp;amp;&amp;amp; c &amp;lt; 65)&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; is none of &lt;code&gt;:;&amp;lt;=&amp;gt;?@&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;!(c &amp;gt; 90 &amp;amp;&amp;amp; c &amp;lt; 94)&lt;/code&gt;: that &lt;code&gt;c&lt;/code&gt; is none of &lt;code&gt;[\]&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&quot;eliminate-almost-all-the-branches&quot;&gt;Eliminate (almost) ALL THE BRANCHES&lt;/h1&gt;
-
-&lt;p&gt;My basic idea was to replace all the equality checks with XOR, and all the
-boolean ands with bitwise ands. Boolean ands (&lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt;) and ors (&lt;code&gt;||&lt;/code&gt;) have short
-circuiting semantics: their right hand sides are only evaluated if necessary.
-This means that &lt;code&gt;&amp;amp;&amp;amp;&lt;/code&gt; has to be implemented as a conditional jump to avoid
-evaluating the right hand side if the left hand side is false.&lt;/p&gt;
-
-&lt;p&gt;To check I was making any sense, I used the fantastic Godbolt interactive
-compiler, which &lt;a href=&quot;http://rust.godbolt.org/&quot;&gt;has Rust support&lt;/a&gt;. This confirmed that at least
-some of the boolean ands were compiling to conditional jumps, which was enough
-for me to go down the bitwise operation path.&lt;/p&gt;
-
-&lt;p&gt;After spending a bunch of time on translating it to be purely bitwise
-operations, I ended up with this performance result:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;test bench_http ... bench:     230,030 ns/iter (+/- 6,303)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;About three times slower. This was… disappointing. Especially because along
-the way, a broken benchmark setup had me convinced I sped things up by 60%!&lt;/p&gt;
-
-&lt;h1 id=&quot;why-so-slow&quot;&gt;Why so slow?&lt;/h1&gt;
-
-&lt;p&gt;I talked about my results with Dan Luu, since he’s written about this kind of
-thing before. He mentioned that on Haswell, the missed branch prediction
-penalty is about 14 cycles. Optimally organised bitwise operations can be
-about 4 per cycle.&lt;/p&gt;
-
-&lt;p&gt;The original version had about 30 instructions, of which about 6 were branches.
-Assuming one instruction per cycle, a really bad branch predictor miss rate
-like 50% would be somewhere around 75 cycles.  The bitwise version had about
-130 instructions, of which one was a branch. Assume the branch predictor is
-always right, that still puts me at 40+ cycles if 3 are in parallel.&lt;/p&gt;
-
-&lt;p&gt;In summary, unless the branch predictor was abysmally bad at this code, or I
-was amazingly excellent at organizing the bitwise operations, there was no
-strong reason to expect my my bitwise version to be faster.&lt;/p&gt;
-
-&lt;p&gt;This got me to run &lt;code&gt;perf stat&lt;/code&gt; on the benchmark to get a look at the branch
-prediction hit rate. This turned out to be above 99.5%, which is far from
-‘abysmal’.&lt;/p&gt;
-
-&lt;h1 id=&quot;another-approach-a-lookup-table&quot;&gt;Another approach: a lookup table&lt;/h1&gt;
-
-&lt;p&gt;The discussion also suggested implementing this as a lookup table. This would
-reduce &lt;code&gt;is_token&lt;/code&gt; to a single load which can be inlined wherever it’s used.
-Rust represents boolean values as bytes, so the table will be 256 bytes which
-should mean we’ll rarely have to go too far down the cache hierarchy.&lt;/p&gt;
-
-&lt;p&gt;Indeed, implementing that gave a modest 6-7%  performance improvement over the
-version that sent me off on this investigation:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;test bench_http ... bench:      67,890 ns/iter (+/- 1,913)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;So at least there was a somewhat satisfactory result at the end!&lt;/p&gt;
-
-&lt;h1 id=&quot;the-moral-of-the-story-validate-assumptions-and-know-more-numbers&quot;&gt;The moral of the story: validate assumptions, and know more numbers!&lt;/h1&gt;
-
-&lt;p&gt;There were a couple of big takeaways for me. The first is I could have saved
-myself a whole bunch of time if I’d investigated the branch prediction
-performance before embarking on this adventure. Instead of assuming the
-branching was slowing things down, I would know that it probably wasn’t.&lt;/p&gt;
-
-&lt;p&gt;The other was knowing some performance numbers offhand could have helped a lot
-here. I have a rough idea of L1 / L2 latency, and main memory latency. But I
-had no idea how many bitwise operations to expect per cycle, or how bad a
-branch misprediction was. I’ve now added these to my collection, but knowing a
-few more rough figures like that would certainly be good!&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;&lt;em&gt;Thanks to Dan Luu, Anton Dubrau, and David Turner for useful and interesting
-discussions, and to Julia Evans for reading drafts of this post.&lt;/em&gt;&lt;/p&gt;
-
-&lt;!--
-
-# How I implemented a bitwise version
-Here&#39;s how I built up my bitwise version. For my own sanity, and ease of
-translation, I decided to use `0x0` as false and `0x1` as true. Implement first
-and improve afterwards if it seems hopeful. I started off using the fact that
-`x ^ y` is all zeros if and only if `x` and `y` are equal. Or, put another way,
-if `x != y` at least one bit in `x ^ y` is set. This will be handy since most
-of our comparisons are checking inequality with a fixed byte. This lets us
-write
-
-~~~
-fn eq(x: u8, y: u8) -&gt; u8 {
-    not(is_non_zero(x ^ y))
-~~~
-
-We need `is_non_zero` to return `0x1` or `0x0`; we&#39;ll get to that in a second.
-Once it does, the `not` operation is easy: just XOR with `0x1`:
-
-~~~
-fn not(x: u8) -&gt; u8 {
-    x ^ 1
-}
-~~~
-
-As for this `is_non_zero` operation, that&#39;s a bit trickier. Fortunately, [the
-internet][stackoverflow]! Here&#39;s the implementation:
-
-~~~
-fn is_non_zero(x: u8) -&gt; u8 {
-    ((x | ((!x).wrapping_add(1))) &gt;&gt; 7)
-}
-~~~
-
-What we want to do is return `0x1` if any bit of `x` is set, and otherwise
-return `0x0`. We&#39;ll work out how this works from the outside in. If we can get the most signicant bit set in The way this works is to force the most significant bit to be set
-if any bit is set. Then the `&gt;&gt; 7` will bring the most significant bit down to
-be the least significant bit, and we&#39;ll have 
-
-Finally, we&#39;ve got comparisons with `128` and `32`. Both of these are powers of
-two, which makes it a bit easier to check! If the most significant bit is set,
-then the number is greater than or equal to `128`, so we bitwise and with `128`
-and check if that&#39;s non-zero:
-
-
-~~~
-pub fn ge_128(x: u8) -&gt; u8 {
-    is_non_zero(128 &amp; x)
-}
-~~~
-
-For checking a number is less than `32`, we need to check that none of the upper 3 bits are set. For this, we can bitwise and with the bitwise compelement of 31, which has all the lower 5 bits set.
-
-~~~
-pub fn lt_32(x: u8) -&gt; u8 {
-    not(is_non_zero(!0x1f &amp; x))
-}
-~~~
-
-Finally, we need a way to go from `0x1` and `0x0` to `true` and `false`. Since we only have
-
-This let me put the whole thing together:
-
-
-[stackoverflow]: http://stackoverflow.com/questions/3912112/check-if-a-number-is-non-zero-using-bitwise-operators-in-c
---&gt;
-</description>
-        <pubDate>Tue, 15 Sep 2015 00:00:00 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</guid>
         
         
       </item>
