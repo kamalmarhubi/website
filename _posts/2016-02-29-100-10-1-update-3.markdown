@@ -25,7 +25,7 @@ it in a VCS commit hook, and never introduce bad formatting. Think of it as a
 style-oriented analogue of not rocket science:
 
 > **The Not Rocket Science Rule Of Software Engineering:**
-> 
+>
 > automatically maintain a repository of code that always passes all the tests
 
 ―[Graydon Hoare](http://graydon2.dreamwidth.org/1597.html)
