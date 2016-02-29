@@ -13,7 +13,7 @@ figure out if it counts as one of the 10 or not :-)
 [rust-bisect] is a little tool to help track down changes in Rust nightlies. It
 works a lot like `git bisect run`. You give it a command, a nightly build where
 it succeeds, and a nightly build where it fails, and it does binary search to
-find the first nightly where it fails. 
+find the first nightly where it fails.
 
 
 # cargo fmt-diff
