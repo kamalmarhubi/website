@@ -1,0 +1,94 @@
+---
+title: "100:10:1 update 3"
+date: 2016-02-29T13:17:09-05:00
+---
+
+I've been neglecting the updates, but here we go! Since the last update, I got
+a prototype out, but it was something that wasn't on my list... I need to
+figure out if it counts as one of the 10 or not :-)
+
+
+# rust-bisect
+
+[rust-bisect] is a little tool to help track down changes in Rust nightlies. It
+works a lot like `git bisect run`. You give it a command, a nightly build where
+it succeeds, and a nightly build where it fails, and it does binary search to
+find the first nightly where it fails. 
+
+
+# cargo fmt-diff
+
+I've decided to give a name to the project formerly described as ‘rustfmt line
+range & diff reading (format a patch)’: `cargo fmt-diff`. It'll be a command
+you can run to format the lines you've changed. Ideally, you'll be able to put
+it in a VCS commit hook, and never introduce bad formatting. Think of it as a
+style-oriented analogue of not rocket science:
+
+> **The Not Rocket Science Rule Of Software Engineering:**
+> 
+> automatically maintain a repository of code that always passes all the tests
+―[Graydon Hoare](http://graydon2.dreamwidth.org/1597.html)
+
+A rough plan of how I intend to get this done:
+
+1. add command line flag that takes a set of line ranges to format (progress:
+   [rustfmt PR #844, ‘rustfmt: Add an ineffectual --file-lines flag behind a
+   feature’][pr844])
+2. parse a unified diff to get sets of line ranges to pass to the above flag
+
+[pr844]: https://github.com/rust-lang-nursery/rustfmt/issues/844
+
+If you're especially interested in this feature, the rustfmt issue to track is
+[#434](https://github.com/rust-lang-nursery/rustfmt/issues/434).
+
+
+# containy-thing (name TBC)
+
+I'm promoting a project I was working on over the holidays onto my list of 10:
+containy-thing. It was formerly described as ‘container thing for running
+commands in container context without privileges’, and I mentioned it in [Eat
+your greens and read your man pages][man-pages] a month ago. The goal is to
+allow running commands in a container environment without root privileges. I
+just pushed up [a basic repository][gh-containy-thing] for it.
+
+[man-pages]: http://kamalmarhubi.com/blog/2016/01/26/eat-your-greens-and-read-your-man-pages/
+[gh-containy-thing]: https://github.com/kamalmarhubi/containy-thing
+
+
+# Rust and The Update Framework
+
+I'm also promoting a fairly ambitious project onto the list of ten. In the list
+of 100, it was cryptically described as ‘tuf + rust + crates’. The goal of this
+project is to secure the Rust crate ecosystem using [The Update Framework][tuf]
+(TUF). I've been interested in this project since well before I wrote any Rust.
+Verifiable provenance of software artifacts is extremely important, and Rust
+absolutely should have a good approach to it.
+
+The Update Framework is a really well-designed and well-thought out approach to
+securing software updates and distribution. It's being implemented for Python,
+Docker, and other ecosystems. While I was in New York attending the Recurse
+Center, I met up with the researchers behind TUF ([minutes]) to talk about
+implementing it for Rust, but I hadn't followed up until recently. The issue to
+watch for this one is [#75][issue75] on the Crates.io repository.
+
+This project is really exciting, and more than a little bit scary because of
+how important it is to get right. The first steps are to refamiliarize myself
+with TUF, and then put together a Rust RFC. The TUF folks have recently had [a
+paper accepted][tuf-paper] that describes how they have improved TUF even
+further, and I'm starting with reading that.
+
+[minutes]: https://github.com/rust-lang/crates.io/issues/75#issuecomment-179904144
+[tuf]: http://theupdateframework.com/
+[issue75]: https://github.com/rust-lang/crates.io/issues/75
+[tuf-paper]: https://isis.poly.edu/~jcappos/papers/kuppusamy_nsdi_16.pdf
+
+
+# Summary of the list-of-ten:
+
+My list of ten now contains four projects:
+
+- cargo fmt-diff
+- containy-thing
+- silly memcached or redis-speaking key value store whose nature of silliness
+  is as yet undisclosed
+- TUF and Crates.io
