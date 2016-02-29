@@ -29,7 +29,7 @@ style-oriented analogue of not rocket science:
 > automatically maintain a repository of code that always passes all the tests
 ―[Graydon Hoare](http://graydon2.dreamwidth.org/1597.html)
 
-A rough plan of how I intend to get this done:
+A (very!) rough plan of how I intend to get this done:
 
 1. add command line flag that takes a set of line ranges to format (progress:
    [rustfmt PR #844, ‘rustfmt: Add an ineffectual --file-lines flag behind a
