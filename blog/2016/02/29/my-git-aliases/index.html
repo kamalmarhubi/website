@@ -64,8 +64,8 @@ and that I thought I’d share.</p>
 
 <h1 id="git-root-print-the-absolute-path-of-the-repository-root-directory">git root: print the absolute path of the repository root directory</h1>
 
-<pre><code>	# Print absolute path of repo root directory
-	root = rev-parse --show-toplevel
+<pre><code># Print absolute path of repo root directory
+root = rev-parse --show-toplevel
 </code></pre>
 
 <p>This is useful in the shell if you end up <code>cd</code>ed to somewhere deeper in the
@@ -76,8 +76,8 @@ repository but want to apply a command at the root, eg for a rename:</p>
 
 <h1 id="git-detach-get-to-a-detached-head-state-on-purpose">git detach: get to a detached HEAD state on purpose</h1>
 
-<pre><code>	# Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
-	detach = !sh -c 'git checkout $(git rev-parse ${1:-HEAD})' --
+<pre><code># Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
+detach = !sh -c 'git checkout $(git rev-parse ${1:-HEAD})' --
 </code></pre>
 
 <p>Usually a detached HEAD state is something you don’t want to be in, but I’ve
@@ -94,8 +94,8 @@ to send any additional arguments to go to <code>git checkout</code> rather than 
 
 <h1 id="git-sha1-print-short-sha1-of-a-commit">git sha1: print short sha1 of a commit</h1>
 
-<pre><code>	# Print short sha1; usage: `git sha1 [REF]`
-	sha1 = !sh -c 'git rev-parse --short ${1:-HEAD}' --
+<pre><code># Print short sha1; usage: `git sha1 [REF]`
+sha1 = !sh -c 'git rev-parse --short ${1:-HEAD}' --
 </code></pre>
 
 <p>Most often used with <code>xsel</code> or <code>pbcopy</code>, as in <code>git sha1 | xsel -i</code> to copy the
@@ -106,45 +106,45 @@ default ref.</p>
 
 <h1 id="git-gh-url-get-the-github-url-for-a-repository">git gh-url: get the GitHub URL for a repository</h1>
 
-<pre><code>	# Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
-	gh-url = "!f() { \
-		if ! remote=${1:-$(git config --get \
-			branch.$(git symbolic-ref --short HEAD).remote)}; \
-		then \
-			echo no remote specified and could not get remote for HEAD; \
-			exit; \
-		fi; \
-		if ! remote_url=$(git config --get remote.$remote.url); \
-		then \
-			echo "could not get URL for remote \\`$remote\\`"; \
-			exit; \
-		fi; \
-		case $remote_url in \
-			git@github.com:*.git) \
-				repo=$(echo $remote_url \
-					| sed 's/git@github.com:\\(.*\\).git/\\1/');; \
-			https://github.com/*) \
-				repo=$(echo $remote_url \
-					| sed 's+https://github.com/\\(.*\\).git+\\1+');; \
-			*) \
-				echo "\\`$remote\\` does not appear to have " \
-					"a GitHub remote url: $remote_url"; \
-				exit 1;; \
-		esac; \
-		echo https://github.com/$repo; \
-	}; \
-	f"
+<pre><code># Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
+gh-url = "!f() { \
+	if ! remote=${1:-$(git config --get \
+		branch.$(git symbolic-ref --short HEAD).remote)}; \
+	then \
+		echo no remote specified and could not get remote for HEAD; \
+		exit; \
+	fi; \
+	if ! remote_url=$(git config --get remote.$remote.url); \
+	then \
+		echo "could not get URL for remote \\`$remote\\`"; \
+		exit; \
+	fi; \
+	case $remote_url in \
+		git@github.com:*.git) \
+			repo=$(echo $remote_url \
+				| sed 's/git@github.com:\\(.*\\).git/\\1/');; \
+		https://github.com/*) \
+			repo=$(echo $remote_url \
+				| sed 's+https://github.com/\\(.*\\).git+\\1+');; \
+		*) \
+			echo "\\`$remote\\` does not appear to have " \
+				"a GitHub remote url: $remote_url"; \
+			exit 1;; \
+	esac; \
+	echo https://github.com/$repo; \
+}; \
+f"
 </code></pre>
 
 <p>This one is pretty self-explanatory in terms of usage, but it illustrates
 another pattern of git aliases: defining shell function and immediately calling
 it. The general pattern is this:</p>
 
-<pre><code>	my-alias = "!f() { \
-		echo COMMANDS GO HERE, ESCAPING NEWLINES WITH \
-			BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
-	}; \
-	f"
+<pre><code>my-alias = "!f() { \
+	echo COMMANDS GO HERE, ESCAPING NEWLINES WITH \
+		BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
+}; \
+f"
 </code></pre>
 
 <p>Because we’re in a string inside a config file, there’s an annoying amount of

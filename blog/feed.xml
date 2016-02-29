@@ -5,8 +5,8 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 29 Feb 2016 17:47:07 -0500</pubDate>
-    <lastBuildDate>Mon, 29 Feb 2016 17:47:07 -0500</lastBuildDate>
+    <pubDate>Mon, 29 Feb 2016 17:48:48 -0500</pubDate>
+    <lastBuildDate>Mon, 29 Feb 2016 17:48:48 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -16,8 +16,8 @@ and that I thought I’d share.&lt;/p&gt;
 
 &lt;h1 id=&quot;git-root-print-the-absolute-path-of-the-repository-root-directory&quot;&gt;git root: print the absolute path of the repository root directory&lt;/h1&gt;
 
-&lt;pre&gt;&lt;code&gt;	# Print absolute path of repo root directory
-	root = rev-parse --show-toplevel
+&lt;pre&gt;&lt;code&gt;# Print absolute path of repo root directory
+root = rev-parse --show-toplevel
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;This is useful in the shell if you end up &lt;code&gt;cd&lt;/code&gt;ed to somewhere deeper in the
@@ -28,8 +28,8 @@ repository but want to apply a command at the root, eg for a rename:&lt;/p&gt;
 
 &lt;h1 id=&quot;git-detach-get-to-a-detached-head-state-on-purpose&quot;&gt;git detach: get to a detached HEAD state on purpose&lt;/h1&gt;
 
-&lt;pre&gt;&lt;code&gt;	# Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
-	detach = !sh -c &#39;git checkout $(git rev-parse ${1:-HEAD})&#39; --
+&lt;pre&gt;&lt;code&gt;# Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
+detach = !sh -c &#39;git checkout $(git rev-parse ${1:-HEAD})&#39; --
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Usually a detached HEAD state is something you don’t want to be in, but I’ve
@@ -46,8 +46,8 @@ to send any additional arguments to go to &lt;code&gt;git checkout&lt;/code&gt; 
 
 &lt;h1 id=&quot;git-sha1-print-short-sha1-of-a-commit&quot;&gt;git sha1: print short sha1 of a commit&lt;/h1&gt;
 
-&lt;pre&gt;&lt;code&gt;	# Print short sha1; usage: `git sha1 [REF]`
-	sha1 = !sh -c &#39;git rev-parse --short ${1:-HEAD}&#39; --
+&lt;pre&gt;&lt;code&gt;# Print short sha1; usage: `git sha1 [REF]`
+sha1 = !sh -c &#39;git rev-parse --short ${1:-HEAD}&#39; --
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Most often used with &lt;code&gt;xsel&lt;/code&gt; or &lt;code&gt;pbcopy&lt;/code&gt;, as in &lt;code&gt;git sha1 | xsel -i&lt;/code&gt; to copy the
@@ -58,45 +58,45 @@ default ref.&lt;/p&gt;
 
 &lt;h1 id=&quot;git-gh-url-get-the-github-url-for-a-repository&quot;&gt;git gh-url: get the GitHub URL for a repository&lt;/h1&gt;
 
-&lt;pre&gt;&lt;code&gt;	# Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
-	gh-url = &quot;!f() { \
-		if ! remote=${1:-$(git config --get \
-			branch.$(git symbolic-ref --short HEAD).remote)}; \
-		then \
-			echo no remote specified and could not get remote for HEAD; \
-			exit; \
-		fi; \
-		if ! remote_url=$(git config --get remote.$remote.url); \
-		then \
-			echo &quot;could not get URL for remote \\`$remote\\`&quot;; \
-			exit; \
-		fi; \
-		case $remote_url in \
-			git@github.com:*.git) \
-				repo=$(echo $remote_url \
-					| sed &#39;s/git@github.com:\\(.*\\).git/\\1/&#39;);; \
-			https://github.com/*) \
-				repo=$(echo $remote_url \
-					| sed &#39;s+https://github.com/\\(.*\\).git+\\1+&#39;);; \
-			*) \
-				echo &quot;\\`$remote\\` does not appear to have &quot; \
-					&quot;a GitHub remote url: $remote_url&quot;; \
-				exit 1;; \
-		esac; \
-		echo https://github.com/$repo; \
-	}; \
-	f&quot;
+&lt;pre&gt;&lt;code&gt;# Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
+gh-url = &quot;!f() { \
+	if ! remote=${1:-$(git config --get \
+		branch.$(git symbolic-ref --short HEAD).remote)}; \
+	then \
+		echo no remote specified and could not get remote for HEAD; \
+		exit; \
+	fi; \
+	if ! remote_url=$(git config --get remote.$remote.url); \
+	then \
+		echo &quot;could not get URL for remote \\`$remote\\`&quot;; \
+		exit; \
+	fi; \
+	case $remote_url in \
+		git@github.com:*.git) \
+			repo=$(echo $remote_url \
+				| sed &#39;s/git@github.com:\\(.*\\).git/\\1/&#39;);; \
+		https://github.com/*) \
+			repo=$(echo $remote_url \
+				| sed &#39;s+https://github.com/\\(.*\\).git+\\1+&#39;);; \
+		*) \
+			echo &quot;\\`$remote\\` does not appear to have &quot; \
+				&quot;a GitHub remote url: $remote_url&quot;; \
+			exit 1;; \
+	esac; \
+	echo https://github.com/$repo; \
+}; \
+f&quot;
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;This one is pretty self-explanatory in terms of usage, but it illustrates
 another pattern of git aliases: defining shell function and immediately calling
 it. The general pattern is this:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;	my-alias = &quot;!f() { \
-		echo COMMANDS GO HERE, ESCAPING NEWLINES WITH \
-			BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
-	}; \
-	f&quot;
+&lt;pre&gt;&lt;code&gt;my-alias = &quot;!f() { \
+	echo COMMANDS GO HERE, ESCAPING NEWLINES WITH \
+		BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
+}; \
+f&quot;
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Because we’re in a string inside a config file, there’s an annoying amount of
