@@ -12,8 +12,8 @@ and that I thought I'd share.
 # git root: print the absolute path of the repository root directory
 
 ~~~
-	# Print absolute path of repo root directory
-	root = rev-parse --show-toplevel
+# Print absolute path of repo root directory
+root = rev-parse --show-toplevel
 ~~~
 
 This is useful in the shell if you end up `cd`ed to somewhere deeper in the
@@ -27,8 +27,8 @@ somewhere/in/repo$ sed -i 's/oldname/newname/g' $(git root)/**
 # git detach: get to a detached HEAD state on purpose
 
 ~~~
-	# Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
-	detach = !sh -c 'git checkout $(git rev-parse ${1:-HEAD})' --
+# Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
+detach = !sh -c 'git checkout $(git rev-parse ${1:-HEAD})' --
 ~~~
 
 Usually a detached HEAD state is something you don't want to be in, but I've
@@ -47,8 +47,8 @@ to send any additional arguments to go to `git checkout` rather than `sh`.
 # git sha1: print short sha1 of a commit
 
 ~~~
-	# Print short sha1; usage: `git sha1 [REF]`
-	sha1 = !sh -c 'git rev-parse --short ${1:-HEAD}' --
+# Print short sha1; usage: `git sha1 [REF]`
+sha1 = !sh -c 'git rev-parse --short ${1:-HEAD}' --
 ~~~
 
 Most often used with `xsel` or `pbcopy`, as in `git sha1 | xsel -i` to copy the
@@ -61,34 +61,34 @@ default ref.
 # git gh-url: get the GitHub URL for a repository
 
 ~~~
-	# Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
-	gh-url = "!f() { \
-		if ! remote=${1:-$(git config --get \
-			branch.$(git symbolic-ref --short HEAD).remote)}; \
-		then \
-			echo no remote specified and could not get remote for HEAD; \
-			exit; \
-		fi; \
-		if ! remote_url=$(git config --get remote.$remote.url); \
-		then \
-			echo "could not get URL for remote \\`$remote\\`"; \
-			exit; \
-		fi; \
-		case $remote_url in \
-			git@github.com:*.git) \
-				repo=$(echo $remote_url \
-					| sed 's/git@github.com:\\(.*\\).git/\\1/');; \
-			https://github.com/*) \
-				repo=$(echo $remote_url \
-					| sed 's+https://github.com/\\(.*\\).git+\\1+');; \
-			*) \
-				echo "\\`$remote\\` does not appear to have " \
-					"a GitHub remote url: $remote_url"; \
-				exit 1;; \
-		esac; \
-		echo https://github.com/$repo; \
-	}; \
-	f"
+# Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
+gh-url = "!f() { \
+	if ! remote=${1:-$(git config --get \
+		branch.$(git symbolic-ref --short HEAD).remote)}; \
+	then \
+		echo no remote specified and could not get remote for HEAD; \
+		exit; \
+	fi; \
+	if ! remote_url=$(git config --get remote.$remote.url); \
+	then \
+		echo "could not get URL for remote \\`$remote\\`"; \
+		exit; \
+	fi; \
+	case $remote_url in \
+		git@github.com:*.git) \
+			repo=$(echo $remote_url \
+				| sed 's/git@github.com:\\(.*\\).git/\\1/');; \
+		https://github.com/*) \
+			repo=$(echo $remote_url \
+				| sed 's+https://github.com/\\(.*\\).git+\\1+');; \
+		*) \
+			echo "\\`$remote\\` does not appear to have " \
+				"a GitHub remote url: $remote_url"; \
+			exit 1;; \
+	esac; \
+	echo https://github.com/$repo; \
+}; \
+f"
 ~~~
 
 This one is pretty self-explanatory in terms of usage, but it illustrates
@@ -96,11 +96,11 @@ another pattern of git aliases: defining shell function and immediately calling
 it. The general pattern is this:
 
 ~~~
-	my-alias = "!f() { \
-		echo COMMANDS GO HERE, ESCAPING NEWLINES WITH \
-			BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
-	}; \
-	f"
+my-alias = "!f() { \
+	echo COMMANDS GO HERE, ESCAPING NEWLINES WITH \
+		BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
+}; \
+f"
 ~~~
 
 Because we're in a string inside a config file, there's an annoying amount of
