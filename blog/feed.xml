@@ -5,9 +5,99 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 23 Feb 2016 16:50:37 -0500</pubDate>
-    <lastBuildDate>Tue, 23 Feb 2016 16:50:37 -0500</lastBuildDate>
+    <pubDate>Mon, 29 Feb 2016 14:07:35 -0500</pubDate>
+    <lastBuildDate>Mon, 29 Feb 2016 14:07:35 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>100:10:1 update 3</title>
+        <description>&lt;p&gt;I’ve been neglecting the updates, but here we go! Since the last update, I got
+a prototype out, but it was something that wasn’t on my list… I need to
+figure out if it counts as one of the 10 or not :-)&lt;/p&gt;
+
+&lt;h1 id=&quot;rust-bisect&quot;&gt;rust-bisect&lt;/h1&gt;
+
+&lt;p&gt;[rust-bisect] is a little tool to help track down changes in Rust nightlies. It
+works a lot like &lt;code&gt;git bisect run&lt;/code&gt;. You give it a command, a nightly build where
+it succeeds, and a nightly build where it fails, and it does binary search to
+find the first nightly where it fails.&lt;/p&gt;
+
+&lt;h1 id=&quot;cargo-fmt-diff&quot;&gt;cargo fmt-diff&lt;/h1&gt;
+
+&lt;p&gt;I’ve decided to give a name to the project formerly described as ‘rustfmt line
+range &amp;amp; diff reading (format a patch)’: &lt;code&gt;cargo fmt-diff&lt;/code&gt;. It’ll be a command
+you can run to format the lines you’ve changed. Ideally, you’ll be able to put
+it in a VCS commit hook, and never introduce bad formatting. Think of it as a
+style-oriented analogue of not rocket science:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;The Not Rocket Science Rule Of Software Engineering:&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;automatically maintain a repository of code that always passes all the tests
+―&lt;a href=&quot;http://graydon2.dreamwidth.org/1597.html&quot;&gt;Graydon Hoare&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;A rough plan of how I intend to get this done:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;add command line flag that takes a set of line ranges to format (progress:
+&lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/issues/844&quot;&gt;rustfmt PR #844, ‘rustfmt: Add an ineffectual –file-lines flag behind a
+feature’&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;parse a unified diff to get sets of line ranges to pass to the above flag&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;If you’re especially interested in this feature, the rustfmt issue to track is
+&lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/issues/434&quot;&gt;#434&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;containy-thing-name-tbc&quot;&gt;containy-thing (name TBC)&lt;/h1&gt;
+
+&lt;p&gt;I’m promoting a project I was working on over the holidays onto my list of 10:
+containy-thing. It was formerly described as ‘container thing for running
+commands in container context without privileges’, and I mentioned it in &lt;a href=&quot;http://kamalmarhubi.com/blog/2016/01/26/eat-your-greens-and-read-your-man-pages/&quot;&gt;Eat
+your greens and read your man pages&lt;/a&gt; a month ago. The goal is to
+allow running commands in a container environment without root privileges. I
+just pushed up &lt;a href=&quot;https://github.com/kamalmarhubi/containy-thing&quot;&gt;a basic repository&lt;/a&gt; for it.&lt;/p&gt;
+
+&lt;h1 id=&quot;rust-and-the-update-framework&quot;&gt;Rust and The Update Framework&lt;/h1&gt;
+
+&lt;p&gt;I’m also promoting a fairly ambitious project onto the list of ten. In the list
+of 100, it was cryptically described as ‘tuf + rust + crates’. The goal of this
+project is to secure the Rust crate ecosystem using &lt;a href=&quot;http://theupdateframework.com/&quot;&gt;The Update Framework&lt;/a&gt;
+(TUF). I’ve been interested in this project since well before I wrote any Rust.
+Verifiable provenance of software artifacts is extremely important, and Rust
+absolutely should have a good approach to it.&lt;/p&gt;
+
+&lt;p&gt;The Update Framework is a really well-designed and well-thought out approach to
+securing software updates and distribution. It’s being implemented for Python,
+Docker, and other ecosystems. While I was in New York attending the Recurse
+Center, I met up with the researchers behind TUF (&lt;a href=&quot;https://github.com/rust-lang/crates.io/issues/75#issuecomment-179904144&quot;&gt;minutes&lt;/a&gt;) to talk about
+implementing it for Rust, but I hadn’t followed up until recently. The issue to
+watch for this one is &lt;a href=&quot;https://github.com/rust-lang/crates.io/issues/75&quot;&gt;#75&lt;/a&gt; on the Crates.io repository.&lt;/p&gt;
+
+&lt;p&gt;This project is really exciting, and more than a little bit scary because of
+how important it is to get right. The first steps are to refamiliarize myself
+with TUF, and then put together a Rust RFC. The TUF folks have recently had &lt;a href=&quot;https://isis.poly.edu/~jcappos/papers/kuppusamy_nsdi_16.pdf&quot;&gt;a
+paper accepted&lt;/a&gt; that describes how they have improved TUF even
+further, and I’m starting with reading that.&lt;/p&gt;
+
+&lt;h1 id=&quot;summary-of-the-list-of-ten&quot;&gt;Summary of the list-of-ten:&lt;/h1&gt;
+
+&lt;p&gt;My list of ten now contains four projects:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;cargo fmt-diff&lt;/li&gt;
+  &lt;li&gt;containy-thing&lt;/li&gt;
+  &lt;li&gt;silly memcached or redis-speaking key value store whose nature of silliness
+is as yet undisclosed&lt;/li&gt;
+  &lt;li&gt;TUF and Crates.io&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 29 Feb 2016 13:17:09 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/02/29/100-10-1-update-3/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/29/100-10-1-update-3/</guid>
+        
+        
+      </item>
     
       <item>
         <title>rust-bisect: tracking down the Rust nightly that changed some behavior</title>
@@ -1001,339 +1091,6 @@ This let me put the whole thing together:
         <pubDate>Tue, 15 Sep 2015 00:00:00 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/15/eliminating-branches-in-rust-for-fun-but-not-much-profit/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Kubernetes from the ground up: the API server</title>
-        <description>&lt;p&gt;&lt;em&gt;This is the second post in a series on &lt;a href=&quot;http://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt;, the open source cluster
-manager. The first post was &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/&quot;&gt;about the kubelet&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/&quot;&gt;Last time&lt;/a&gt; we took a look at the kubelet, Kubernetes’
-container-focused process watcher. The kubelet runs pods, which are collections
-of containers that share an IP and some volumes. In the post, we gave it pods
-to run by putting pod manifest files in directory it watched. This was a great
-way to understand the core purpose of the kubelet.  In a Kubernetes cluster,
-however, a kubelet will get most its pods to run from the Kubernetes API
-server.&lt;/p&gt;
-
-&lt;p&gt;Kubernetes stores all its cluster state in &lt;a href=&quot;https://github.com/coreos/etcd&quot;&gt;etcd&lt;/a&gt;, a distributed data store with
-a strong consistency model. This state includes what nodes exist in the cluster,
-what pods should be running, which nodes they are running on, and a whole lot
-more. The API server is the only Kubernetes component that connects to etcd; all
-the other components must go through the API server to work with cluster state.
-In this post we’ll look at the API server, and its interaction with the kubelet.&lt;/p&gt;
-
-&lt;h1 id=&quot;starting-the-api-server&quot;&gt;Starting the API server&lt;/h1&gt;
-
-&lt;p&gt;&lt;em&gt;You may need to use &lt;code&gt;sudo&lt;/code&gt; on some commands, depending on your setup.&lt;/em&gt;&lt;/p&gt;
-
-&lt;p&gt;First off, we’re going to need etcd running. Luckily this is as easy as creating
-a directory for it to store its state and starting it with Docker. We’ll also
-save the Docker container ID so we can stop the container later.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ mkdir etcd-data
-$ docker run --volume=$PWD/etcd-data:/default.etcd \
---detach --net=host quay.io/coreos/etcd &amp;gt; etcd-container-id
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We use host networking so that the API server can talk to it at &lt;code&gt;127.0.0.1&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Next we’ll want the API server binary:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ wget https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/kube-apiserver
-$ chmod +x kube-apiserver
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now we can start it up. It needs to know where the etcd server is, as well as
-the service cluster IP range. We’ll save talking about what the IP range is for
-a later post that will go into Kubernetes’ services and networking. For now
-we’ll just provide &lt;code&gt;10.0.0.0/16&lt;/code&gt; so that the API server starts up without
-shouting at us!&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ./kube-apiserver \
---etcd-servers=http://127.0.0.1:2379 \
---service-cluster-ip-range=10.0.0.0/16 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We can now &lt;code&gt;curl&lt;/code&gt; around and check a few things out. First off, we can get a
-list of nodes in our cluster:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl http://localhost:8080/api/v1/nodes
-{
-  &quot;kind&quot;: &quot;NodeList&quot;,
-  &quot;apiVersion&quot;: &quot;v1&quot;,
-  &quot;metadata&quot;: {
-    &quot;selfLink&quot;: &quot;/api/v1/nodes&quot;,
-    &quot;resourceVersion&quot;: &quot;150&quot;
-  },
-  &quot;items&quot;: []
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Not surprisingly, there aren’t any yet.&lt;/p&gt;
-
-&lt;p&gt;As a quick note on other fields in the response: the &lt;code&gt;kind&lt;/code&gt; and &lt;code&gt;apiVersion&lt;/code&gt;
-are giving information about the API version and type of response we got. The
-&lt;code&gt;selfLink&lt;/code&gt; field is a canonical link for the resource in the response. The
-&lt;code&gt;resourceVersion&lt;/code&gt; is used for concurrency control. Clients send it back when
-they are changing a resource, and the server can determine if there was a
-conflicting write to the same resource in the meantime.&lt;/p&gt;
-
-&lt;p&gt;All that is to say: right now we only care about the &lt;code&gt;items&lt;/code&gt; field. We can use
-the incredibly handy &lt;a href=&quot;https://stedolan.github.io/jq/&quot;&gt;&lt;code&gt;jq&lt;/code&gt;&lt;/a&gt; utility to just get at the items. We’ll use &lt;code&gt;jq&lt;/code&gt;
-to cut out noisy bits of responses throughout this post. For example, we can
-look at what pods our cluster is running:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://localhost:8080/api/v1/pods | jq &#39;.items&#39;
-[]
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;No surprises there, either!&lt;/p&gt;
-
-&lt;h1 id=&quot;adding-a-node&quot;&gt;Adding a node&lt;/h1&gt;
-
-&lt;p&gt;In the last post, we had the kubelet watching for pod manifest files in a
-directory we gave it via the &lt;code&gt;--config&lt;/code&gt; flag. This time we’ll have it get pod
-manifests from the API server.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ./kubelet --api-servers=127.0.0.1:8080
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;When a kubelet starts up, it registers itself as a node with the API server and
-starts watching for pods to run. This is really great, because it means that
-when we get to running a multinode cluster, we can add nodes without having to
-reconfigure the API server.&lt;/p&gt;
-
-&lt;p&gt;We can check that the API server knows about our node:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://localhost:8080/api/v1/nodes/ \
-| jq &#39;.items&#39; | head
-[
-  {
-    &quot;metadata&quot;: {
-      &quot;name&quot;: &quot;awesome-node&quot;,
-      &quot;selfLink&quot;: &quot;/api/v1/nodes/awesome-node&quot;,
-      &quot;uid&quot;: &quot;6811f7b0-5181-11e5-b364-68f7288bdc45&quot;,
-      &quot;resourceVersion&quot;: &quot;246&quot;,
-      &quot;creationTimestamp&quot;: &quot;2015-09-02T14:46:34Z&quot;,
-      &quot;labels&quot;: {
-        &quot;kubernetes.io/hostname&quot;: &quot;awesome-node&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We now have a one-node cluster!&lt;/p&gt;
-
-&lt;h1 id=&quot;running-a-pod-via-the-api-server&quot;&gt;Running a pod via the API server&lt;/h1&gt;
-
-&lt;p&gt;Let’s run our nginx example from the last post:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/01-the-kubelet/nginx.yaml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;In a complete Kubernetes cluster, the scheduler will decide which node to run a
-pod on. For now, we’ve only got the API server and a kubelet, so we’ll have to
-specify it ourselves. To do this, we need to add a &lt;code&gt;nodeName&lt;/code&gt; to the spec with
-the node’s &lt;code&gt;name&lt;/code&gt; from above:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ sed --in-place &#39;/spec:/a\ \ nodeName: awesome-node&#39; nginx.yaml
-$ head nginx.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-spec:
-  nodeName: awesome-node
-  containers:
-  - name: nginx
-    image: nginx
-    ports:
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;With the &lt;code&gt;nodeName&lt;/code&gt; configured, we’re almost ready to send the pod manifest to
-the API server. Unfortunately, it only speaks JSON so we have to convert our YAML to
-JSON:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ruby -ryaml -rjson \
--e &#39;puts JSON.pretty_generate(YAML.load(ARGF))&#39; &amp;lt; nginx.yaml &amp;gt; nginx.json
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Alternatively, just download the &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json&quot;&gt;JSON file&lt;/a&gt; and &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml&quot;&gt;YAML
-file&lt;/a&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.json
-$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/02-the-api-server/nginx.yaml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Then edit the files so that the &lt;code&gt;nodeName&lt;/code&gt; matches your hostname.&lt;/p&gt;
-
-&lt;p&gt;Now we can post the JSON pod manifest to the API server:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl \
---stderr /dev/null \
---request POST http://localhost:8080/api/v1/namespaces/default/pods \
---data @nginx.json | jq &#39;del(.spec.containers, .spec.volumes)&#39;
-{
-  &quot;kind&quot;: &quot;Pod&quot;,
-  &quot;apiVersion&quot;: &quot;v1&quot;,
-  &quot;metadata&quot;: {
-    &quot;name&quot;: &quot;nginx&quot;,
-    &quot;namespace&quot;: &quot;default&quot;,
-    &quot;selfLink&quot;: &quot;/api/v1/namespaces/default/pods/nginx&quot;,
-    &quot;uid&quot;: &quot;28aa5a55-5194-11e5-b364-68f7288bdc45&quot;,
-    &quot;resourceVersion&quot;: &quot;1365&quot;,
-    &quot;creationTimestamp&quot;: &quot;2015-09-02T17:00:48Z&quot;
-  },
-  &quot;spec&quot;: {
-    &quot;restartPolicy&quot;: &quot;Always&quot;,
-    &quot;dnsPolicy&quot;: &quot;ClusterFirst&quot;,
-    &quot;nodeName&quot;: &quot;awesome-node&quot;
-  },
-  &quot;status&quot;: {
-    &quot;phase&quot;: &quot;Pending&quot;
-  }
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;After a short wait, the kubelet should have started the pod. We can check this
-by making a GET request:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://localhost:8080/api/v1/namespaces/default/pods \
-| jq &#39;.items[] | { name: .metadata.name, status: .status} | del(.status.containerStatuses)&#39;
-{
-  &quot;name&quot;: &quot;nginx&quot;,
-  &quot;status&quot;: {
-    &quot;phase&quot;: &quot;Running&quot;,
-    &quot;conditions&quot;: [
-      {
-        &quot;type&quot;: &quot;Ready&quot;,
-        &quot;status&quot;: &quot;True&quot;
-      }
-    ],
-    &quot;hostIP&quot;: &quot;127.0.1.1&quot;,
-    &quot;podIP&quot;: &quot;172.17.0.37&quot;,
-    &quot;startTime&quot;: &quot;2015-09-02T18:00:00Z&quot;
-  }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The pod is up, and it’s been assigned the IP &lt;code&gt;172.17.0.37&lt;/code&gt; by Docker. Docker
-networking is really quite interesting, and well worth reading about. A good
-place to start is &lt;a href=&quot;https://docs.docker.com/articles/networking/&quot;&gt;the network configuration article&lt;/a&gt; in the Docker
-documentation.&lt;/p&gt;
-
-&lt;p&gt;Let’s check that nginx is reachable at that IP:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://172.17.0.37 | head -4
-&amp;lt;!DOCTYPE html&amp;gt;
-&amp;lt;html&amp;gt;
-&amp;lt;head&amp;gt;
-&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Excellent!&lt;/p&gt;
-
-&lt;h1 id=&quot;the-kubernetes-command-line-client-kubectl&quot;&gt;The Kubernetes command line client: kubectl&lt;/h1&gt;
-
-&lt;p&gt;While it’s great to know that the API server speaks a fairly intelligible REST
-dialect, talking to it directly with &lt;code&gt;curl&lt;/code&gt; and using &lt;code&gt;jq&lt;/code&gt; to filter the
-responses isn’t the best user experience. This is a great point to pause and
-introduce the command line client&lt;a href=&quot;http://kubernetes.io/v1.0/docs/user-guide/kubectl/kubectl.html&quot;&gt; &lt;code&gt;kubectl&lt;/code&gt;&lt;/a&gt;, which we’ll use
-throughout the rest of this series. It will make things &lt;strong&gt;much&lt;/strong&gt; nicer!&lt;/p&gt;
-
-&lt;p&gt;First off, let’s download the client:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ wget https://storage.googleapis.com/kubernetes-release/release/v1.0.3/bin/linux/amd64/kubectl
-$ chmod +x kubectl
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now we can get the list of nodes and see what pods are running:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ./kubectl get nodes
-NAME      LABELS                      STATUS
-awesome-node        kubernetes.io/hostname=awesome-node   Ready
-$ ./kubectl get pods
-NAME      READY     STATUS    RESTARTS   AGE
-nginx     2/2       Running   0          28m
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Much easier and prettier! Creating pods is also easier with &lt;code&gt;kubectl&lt;/code&gt;. Let’s
-create a copy of the nginx pod manifest with a different name.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ sed &#39;s/^  name:.*/  name: nginx-the-second/&#39; nginx.yaml &amp;gt; nginx2.yaml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now we can use &lt;code&gt;kubectl create&lt;/code&gt; to start another copy.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ./kubectl create --filename nginx2.yaml
-pods/nginx-the-second
-$ ./kubectl get pods
-NAME               READY     STATUS    RESTARTS   AGE
-nginx              2/2       Running   0          1h
-nginx-the-second   0/2       Running   0          6s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now we’ve got our second nginx pod running, but it reports &lt;code&gt;0/2&lt;/code&gt; containers
-running. Let’s give it a bit and try again:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ./kubectl get pods
-NAME               READY     STATUS    RESTARTS   AGE
-nginx              2/2       Running   0          1h
-nginx-the-second   2/2       Running   0          1m
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We can also use &lt;code&gt;kubectl describe&lt;/code&gt; to get at more detailed information on the
-pod:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ./kubectl describe pods/nginx-the-second | head
-Name:                           nginx-the-second
-Namespace:                      default
-Image(s):                       nginx,busybox
-Node:                           awesome-node/127.0.1.1
-Labels:                         &amp;lt;none&amp;gt;
-Status:                         Running
-Reason:
-Message:
-IP:                             172.17.0.38
-Replication Controllers:        &amp;lt;none&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;And just to be sure, we can check that this pod’s nginx is also up and serving
-requests at the pod’s IP:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ curl --stderr /dev/null http://172.17.0.38 | head -4
-&amp;lt;!DOCTYPE html&amp;gt;
-&amp;lt;html&amp;gt;
-&amp;lt;head&amp;gt;
-&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Great! So now we’ve seen what it’s like to start a server in Kubernetes using
-the command line client. We’ve still got a little way to go before this is a
-full-blown Kubernetes cluster, but we are inching closer. Next time we’ll bring
-in the scheduler and add a couple more nodes into the mix.&lt;/p&gt;
-
-&lt;p&gt;For now, let’s just tear everything down:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ./kubectl delete pods/nginx pods/nginx-the-second
-pods/nginx
-pods/nginx-the-second
-$ ./kubectl get pods
-NAME      READY     STATUS    RESTARTS   AGE
-$ docker stop $(cat etcd-container-id)
-$ sleep 20  # wait for the Kubelet to stop all the containers
-$ docker ps
-CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;&lt;em&gt;Thanks to Johannes Alkjær, Julia Evans, Ray Bejjani, and Tavish Armstrong for
-reviewing drafts of this post.&lt;/em&gt;&lt;/p&gt;
-</description>
-        <pubDate>Sun, 06 Sep 2015 12:02:47 -0400</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/</guid>
         
         
       </item>
