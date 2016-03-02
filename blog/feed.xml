@@ -5,8 +5,8 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 29 Feb 2016 17:48:48 -0500</pubDate>
-    <lastBuildDate>Mon, 29 Feb 2016 17:48:48 -0500</lastBuildDate>
+    <pubDate>Wed, 02 Mar 2016 13:22:51 -0500</pubDate>
+    <lastBuildDate>Wed, 02 Mar 2016 13:22:51 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -176,10 +176,11 @@ implementing it for Rust, but I hadn’t followed up until recently. The issue t
 watch for this one is &lt;a href=&quot;https://github.com/rust-lang/crates.io/issues/75&quot;&gt;#75&lt;/a&gt; on the Crates.io repository.&lt;/p&gt;
 
 &lt;p&gt;This project is really exciting, and more than a little bit scary because of
-how important it is to get right. The first steps are to refamiliarize myself
-with TUF, and then put together a Rust RFC. The TUF folks have recently had &lt;a href=&quot;https://isis.poly.edu/~jcappos/papers/kuppusamy_nsdi_16.pdf&quot;&gt;a
-paper accepted&lt;/a&gt; that describes how they have improved TUF even
-further, and I’m starting with reading that.&lt;/p&gt;
+how important it is to get right. But I won’t be working on it alone, so that’s
+great! The first steps are to refamiliarize myself with TUF, and then put
+together a Rust RFC. The TUF folks have recently had &lt;a href=&quot;https://isis.poly.edu/~jcappos/papers/kuppusamy_nsdi_16.pdf&quot;&gt;a paper
+accepted&lt;/a&gt; that describes how they have improved TUF even further,
+and I’m starting with reading that.&lt;/p&gt;
 
 &lt;h1 id=&quot;summary-of-the-list-of-ten&quot;&gt;Summary of the list-of-ten:&lt;/h1&gt;
 
