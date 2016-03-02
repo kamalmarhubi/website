@@ -75,10 +75,11 @@ implementing it for Rust, but I hadn't followed up until recently. The issue to
 watch for this one is [#75][issue75] on the Crates.io repository.
 
 This project is really exciting, and more than a little bit scary because of
-how important it is to get right. The first steps are to refamiliarize myself
-with TUF, and then put together a Rust RFC. The TUF folks have recently had [a
-paper accepted][tuf-paper] that describes how they have improved TUF even
-further, and I'm starting with reading that.
+how important it is to get right. But I won't be working on it alone, so that's
+great! The first steps are to refamiliarize myself with TUF, and then put
+together a Rust RFC. The TUF folks have recently had [a paper
+accepted][tuf-paper] that describes how they have improved TUF even further,
+and I'm starting with reading that.
 
 [minutes]: https://github.com/rust-lang/crates.io/issues/75#issuecomment-179904144
 [tuf]: http://theupdateframework.com/
