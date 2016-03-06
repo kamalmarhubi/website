@@ -1,0 +1,37 @@
+---
+title: "100:10:1 update 4"
+date: 2016-03-06T11:26:53-05:00
+---
+
+# rust-bisect
+
+I [spent some time][ci-commits] getting TravisCI to build binary releases for
+{Linux, OS X} × {i686, x86_64}. That makes it possible to use rust-bisect
+without having a nightly build available to build with. This was mostly to get
+around the annoyance of using a git dependency for multirust-rs, which pulled
+hundreds of megabytes of useless binaries, and made the first build take a long
+time.
+
+[ci-commits]: https://github.com/kamalmarhubi/rust-bisect/compare/3f2dbe0574ef9139817a5172c3134c62c2aa5f91...97324a58eba48d746b72f132fba0e3be0a9795a7
+
+I later realized I could put the commit of multirust-rs I wanted in my
+repository with `git subtree`, [which I did][subtree-commits]. This at least
+makes it easier to build. I just realized that it even makes it possible for me
+to make a release on Crates.io, which I haven't done yet.
+
+
+# cargo fmt-diff
+
+Not too much activity here. I think the main maintainer is on vacation, so my
+first steps are still out for review. I made some changes to how the
+conditionally included flag is conditionally included. I was using a
+compile-time flag before, but I've changed to to always be compiled in, but only
+available if an environment variable is set.
+
+This idea came out of a discussion of what the ‘integration’ in ‘continuous
+integration’ means: changes are always integrated. I decided that having the
+changes always compiled in was safer for when the feature is eventually
+available by default.
+
+
+[subtree-commits]: https://github.com/kamalmarhubi/rust-bisect/compare/97324a5...290b57c
