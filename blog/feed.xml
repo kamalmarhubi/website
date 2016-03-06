@@ -5,9 +5,46 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 02 Mar 2016 13:22:51 -0500</pubDate>
-    <lastBuildDate>Wed, 02 Mar 2016 13:22:51 -0500</lastBuildDate>
+    <pubDate>Sun, 06 Mar 2016 12:07:06 -0500</pubDate>
+    <lastBuildDate>Sun, 06 Mar 2016 12:07:06 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>100:10:1 update 4</title>
+        <description>&lt;h1 id=&quot;rust-bisect&quot;&gt;rust-bisect&lt;/h1&gt;
+
+&lt;p&gt;I &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/compare/3f2dbe0574ef9139817a5172c3134c62c2aa5f91...97324a58eba48d746b72f132fba0e3be0a9795a7&quot;&gt;spent some time&lt;/a&gt; getting TravisCI to build binary releases for
+{Linux, OS X} × {i686, x86_64}. That makes it possible to use rust-bisect
+without having a nightly build available to build with. This was mostly to get
+around the annoyance of using a git dependency for multirust-rs, which pulled
+hundreds of megabytes of useless binaries, and made the first build take a long
+time.&lt;/p&gt;
+
+&lt;p&gt;I later realized I could put the commit of multirust-rs I wanted in my
+repository with &lt;code&gt;git subtree&lt;/code&gt;, &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/compare/97324a5...290b57c&quot;&gt;which I did&lt;/a&gt;. This at least
+makes it easier to build. I just realized that it even makes it possible for me
+to make a release on Crates.io, which I haven’t done yet.&lt;/p&gt;
+
+&lt;h1 id=&quot;cargo-fmt-diff&quot;&gt;cargo fmt-diff&lt;/h1&gt;
+
+&lt;p&gt;Not too much activity here. I think the main maintainer is on vacation, so my
+first steps are still out for review. I made some changes to how the
+conditionally included flag is conditionally included. I was using a
+compile-time flag before, but I’ve changed to to always be compiled in, but only
+available if an environment variable is set.&lt;/p&gt;
+
+&lt;p&gt;This idea came out of a discussion of what the ‘integration’ in ‘continuous
+integration’ means: changes are always integrated. I decided that having the
+changes always compiled in was safer for when the feature is eventually
+available by default.&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 06 Mar 2016 11:26:53 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/03/06/100-10-1-update-4/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/06/100-10-1-update-4/</guid>
+        
+        
+      </item>
     
       <item>
         <title>My git aliases</title>
@@ -744,254 +781,6 @@ letting it worked unchanged!&lt;/p&gt;
         <pubDate>Sat, 21 Nov 2015 23:48:22 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/11/21/using-strace-to-figure-out-how-git-push-over-ssh-works/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/21/using-strace-to-figure-out-how-git-push-over-ssh-works/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Kubernetes from the ground up: the scheduler</title>
-        <description>&lt;p&gt;&lt;em&gt;This is the third post in a series on &lt;a href=&quot;https://kubernetes.io/&quot;&gt;Kubernetes&lt;/a&gt;, the open source cluster
-manager. The earlier posts were about &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/08/27/what-even-is-a-kubelet/&quot;&gt;the kubelet&lt;/a&gt;, and &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/&quot;&gt;the API
-server&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;
-
-&lt;p&gt;It’s been a while since the last post, but I’m excited to finally finish this
-one off. This is about the scheduler, which is the first part of what makes
-Kubernetes Kubernetes. The scheduler’s job is to decide where in the cluster to
-run our workloads. This lets us stop thinking about which host should run what,
-and just declaratively say ‘I want this to be running’.&lt;/p&gt;
-
-&lt;p&gt;When we left off last time, we were able to run a collection of containers on a
-specific Kubernetes node by posting a JSON manifest to the API server. We also
-got a look at the &lt;code&gt;kubectl&lt;/code&gt;, the command line client for Kubernetes, which
-makes it much easier to interact with the cluster.&lt;/p&gt;
-
-&lt;p&gt;Oh, except that until now we haven’t had a cluster, at least not in the sense
-of multiple machines. In this post we’re going to change that. To follow along,
-you’ll need a few machines—virtual, real, cloud, it doesn’t matter.
-What does matter is&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;they are all on the same network&lt;/li&gt;
-  &lt;li&gt;they all have Docker installed&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;I’ve got a few machines in the examples below: the master is &lt;code&gt;master&lt;/code&gt;, while
-the nodes are &lt;code&gt;node1&lt;/code&gt;, &lt;code&gt;node2&lt;/code&gt;. I’m assuming they can all be reached
-via their hostnames; feel free to substitute in their IPs instead!&lt;/p&gt;
-
-&lt;h1 id=&quot;starting-the-api-server&quot;&gt;Starting the API server&lt;/h1&gt;
-
-&lt;p&gt;We’re going to breeze through starting the API server, since it’s
-all &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/#starting-the-api-server&quot;&gt;straight out of the last post&lt;/a&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ mkdir etcd-data
-master$ docker run --volume=$PWD/etcd-data:/default.etcd \
---detach --net=host quay.io/coreos/etcd &amp;gt; etcd-container-id
-master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-apiserver
-master$ chmod +x kube-apiserver
-master$ ./kube-apiserver \
---etcd-servers=http://127.0.0.1:2379 \
---service-cluster-ip-range=10.0.0.0/16 \
---insecure-bind-address=0.0.0.0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The only difference is we’ve added &lt;code&gt;--insecure-bind-address=0.0.0.0&lt;/code&gt;. This
-allows the kubelets running on the nodes to connect to the API server remotely
-without any authentication. Ordinarily, unauthenticated connections are only
-allowed from localhost.&lt;/p&gt;
-
-&lt;p&gt;Just to be clear, you &lt;em&gt;really&lt;/em&gt; don’t want to do this in production!&lt;/p&gt;
-
-&lt;p&gt;While we’re here, let’s also get &lt;code&gt;kubectl&lt;/code&gt;, the command line client &lt;a href=&quot;http://kamalmarhubi.com/blog/2015/09/06/kubernetes-from-the-ground-up-the-api-server/#the-kubernetes-command-line-client-kubectl&quot;&gt;we looked
-at in the last post&lt;/a&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kubectl
-master$ chmod +x kubectl
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;launching-some-nodes&quot;&gt;Launching some nodes&lt;/h1&gt;
-
-&lt;p&gt;This will be quick too, as we’ve done this a couple of times before. The only
-difference here is that the API server isn’t running on localhost, so we need
-to include its address. I’ve got two nodes, but I’ll just show this once below.
-If you’re following along, do this on as many nodes as you want!&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;node1$ ./kubelet --api-servers=http://master:8080
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now back on &lt;code&gt;master&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl get nodes
-NAME      LABELS                         STATUS    AGE
-node1     kubernetes.io/hostname=node1   Ready     2m
-node2     kubernetes.io/hostname=node2   Ready     4s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Excellent.&lt;/p&gt;
-
-&lt;h1 id=&quot;running-something-on-the-cluster&quot;&gt;Running something on the cluster&lt;/h1&gt;
-
-&lt;p&gt;Kubernetes runs &lt;em&gt;pods&lt;/em&gt;, which are collections of containers that execute
-together.  To start, we’ll create a pod and specify which node it should run
-on.&lt;/p&gt;
-
-&lt;p&gt;We’ll continue running our nginx example pod from the earlier posts. Get &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml&quot;&gt;the
-pod manifest&lt;/a&gt;, which specifies which containers to run. We
-specify the node to run on by setting the &lt;code&gt;nodeName&lt;/code&gt; field. Edit the file and
-set it to run on one of your nodes.  I picked &lt;code&gt;node2&lt;/code&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-with-nodename.yaml
-master$ $EDITOR nginx-with-nodename.yaml  # edit the nodeName field to match a node
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now create the pod:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl create --filename nginx-with-nodename.yaml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We can check with &lt;code&gt;kubectl get pods&lt;/code&gt; we see that it got picked up. If you’re
-quicker than me, you might catch it in the &lt;code&gt;Pending&lt;/code&gt; state, before the kubelet
-starts it, but it should end up &lt;code&gt;Running&lt;/code&gt; fairly quickly.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl get pods
-NAME                  READY     STATUS    RESTARTS   AGE
-nginx-with-nodename   2/2       Running   0          7s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Just to be sure it’s actually on &lt;code&gt;node2&lt;/code&gt; as we said, we can &lt;code&gt;kubectl describe&lt;/code&gt;
-the pod:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-with-nodename | grep ^Node
-Node:                           node2/10.240.0.4
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We can break down what happened here:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;initially, the kubelets on each node are watching the API server for pods
-they are meant to be running&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;kubectl&lt;/code&gt; created a pod on the API server that’s meant to run on &lt;code&gt;node2&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;the kubelet on &lt;code&gt;node2&lt;/code&gt; noticed the new pod, and so started running it.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;We can also try &lt;a href=&quot;https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-without-nodename.yaml&quot;&gt;a pod manifest&lt;/a&gt; that doesn’t specify a
-node to run on. In our current setup, this pod will forever sit in the
-&lt;code&gt;Pending&lt;/code&gt; state. Let’s try anyway:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ wget https://raw.githubusercontent.com/kamalmarhubi/kubernetes-from-the-ground-up/master/03-the-scheduler/nginx-without-nodename.yaml
-master$ ./kubectl create --filename nginx-without-nodename.yaml
-master$ ./kubectl get pods
-NAME                     READY     STATUS    RESTARTS   AGE
-nginx-with-nodename      2/2       Running   0          3m
-nginx-without-nodename   0/2       Pending   0          20s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Even if you take a break and read the internet for 15 minutes, it’ll still be
-there, &lt;code&gt;Pending&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl get pods
-NAME                     READY     STATUS    RESTARTS   AGE
-nginx-with-nodename      2/2       Running   0          18m
-nginx-without-nodename   0/2       Pending   0          15m
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Breaking it down in the same way:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;initially, the kubelets on each node are watching the API server for pods
-they are meant to be running&lt;/li&gt;
-  &lt;li&gt;&lt;code&gt;kubectl&lt;/code&gt; created a pod on the API server without specifying which node to
-run on&lt;/li&gt;
-  &lt;li&gt;…&lt;/li&gt;
-  &lt;li&gt;…&lt;/li&gt;
-  &lt;li&gt;… yeah, nothing’s going to happen.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&quot;the-scheduler&quot;&gt;The scheduler&lt;/h1&gt;
-
-&lt;p&gt;This is where the sheduler comes in: its job is to take pods that aren’t bound
-to a node, and assign them one. Once the pod has a node assigned, the normal
-behavior of the kubelet kicks in, and the pod gets started.&lt;/p&gt;
-
-&lt;p&gt;Let’s get the scheduler binary and start it running on &lt;code&gt;master&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ wget https://storage.googleapis.com/kubernetes-release/release/v1.1.1/bin/linux/amd64/kube-scheduler
-master$ chmod +x kubectl
-master$ ./kube-scheduler --master=http://localhost:8080
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Not long after starting the scheduler, the &lt;code&gt;nginx-without-nodename&lt;/code&gt; pod should
-get assigned a node and start running.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl get pods
-NAME                     READY     STATUS    RESTARTS   AGE
-nginx-with-nodename      2/2       Running   0          1h
-nginx-without-nodename   2/2       Running   0          1h
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;If we &lt;code&gt;describe&lt;/code&gt; it, we can see which node it got scheduled on:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-without-nodename | grep ^Node
-Node:                           node1/10.240.0.3
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;It ended up on &lt;code&gt;node1&lt;/code&gt;! The scheduler tries to spread out pods evenly across
-the nodes we have available, so that makes sense. If you’re interested in more
-about how the scheduler places pods, there’s a really good &lt;a href=&quot;http://stackoverflow.com/a/28874577&quot;&gt;Stack
-Overflow&lt;/a&gt; answer with some details.&lt;/p&gt;
-
-&lt;p&gt;We can also get a list of ‘events’ related to the pod. These are state changes
-through the pods lifetime:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-without-nodename | grep -A5 ^Events
-Events:
-  FirstSeen     LastSeen        Count   From            SubobjectPath                           Reason                  Message
-  ─────────     ────────        ─────   ────            ─────────────                           ──────                  ───────
-  25m           25m             1       {scheduler }                                            Scheduled               Successfully assigned nginx-without-nodename to node1
-  23m           23m             1       {kubelet node1} implicitly required container POD       Pulling                 Pulling image &quot;gcr.io/google_containers/pause:0.8.0&quot;
-  23m           23m             1       {kubelet node1} implicitly required container POD       Pulled                  Successfully pulled image &quot;gcr.io/google_containers/pause:0.8.0&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The first one shows it getting scheduled, then others are related to the pod
-starting up on the node.&lt;/p&gt;
-
-&lt;p&gt;At this point, if you create another pod without specifying a node for it to
-run on, the scheduler will place it right away. Try it out!&lt;/p&gt;
-
-&lt;h1 id=&quot;wrapping-up&quot;&gt;Wrapping up&lt;/h1&gt;
-
-&lt;p&gt;So now we are able to declaratively specify workloads, and get them scheduled
-across our cluster, which is great! But if we actually try connecting to the
-nginx servers we have running, we’ll see we have a little problem:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;master$ ./kubectl describe pods/nginx-with-nodename | grep ^IP
-IP:                             172.17.0.2
-master$ curl http://172.17.0.2
-curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;This pod is running on &lt;code&gt;node2&lt;/code&gt;. If we go over to that machine,
-we get through:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;node2$ curl --stderr /dev/null http://172.17.0.2 | head -4
-&amp;lt;!DOCTYPE html&amp;gt;
-&amp;lt;html&amp;gt;
-&amp;lt;head&amp;gt;
-&amp;lt;title&amp;gt;Welcome to nginx!&amp;lt;/title&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;But our other node can’t reach it:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;node1$ curl http://172.17.0.2
-curl: (7) Failed to connect to 172.17.0.2 port 80: No route to host
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;In the next post, we’ll take a little detour into Kubernetes networking, and
-make it possible for containers to talk to each other over the network.&lt;/p&gt;
-</description>
-        <pubDate>Tue, 17 Nov 2015 17:41:57 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/11/17/kubernetes-from-the-ground-up-the-scheduler/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/17/kubernetes-from-the-ground-up-the-scheduler/</guid>
         
         
       </item>
