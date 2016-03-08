@@ -104,7 +104,7 @@ very well:
 The `--squash` and `--fixup` options to `git commit` take a commit as an
 argument, and formats the commit message for use with `--autosquash`.
 
-To make it all even handier, you can set `rebase.autoquash` to `true` in your
+To make it all even handier, you can set `rebase.autosquash` to `true` in your
 gitconfig. [I just did][commit]!
 
 [commit]: https://github.com/kamalmarhubi/dotfiles-git/commit/dee6b4912c077bd06404937854ba053c16f8b880
