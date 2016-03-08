@@ -5,9 +5,166 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 06 Mar 2016 12:07:06 -0500</pubDate>
-    <lastBuildDate>Sun, 06 Mar 2016 12:07:06 -0500</lastBuildDate>
+    <pubDate>Tue, 08 Mar 2016 17:15:52 -0500</pubDate>
+    <lastBuildDate>Tue, 08 Mar 2016 17:15:52 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>git rebase --exec: make sure your tests pass at each commit! (and other rebase goodies)</title>
+        <description>&lt;p&gt;I learned about the &lt;code&gt;--exec&lt;/code&gt; option to &lt;code&gt;git rebase&lt;/code&gt; recently, and I needed to
+share! The basic structure is this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;git rebase --interactive --exec &quot;cmd&quot; some-ref
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This brings up the usual interactive rebase todo list, but with &lt;code&gt;exec &quot;cmd&quot;&lt;/code&gt;
+added after each commit. Saving the todo list as-is will run &lt;code&gt;cmd&lt;/code&gt; at each
+commit between &lt;code&gt;some-ref&lt;/code&gt; and the current &lt;code&gt;HEAD&lt;/code&gt;. You can use the short option
+&lt;code&gt;-x&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;git rebase -ix &quot;cmd&quot; some-ref
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The rebase will stop any time the &lt;code&gt;cmd&lt;/code&gt; exits unsuccessfully, giving you a
+chance to inspect why it failed.&lt;/p&gt;
+
+&lt;h2 id=&quot;making-sure-the-tests-always-pass&quot;&gt;making sure the tests always pass!&lt;/h2&gt;
+
+&lt;p&gt;I like to have my pull requests broken up into small commits, eg one that does
+a small refactor, one that adds a type, another that uses the new type. In the
+run up to actually opening the pull request, I make lots of small
+changes—style, documentation, comments, and so on.&lt;/p&gt;
+
+&lt;p&gt;These finishing touches affect all the commits, so I do lots of little rebases.
+There’s a risk of one of the intermediate commits being broken—not passing
+tests, not building, having bad style or lint errors. If I was feeling extra
+diligent, sometimes I’d manually step through the commits by marking them all
+for &lt;code&gt;edit&lt;/code&gt; in &lt;code&gt;git rebase -i&lt;/code&gt;. But now it’s super easy to get right!&lt;/p&gt;
+
+&lt;p&gt;You can even specify &lt;code&gt;--exec&lt;/code&gt; (&lt;code&gt;-x&lt;/code&gt;) multiple times, and all the commands will
+get run:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;git rebase -i -x &quot;run-tests&quot; -x &quot;run-linter&quot; master
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;other-goodies-in-rebase&quot;&gt;other goodies in rebase&lt;/h2&gt;
+
+&lt;p&gt;After finding out about &lt;code&gt;--exec&lt;/code&gt;, I wanted to be sure I wasn’t missing any
+other life changing options or features, so here’s a quick tour of things I
+discovered.&lt;/p&gt;
+
+&lt;h3 id=&quot;the-options-in-the-rebase-todo-list&quot;&gt;the options in the rebase todo list&lt;/h3&gt;
+
+&lt;p&gt;The &lt;code&gt;--exec&lt;/code&gt; option wouldn’t have surprised me if I ever looked at the options
+that pop up in my editor &lt;em&gt;every time&lt;/em&gt; I use &lt;code&gt;git rebase -i&lt;/code&gt;! Here they are as
+of git version 2.1.4, which is what I’m running:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# Commands:
+#  p, pick = use commit
+#  r, reword = use commit, but edit the commit message
+#  e, edit = use commit, but stop for amending
+#  s, squash = use commit, but meld into previous commit
+#  f, fixup = like &quot;squash&quot;, but discard this commit&#39;s log message
+#  x, exec = run command (the rest of the line) using shell
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I don’t feel like I was missing out &lt;em&gt;too&lt;/em&gt; much though. I make good use of
+&lt;code&gt;fixup&lt;/code&gt; and &lt;code&gt;reword&lt;/code&gt;, as well as the basics: &lt;code&gt;pick&lt;/code&gt;, &lt;code&gt;edit&lt;/code&gt;, and &lt;code&gt;squash&lt;/code&gt;.
+&lt;code&gt;fixup&lt;/code&gt; is great if you make lots of little work-in-progress commits: you can
+just squash them and throw away their messages. I find &lt;code&gt;reword&lt;/code&gt; is useful for
+expanding on commit messages in the run up to opening a pull request.&lt;/p&gt;
+
+&lt;h3 id=&quot;git-rebase---edit-todo&quot;&gt;git rebase –edit-todo&lt;/h3&gt;
+
+&lt;p&gt;When you run &lt;code&gt;git rebase -i&lt;/code&gt;, your editor pops up with a list of commits for
+you to mess with. I sometimes get my choices wrong, and end up doing &lt;code&gt;git
+rebase --abort&lt;/code&gt; and starting over. It turns out I don’t need to! &lt;code&gt;git rebase
+--edit-todo&lt;/code&gt; will bring up the same list and let you modify it.&lt;/p&gt;
+
+&lt;h3 id=&quot;git-commit---squash---fixup-and-git-rebase---autosquash&quot;&gt;git commit –squash, –fixup, and git rebase –autosquash&lt;/h3&gt;
+
+&lt;p&gt;I didn’t know about these at all, but I’m excited to try and get them into my
+workflow! I’ll just quote the man page because it describes how to use them
+very well:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;--autosquash, --no-autosquash
+    When the commit log message begins with &quot;squash! ...&quot; (or &quot;fixup!
+    ...&quot;), and there is a commit whose title begins with the same ...,
+    automatically modify the todo list of rebase -i so that the commit
+    marked for squashing comes right after the commit to be modified,
+    and change the action of the moved commit from pick to squash (or
+    fixup). Ignores subsequent &quot;fixup! &quot; or &quot;squash! &quot; after the first,
+    in case you referred to an earlier fixup/squash with git commit
+    --fixup/--squash.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The &lt;code&gt;--squash&lt;/code&gt; and &lt;code&gt;--fixup&lt;/code&gt; options to &lt;code&gt;git commit&lt;/code&gt; take a commit as an
+argument, and formats the commit message for use with &lt;code&gt;--autosquash&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;To make it all even handier, you can set &lt;code&gt;rebase.autoquash&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; in your
+gitconfig. &lt;a href=&quot;https://github.com/kamalmarhubi/dotfiles-git/commit/dee6b4912c077bd06404937854ba053c16f8b880&quot;&gt;I just did&lt;/a&gt;!&lt;/p&gt;
+
+&lt;h3 id=&quot;git-rebase---autostash&quot;&gt;git rebase –autostash&lt;/h3&gt;
+
+&lt;p&gt;The &lt;code&gt;--autostash&lt;/code&gt; option will stash before starting a rebase, and pop the stash
+afterwards. If you ever end up doing a dance like&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;git stash
+git rebase -i master
+git stash pop
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;then the &lt;code&gt;--autostash&lt;/code&gt; option will save you 12 key presses each time. Or you
+can set &lt;code&gt;rebase.autostash&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; in your configuration, and it will happen
+by default, saving you a whopping &lt;em&gt;24&lt;/em&gt; key presses!&lt;/p&gt;
+
+&lt;p&gt;The man page warns that ‘the final stash application after a successful rebase
+might result in non-trivial conflicts’, so I’ve not set this in my &lt;code&gt;gitconfig&lt;/code&gt;.
+I’ll see how useful the option seems first.&lt;/p&gt;
+
+&lt;h3 id=&quot;git-rebase---no-ff&quot;&gt;git rebase –no-ff&lt;/h3&gt;
+
+&lt;p&gt;This forces the rebase to create new commits instead of fast-forwarding over
+the unchanged ones. I’ve manually approximated this in the past to tickle the
+continuous integration into running again if I think the failures were spurious
+or flakes. This could be useful for repositories where you’re not the owner,
+and so don’t have access to the CI system’s retry button.&lt;/p&gt;
+
+&lt;h3 id=&quot;changing-the-merge-strategy&quot;&gt;changing the merge strategy&lt;/h3&gt;
+
+&lt;p&gt;The &lt;code&gt;--strategy&lt;/code&gt; (&lt;code&gt;-s&lt;/code&gt;) option lets you say what merge strategy to use, and the
+&lt;code&gt;--strategy-option&lt;/code&gt; (&lt;code&gt;-X&lt;/code&gt;) option lets you set options on the strategy. I just
+figured out that, together with &lt;code&gt;--autosquash&lt;/code&gt;, this can let me do another
+pre-pull-request-tidy task: making sure all the intermediate commits are
+properly formatted.&lt;/p&gt;
+
+&lt;p&gt;If you have some command &lt;code&gt;format-cmd&lt;/code&gt; that formats your code, then something
+like this will format all the commits:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;git rebase -i \
+-x &quot;format-cmd &amp;amp;&amp;amp; git commit -a --allow-empty --fixup=HEAD&quot; \
+--strategy-option=theirs \
+origin/master
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Since I now have &lt;code&gt;rebase.autosquash&lt;/code&gt; set in my &lt;code&gt;gitconfig&lt;/code&gt;, this results in a
+nice tidied up set of commits. I still have to tweak it a bit, as I had to &lt;code&gt;git
+rebase --continue&lt;/code&gt; on an empty diff at some point, but it’s looking pretty
+great! I will almost certainly turn it into an alias soon.&lt;/p&gt;
+
+&lt;h2 id=&quot;sometimes-reading-docs-really-pays-off&quot;&gt;sometimes reading docs really pays off&lt;/h2&gt;
+
+&lt;p&gt;I’m pretty happy with this exploration of &lt;code&gt;git rebase&lt;/code&gt;.  I’m pretty sure what I
+just picked up here with &lt;code&gt;git rebase&lt;/code&gt; will make some things a &lt;em&gt;lot&lt;/em&gt; smoother in
+the future. It makes me think I set aside a bit of time each week to read some
+documentation for tools I use a lot. When I do, I’ll write it up!&lt;/p&gt;
+</description>
+        <pubDate>Tue, 08 Mar 2016 14:38:55 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/03/08/git-rebase-exec-make-sure-your-tests-pass-at-each-commit-and-other-rebase-goodies/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/08/git-rebase-exec-make-sure-your-tests-pass-at-each-commit-and-other-rebase-goodies/</guid>
+        
+        
+      </item>
     
       <item>
         <title>100:10:1 update 4</title>
@@ -701,86 +858,6 @@ ADD rethink-squashed.tar /
         <pubDate>Fri, 27 Nov 2015 14:44:03 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2015/11/27/squashing-docker-images-with-btrfs/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/27/squashing-docker-images-with-btrfs/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Using strace to figure out how git push over SSH works</title>
-        <description>&lt;p&gt;Yesterday I was curious about how &lt;code&gt;git push&lt;/code&gt; works over SSH. I’m getting more
-used to using &lt;code&gt;strace&lt;/code&gt; to figure this kind of thing out, so I gave it a shot.
-If I &lt;code&gt;strace&lt;/code&gt; pushing to this site’s repository, this shows up:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;[pid 15943] execve(&quot;/usr/bin/ssh&quot;, [&quot;ssh&quot;, &quot;git@github.com&quot;, &quot;git-receive-pack &#39;kamalmarhubi/w&quot;...], [/* 51 vars */]) = 0
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;So &lt;code&gt;git push&lt;/code&gt; eventually calls &lt;code&gt;ssh git@github.com git-receive-pack &amp;lt;repo-path&amp;gt;&lt;/code&gt;.
-Trying this out at my terminal gives me this:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ ssh git@github.com git-receive-pack kamalmarhubi/website
-00bb29793c39c8e4bfec627d60938c4ed2086cc60bb1 refs/heads/gh-pagesreport-status delete-refs side-band-64k quiet atomic ofs-delta agent=git/2:2.4.8~upload-pack-wrapper-script-1211-gc27b061
-003f04bfcb3e238e5660ae9e71a6ce99f472211fe85f refs/heads/master
-0000
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;with the terminal waiting for my input. SSH is used to handle authentication
-and remote connection, and then it runs a command at the other end to handle
-the data exchange. These lines are the start of that exchange.&lt;/p&gt;
-
-&lt;p&gt;A tiny bit of looking around the internet told me that the protocol is made up
-of lines prefixed by their length as 4 hex digits. Then it looks like a commit
-SHA-1 and a ref. The sender terminates with &lt;code&gt;0000&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;There are a couple of lines here, one for each branch in the repository. The
-first line additionally has a bunch of stuff at the end that looks like a
-description of what the sending program is and some features it supports.&lt;/p&gt;
-
-&lt;p&gt;While I was looking into this, I used &lt;code&gt;xsel&lt;/code&gt; to copy the output to paste into
-an editor. This was really confusing, because all that got pasted was the first
-line without all the metadata!&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;00bb29793c39c8e4bfec627d60938c4ed2086cc60bb1 refs/heads/gh-pages
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Looking at the entire output through &lt;code&gt;hexdump -C&lt;/code&gt;, it turns out that there’s a
-null byte after &lt;code&gt;refs/heads/gh-pages&lt;/code&gt;, and then a newline at the end (marked with &lt;code&gt;*&lt;/code&gt; below):&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;00000000  30 30 62 62 32 39 37 39  33 63 33 39 63 38 65 34  |00bb29793c39c8e4|
-00000010  62 66 65 63 36 32 37 64  36 30 39 33 38 63 34 65  |bfec627d60938c4e|
-00000020  64 32 30 38 36 63 63 36  30 62 62 31 20 72 65 66  |d2086cc60bb1 ref|
-00000030  73 2f 68 65 61 64 73 2f  67 68 2d 70 61 67 65 73  |s/heads/gh-pages|
-00000040 *00*72 65 70 6f 72 74 2d  73 74 61 74 75 73 20 64  |.report-status d|
-00000050  65 6c 65 74 65 2d 72 65  66 73 20 73 69 64 65 2d  |elete-refs side-|
-00000060  62 61 6e 64 2d 36 34 6b  20 71 75 69 65 74 20 61  |band-64k quiet a|
-00000070  74 6f 6d 69 63 20 6f 66  73 2d 64 65 6c 74 61 20  |tomic ofs-delta |
-00000080  61 67 65 6e 74 3d 67 69  74 2f 32 3a 32 2e 34 2e  |agent=git/2:2.4.|
-00000090  38 7e 75 70 6c 6f 61 64  2d 70 61 63 6b 2d 77 72  |8~upload-pack-wr|
-000000a0  61 70 70 65 72 2d 73 63  72 69 70 74 2d 31 32 31  |apper-script-121|
-000000b0  31 2d 67 63 32 37 62 30  36 31*0a*30 30 33 66 37  |1-gc27b061.003f7|
-000000c0  39 32 66 34 39 36 65 37  35 33 64 62 39 33 33 30  |92f496e753db9330|
-000000d0  66 30 61 34 65 38 32 39  30 62 38 61 36 63 62 61  |f0a4e8290b8a6cba|
-000000e0  38 61 62 36 64 61 62 20  72 65 66 73 2f 68 65 61  |8ab6dab refs/hea|
-000000f0  64 73 2f 6d 61 73 74 65  72 0a 30 30 30 30        |ds/master.0000|
-000000fe
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Without doing any research, here’s what I think happened. The git folks defined
-the fairly simple length-prefixed, newline-separated protocol. Then at some
-point they wanted to add some metadata to the protocol without breaking
-compatibility with older versions of git. They came up with a nifty hack that
-exploits C’s null-terminated strings: add the metadata after a null byte but
-before the newline. This way, reading up to a newline will get all the
-metadata. The metadata-processing code knows to look past the null byte, but
-the existing protocol code would see only the part up before it, presumably
-letting it worked unchanged!&lt;/p&gt;
-
-&lt;p&gt;And when I copied it using &lt;code&gt;xsel&lt;/code&gt;, the stuff past the null byte got skipped.&lt;/p&gt;
-
-&lt;p&gt;Cute hack, and mystery solved!&lt;/p&gt;
-</description>
-        <pubDate>Sat, 21 Nov 2015 23:48:22 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/11/21/using-strace-to-figure-out-how-git-push-over-ssh-works/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/21/using-strace-to-figure-out-how-git-push-over-ssh-works/</guid>
         
         
       </item>
