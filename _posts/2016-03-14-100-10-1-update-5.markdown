@@ -1,0 +1,86 @@
+---
+title: "100:10:1 update 5"
+date: 2016-03-14T11:59:21-04:00
+---
+
+I need to find a better way to track my time and know what I worked on. Here's my recollection:
+
+# cargo fmt-diff
+
+I reached a great state on Saturday: I can pass a set of line ranges in on the
+command line, and statements—but only statements—in that range will be
+reformatted! I probably spent half an hour trying different sets of arguments
+just to see it go. This is really exciting!
+
+I still need to tidy up the code and send in the PR, but I'm at point where the
+infrastructure for this project is pretty much done. Next up is lots of
+heuristics for figuring out what to do when a syntactic element is partially in
+a modified line range. To get an idea: if you modify one line in a function
+body, you don't want to reformat the whole function. But if you modify one line
+in a function declaration, you *may* want to reformat the whole declaration.
+
+
+# tufcrates
+
+I finally printed off [the latest paper][paper] from [The Update
+Framework][tuf] folks. I'm about half way through it. The paper makes some
+excellent extensions for community repositories, which is exactly what
+[Crates.io][crates-io] is. I'll continue reading the paper this week, and aim
+to write something about TUF and the problems it solves some time soon.
+
+[paper]: https://isis.poly.edu/%7Ejcappos/papers/kuppusamy_nsdi_16.pdf
+[tuf]: http://theupdateframework.com/
+[crates-io]: https://crates.io/
+
+
+# rust-bisect
+
+Someone on the Rust IRC channel gave me a bit of feedback on rust-bisect. This
+was a) really exciting because someone was using my project, and b) really
+useful as I now have some idea of what would be good to add next.
+
+Specifically, the immediate next step is to allow an interactive mode where you
+can run commands with the nightly version instead of needing to write a script.
+This would be analogous to the git-bisect without the `run` subcommand. I may
+end up changing the CLI to more closely match git-bisect in that case.
+
+There's are open questions of how to track progress, and how to override he
+user's environment in the least intrusive and most friendly way. Current ideas
+I have:
+
+1. have rust-bisect fork a shell with the environment set up so that `rustc`,
+  `cargo`, et al will run the correct nightly version
+    - pros:
+        - easy to keep track of state in the parent process
+        - immediate access in the shell, so they can run `rustc` and `cargo`
+        without prefixing
+    - cons:
+
+        - it's not obvious how to communicate the outcome up to the parent process
+          from the shell: the obvious things involve terminating the shell and
+          forking a new one, but
+        - I would most likely be overriding the user's shell preference
+2. store state in the filesystem, and require that they prefix commands with
+  `rust-bisect run` or a similar subcommand
+    - pros:
+        - easier to communicate the outcome, as there's no environment overriding
+          going on
+    - cons:
+        - it's unclear *where* I should store the state. Current directory won't
+          work, because they might go up and down the tree while testing. Home
+          directory might work, but would force at most one bisect at a time.
+3. something akin to what virtualenv does, providing a script to source that
+  overrides the current shell's environment.
+    - pros:
+        - it lets the user use their shell, and not prefix any commands
+    - cons:
+        - I don't like it
+        - I'd have to provide scripts for a couple of different shells
+
+I need to give this a bit more thought before implementing.
+
+
+# Projects I didn't touch
+
+- containy-thing
+- silly key-value store
