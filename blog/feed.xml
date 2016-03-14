@@ -5,9 +5,125 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 08 Mar 2016 18:05:51 -0500</pubDate>
-    <lastBuildDate>Tue, 08 Mar 2016 18:05:51 -0500</lastBuildDate>
+    <pubDate>Mon, 14 Mar 2016 12:45:00 -0400</pubDate>
+    <lastBuildDate>Mon, 14 Mar 2016 12:45:00 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>100:10:1 update 5</title>
+        <description>&lt;p&gt;I need to find a better way to track my time and know what I worked on. Here’s my recollection:&lt;/p&gt;
+
+&lt;h1 id=&quot;cargo-fmt-diff&quot;&gt;cargo fmt-diff&lt;/h1&gt;
+
+&lt;p&gt;I reached a great state on Saturday: I can pass a set of line ranges in on the
+command line, and statements—but only statements—in that range will be
+reformatted! I probably spent half an hour trying different sets of arguments
+just to see it go. This is really exciting!&lt;/p&gt;
+
+&lt;p&gt;I still need to tidy up the code and send in the PR, but I’m at point where the
+infrastructure for this project is pretty much done. Next up is lots of
+heuristics for figuring out what to do when a syntactic element is partially in
+a modified line range. To get an idea: if you modify one line in a function
+body, you don’t want to reformat the whole function. But if you modify one line
+in a function declaration, you &lt;em&gt;may&lt;/em&gt; want to reformat the whole declaration.&lt;/p&gt;
+
+&lt;h1 id=&quot;tufcrates&quot;&gt;tufcrates&lt;/h1&gt;
+
+&lt;p&gt;I finally printed off &lt;a href=&quot;https://isis.poly.edu/%7Ejcappos/papers/kuppusamy_nsdi_16.pdf&quot;&gt;the latest paper&lt;/a&gt; from &lt;a href=&quot;http://theupdateframework.com/&quot;&gt;The Update
+Framework&lt;/a&gt; folks. I’m about half way through it. The paper makes some
+excellent extensions for community repositories, which is exactly what
+&lt;a href=&quot;https://crates.io/&quot;&gt;Crates.io&lt;/a&gt; is. I’ll continue reading the paper this week, and aim
+to write something about TUF and the problems it solves some time soon.&lt;/p&gt;
+
+&lt;h1 id=&quot;rust-bisect&quot;&gt;rust-bisect&lt;/h1&gt;
+
+&lt;p&gt;Someone on the Rust IRC channel gave me a bit of feedback on rust-bisect. This
+was a) really exciting because someone was using my project, and b) really
+useful as I now have some idea of what would be good to add next.&lt;/p&gt;
+
+&lt;p&gt;Specifically, the immediate next step is to allow an interactive mode where you
+can run commands with the nightly version instead of needing to write a script.
+This would be analogous to the git-bisect without the &lt;code&gt;run&lt;/code&gt; subcommand. I may
+end up changing the CLI to more closely match git-bisect in that case.&lt;/p&gt;
+
+&lt;p&gt;There’s are open questions of how to track progress, and how to override he
+user’s environment in the least intrusive and most friendly way. Current ideas
+I have:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;have rust-bisect fork a shell with the environment set up so that &lt;code&gt;rustc&lt;/code&gt;,
+  &lt;code&gt;cargo&lt;/code&gt;, et al will run the correct nightly version
+    &lt;ul&gt;
+      &lt;li&gt;pros:
+        &lt;ul&gt;
+          &lt;li&gt;easy to keep track of state in the parent process&lt;/li&gt;
+          &lt;li&gt;immediate access in the shell, so they can run &lt;code&gt;rustc&lt;/code&gt; and &lt;code&gt;cargo&lt;/code&gt;
+  without prefixing&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;
+        &lt;p&gt;cons:&lt;/p&gt;
+
+        &lt;ul&gt;
+          &lt;li&gt;it’s not obvious how to communicate the outcome up to the parent process
+from the shell: the obvious things involve terminating the shell and
+forking a new one, but&lt;/li&gt;
+          &lt;li&gt;I would most likely be overriding the user’s shell preference&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;store state in the filesystem, and require that they prefix commands with
+  &lt;code&gt;rust-bisect run&lt;/code&gt; or a similar subcommand
+    &lt;ul&gt;
+      &lt;li&gt;pros:
+        &lt;ul&gt;
+          &lt;li&gt;easier to communicate the outcome, as there’s no environment overriding
+going on&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;cons:
+        &lt;ul&gt;
+          &lt;li&gt;it’s unclear &lt;em&gt;where&lt;/em&gt; I should store the state. Current directory won’t
+work, because they might go up and down the tree while testing. Home
+directory might work, but would force at most one bisect at a time.&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;something akin to what virtualenv does, providing a script to source that
+  overrides the current shell’s environment.
+    &lt;ul&gt;
+      &lt;li&gt;pros:
+        &lt;ul&gt;
+          &lt;li&gt;it lets the user use their shell, and not prefix any commands&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;cons:
+        &lt;ul&gt;
+          &lt;li&gt;I don’t like it&lt;/li&gt;
+          &lt;li&gt;I’d have to provide scripts for a couple of different shells&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;I need to give this a bit more thought before implementing.&lt;/p&gt;
+
+&lt;h1 id=&quot;projects-i-didnt-touch&quot;&gt;Projects I didn’t touch&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;containy-thing&lt;/li&gt;
+  &lt;li&gt;silly key-value store&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 14 Mar 2016 11:59:21 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/03/14/100-10-1-update-5/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/14/100-10-1-update-5/</guid>
+        
+        
+      </item>
     
       <item>
         <title>git rebase --exec: make sure your tests pass at each commit! (and other rebase goodies)</title>
@@ -785,79 +901,6 @@ the moment&lt;/li&gt;
         <pubDate>Mon, 25 Jan 2016 17:03:49 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/01/25/100-10-1/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/01/25/100-10-1/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Squashing Docker images with Btrfs</title>
-        <description>&lt;p&gt;Here’s a small hack for squashing a Docker image to a single layer if you
-happen to run with &lt;code&gt;/var/lib&lt;/code&gt; on a Btrfs filesystem. The output will be a tar
-file you can use with &lt;a href=&quot;http://docs.docker.com/engine/reference/builder/#add&quot;&gt;&lt;code&gt;ADD&lt;/code&gt;&lt;/a&gt; in a &lt;code&gt;Dockerfile&lt;/code&gt; to create a flat
-base image.&lt;/p&gt;
-
-&lt;p&gt;This is an alternative to &lt;a href=&quot;http://docs.docker.com/engine/reference/commandline/create/&quot;&gt;&lt;code&gt;docker create&lt;/code&gt;&lt;/a&gt;-ing a container and
-running &lt;a href=&quot;http://docs.docker.com/engine/reference/commandline/export/&quot;&gt;&lt;code&gt;docker export&lt;/code&gt;&lt;/a&gt; on it to get the filesystem contents.
-It saves you having to &lt;a href=&quot;http://docs.docker.com/engine/reference/commandline/rm/&quot;&gt;&lt;code&gt;docker rm&lt;/code&gt;&lt;/a&gt; the container afterwards.&lt;/p&gt;
-
-&lt;p&gt;First, get the ID of the image you want to squash:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ docker images rethink
-REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-rethinkdb           latest              ffb24b60063b        6 days ago          181.8 MB
-rethinkdb           2.0.4               83d2da4505dc        2 weeks ago         195.8 MB
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I’ll go with the latest version, &lt;code&gt;ffb24b60063b&lt;/code&gt;. This is a prefix of the full
-image ID. The image will be a Btrfs snapshot in
-&lt;code&gt;/var/lib/docker/Btrfs/subvolumes&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ sudo -i
-# cd /var/lib/docker/btrfs/subvolumes
-# ls -d ffb24b60063b*
-ffb24b60063ba7e26ebf2f888deb5af0c8966dcbb612353fcd0c5d52a0a1d234
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The &lt;a href=&quot;http://docs.docker.com/engine/userguide/storagedriver/btrfs-driver/&quot;&gt;Btrfs storage driver’s documentation&lt;/a&gt; goes into a
-fair bit of detail on how the driver uses Btrfs subvolumes and snapshots for
-images and containers.&lt;/p&gt;
-
-&lt;p&gt;Here’s an exerpt from &lt;a href=&quot;https://github.com/justone/dockviz&quot;&gt;&lt;code&gt;dockviz&lt;/code&gt;&lt;/a&gt; output for that image that shows the
-various layers:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;├─1565e86129b8 Virtual Size: 125.1 MB
-│ └─a604b236bcde Virtual Size: 125.1 MB Tags: debian:latest
-│   └─3012d15ee771 Virtual Size: 125.1 MB
-│     └─67ab878cc688 Virtual Size: 125.1 MB
-│       └─d4d9554f3430 Virtual Size: 125.1 MB
-│         └─d4bdd500e4ec Virtual Size: 125.1 MB
-│           └─9c56aa19b706 Virtual Size: 181.8 MB
-│             └─9102e5038f43 Virtual Size: 181.8 MB
-│               └─c5dff5ddf6a8 Virtual Size: 181.8 MB
-│                 └─769806cae856 Virtual Size: 181.8 MB
-│                   └─ffb24b60063b Virtual Size: 181.8 MB Tags: rethinkdb:latest
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Then it’s just a matter of:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ sudo -i
-# cd /var/lib/docker/btrfs/subvolumes/ffb24b60063ba7e26ebf2f888deb5af0c8966dcbb612353fcd0c5d52a0a1d234
-# tar c . &amp;gt; /tmp/rethink-squashed.tar
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Tab completion should pick up the full directory name from the short image ID,
-so you don’t have to copy the complete ID.&lt;/p&gt;
-
-&lt;p&gt;That’s pretty much it. You can get a flat base image with a &lt;code&gt;Dockerfile&lt;/code&gt;
-with these contents:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;FROM sratch
-ADD rethink-squashed.tar /
-&lt;/code&gt;&lt;/pre&gt;
-</description>
-        <pubDate>Fri, 27 Nov 2015 14:44:03 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2015/11/27/squashing-docker-images-with-btrfs/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2015/11/27/squashing-docker-images-with-btrfs/</guid>
         
         
       </item>
