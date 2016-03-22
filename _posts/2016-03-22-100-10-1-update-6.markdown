@@ -1,0 +1,50 @@
+---
+title: "100:10:1 update 6"
+date: 2016-03-22T14:06:52-04:00
+---
+
+I said [last time][last] that I should keep a log; I didn't. This is from
+memory + what I could convince git and GitHub to tell me. Writing this also
+makes me realize that now we're two months into 100:10:1, I should promote some
+more projects to round out my list of 10. I'll try and make some progress there
+this week!
+
+[last]: /blog/2016/03/14/100-10-1-update-5/
+
+
+## projects I worked on this week
+
+### containy-thing
+
+I made some really minor changes to [containy-thing], which I haven't pushed up
+to GitHub yet. I switched to using the released version of [nix] to pick up a
+couple of changes I'd made to [enable `mount(2)`][mount], and [make safe
+wrappers for `getuid(2)` and `getgid(2)`][getuid].
+
+This is kind of cool because it's popping some yaks off [the yak
+stack][yak-stack]: I initially got involved with nix to make those changes.
+Somehow I wound up making [lots more][nix-issues] [contributions][nix-commits],
+and becoming a maintainer. It's a fun circle, because I'm coming back to
+containy-thing in order to get the CI for nix to run faster.
+
+
+[containy-thing]: https://github.com/kamalmarhubi/containy-thing
+[nix]: https://github.com/nix-rust/nix
+[mount]: https://github.com/nix-rust/nix/pull/231
+[getuid]: https://github.com/nix-rust/nix/pull/224
+[yak-stack]: /blog/2015/05/27/controlling-the-yak-stack/
+[nix-issues]: https://github.com/nix-rust/nix/issues?utf8=%E2%9C%93&q=is%3Aissue+author%3Akamalmarhubi
+[nix-commits]: https://github.com/nix-rust/nix/commits?author=kamalmarhubi
+
+
+### silly key-value store
+
+I did some initial work on this still-mysterious project. I'm pretty excited
+for finally starting on it! Watch this space. :-)
+
+
+
+## projects I didn't work on
+
+- cargo fmt-diff
+- tufcrates
