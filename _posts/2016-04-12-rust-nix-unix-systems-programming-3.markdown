@@ -283,4 +283,4 @@ If this kind of thing interests you too, come help out! We have [good first bug 
 
 ---
 
-
+<small>*Thanks to Anton Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.*</small>
