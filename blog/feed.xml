@@ -5,8 +5,8 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 13 Apr 2016 22:42:21 -0400</pubDate>
-    <lastBuildDate>Wed, 13 Apr 2016 22:42:21 -0400</lastBuildDate>
+    <pubDate>Wed, 13 Apr 2016 23:40:42 -0400</pubDate>
+    <lastBuildDate>Wed, 13 Apr 2016 23:40:42 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -136,7 +136,7 @@ fn main() {
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;We can read this definition as saying that a &lt;code&gt;ForkResult&lt;/code&gt; is either &lt;code&gt;Parent&lt;/code&gt; and has a &lt;code&gt;pid_t&lt;/code&gt; value called &lt;code&gt;child&lt;/code&gt;, or it’s &lt;code&gt;Child&lt;/code&gt;. Rust has &lt;a href=&quot;https://doc.rust-lang.org/stable/book/match.html#matching-on-enums&quot;&gt;a pattern matching syntax&lt;/a&gt; for easily checking which variant an enum value is. If we have a variable &lt;code&gt;fork_result&lt;/code&gt;, we can pattern match on it like this:&lt;/p&gt;
+&lt;p&gt;We can read this definition as saying that a &lt;code&gt;ForkResult&lt;/code&gt; is either &lt;code&gt;Parent&lt;/code&gt; or &lt;code&gt;Child&lt;/code&gt;. If it’s &lt;code&gt;Parent&lt;/code&gt; then it contains a &lt;code&gt;pid_t&lt;/code&gt; value named &lt;code&gt;child&lt;/code&gt;, while if it’s &lt;code&gt;Child&lt;/code&gt; then it contains no value. Rust has &lt;a href=&quot;https://doc.rust-lang.org/stable/book/match.html#matching-on-enums&quot;&gt;a pattern matching syntax&lt;/a&gt; for easily checking which variant an enum value is. If we have a variable &lt;code&gt;fork_result&lt;/code&gt;, we can pattern match on it like this:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;    match fork_result {
         ForkResult::Parent { child } =&amp;gt; {
@@ -150,7 +150,7 @@ fn main() {
 
 &lt;h3 id=&quot;separating-the-success-and-failure-cases-with-result&quot;&gt;Separating the success and failure cases with Result&lt;/h3&gt;
 
-&lt;p&gt;The other big thing Rust does to help is having a &lt;code&gt;Result&lt;/code&gt; type that’s used to represent the return from functions that can fail. Similar to how &lt;code&gt;ForkResult&lt;/code&gt; separated the parent and child cases, the built-in &lt;code&gt;Result&lt;/code&gt; type separates successes from failures. It looks like this:&lt;/p&gt;
+&lt;p&gt;The other big thing Rust does to help is having a &lt;a href=&quot;http://doc.rust-lang.org/std/result/enum.Result.html&quot;&gt;&lt;code&gt;Result&lt;/code&gt;&lt;/a&gt; type that’s used to represent the return from functions that can fail. Similar to how &lt;code&gt;ForkResult&lt;/code&gt; separated the parent and child cases, the built-in &lt;code&gt;Result&lt;/code&gt; type separates successes from failures. It looks like this:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;#[must_use]
 pub enum Result&amp;lt;T, E&amp;gt; {
@@ -159,7 +159,7 @@ pub enum Result&amp;lt;T, E&amp;gt; {
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;We can read this definition as saying that as a &lt;code&gt;Result&amp;lt;T, E&amp;gt;&lt;/code&gt; is either &lt;code&gt;Ok&lt;/code&gt; and contains a &lt;code&gt;T&lt;/code&gt; value, or is &lt;code&gt;Err&lt;/code&gt; and contains an &lt;code&gt;E&lt;/code&gt; value. For a specific case, you’d set &lt;code&gt;T&lt;/code&gt; to be the happy case type, and &lt;code&gt;E&lt;/code&gt; to be the type of error that can happen. And the &lt;code&gt;#[must_use]&lt;/code&gt; attribute tells the compiler to warn us if we ignore a &lt;code&gt;Result&lt;/code&gt; return value.&lt;sup id=&quot;fnref:compiler-warned&quot;&gt;&lt;a href=&quot;#fn:compiler-warned&quot; class=&quot;footnote&quot;&gt;4&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;We can read this definition as saying that a &lt;code&gt;Result&amp;lt;T, E&amp;gt;&lt;/code&gt; is either &lt;code&gt;Ok&lt;/code&gt; to indicate success, or &lt;code&gt;Err&lt;/code&gt; to indicate failure. If it’s &lt;code&gt;Ok&lt;/code&gt;, it contains a &lt;code&gt;T&lt;/code&gt; value, while if it’s &lt;code&gt;Err&lt;/code&gt; it contains an &lt;code&gt;E&lt;/code&gt; value. For a specific case, you’d set &lt;code&gt;T&lt;/code&gt; to be the successful return type, and &lt;code&gt;E&lt;/code&gt; to be the type of error that can happen. And the &lt;code&gt;#[must_use]&lt;/code&gt; attribute tells the compiler to warn us if we ignore a &lt;code&gt;Result&lt;/code&gt; return value.&lt;sup id=&quot;fnref:compiler-warned&quot;&gt;&lt;a href=&quot;#fn:compiler-warned&quot; class=&quot;footnote&quot;&gt;4&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
 
 &lt;p&gt;For nix’s &lt;code&gt;fork()&lt;/code&gt; function, the return type is &lt;code&gt;Result&amp;lt;ForkResult, Errno&amp;gt;&lt;/code&gt;: our happy case is the &lt;code&gt;ForkResult&lt;/code&gt; type we talked about earlier. Our sad case is an &lt;code&gt;Errno&lt;/code&gt; value, which is simply an integer the OS uses to tell us why our call failed.&lt;/p&gt;
 
@@ -211,7 +211,7 @@ pub enum Result&amp;lt;T, E&amp;gt; {
 
 &lt;hr /&gt;
 
-&lt;p&gt;&lt;small&gt;&lt;em&gt;Thanks to Ant6n Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;p&gt;&lt;small&gt;&lt;em&gt;Thanks to Ant6n Dubrau, Bryan Newbold, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
 &lt;div class=&quot;footnotes&quot;&gt;
   &lt;ol&gt;
     &lt;li id=&quot;fn:not-that-nix&quot;&gt;

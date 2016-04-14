@@ -184,7 +184,7 @@ fn main() {
 }
 </code></pre>
 
-<p>We can read this definition as saying that a <code>ForkResult</code> is either <code>Parent</code> and has a <code>pid_t</code> value called <code>child</code>, or it’s <code>Child</code>. Rust has <a href="https://doc.rust-lang.org/stable/book/match.html#matching-on-enums">a pattern matching syntax</a> for easily checking which variant an enum value is. If we have a variable <code>fork_result</code>, we can pattern match on it like this:</p>
+<p>We can read this definition as saying that a <code>ForkResult</code> is either <code>Parent</code> or <code>Child</code>. If it’s <code>Parent</code> then it contains a <code>pid_t</code> value named <code>child</code>, while if it’s <code>Child</code> then it contains no value. Rust has <a href="https://doc.rust-lang.org/stable/book/match.html#matching-on-enums">a pattern matching syntax</a> for easily checking which variant an enum value is. If we have a variable <code>fork_result</code>, we can pattern match on it like this:</p>
 
 <pre><code>    match fork_result {
         ForkResult::Parent { child } =&gt; {
@@ -198,7 +198,7 @@ fn main() {
 
 <h3 id="separating-the-success-and-failure-cases-with-result">Separating the success and failure cases with Result</h3>
 
-<p>The other big thing Rust does to help is having a <code>Result</code> type that’s used to represent the return from functions that can fail. Similar to how <code>ForkResult</code> separated the parent and child cases, the built-in <code>Result</code> type separates successes from failures. It looks like this:</p>
+<p>The other big thing Rust does to help is having a <a href="http://doc.rust-lang.org/std/result/enum.Result.html"><code>Result</code></a> type that’s used to represent the return from functions that can fail. Similar to how <code>ForkResult</code> separated the parent and child cases, the built-in <code>Result</code> type separates successes from failures. It looks like this:</p>
 
 <pre><code>#[must_use]
 pub enum Result&lt;T, E&gt; {
@@ -207,7 +207,7 @@ pub enum Result&lt;T, E&gt; {
 }
 </code></pre>
 
-<p>We can read this definition as saying that as a <code>Result&lt;T, E&gt;</code> is either <code>Ok</code> and contains a <code>T</code> value, or is <code>Err</code> and contains an <code>E</code> value. For a specific case, you’d set <code>T</code> to be the happy case type, and <code>E</code> to be the type of error that can happen. And the <code>#[must_use]</code> attribute tells the compiler to warn us if we ignore a <code>Result</code> return value.<sup id="fnref:compiler-warned"><a href="#fn:compiler-warned" class="footnote">4</a></sup></p>
+<p>We can read this definition as saying that a <code>Result&lt;T, E&gt;</code> is either <code>Ok</code> to indicate success, or <code>Err</code> to indicate failure. If it’s <code>Ok</code>, it contains a <code>T</code> value, while if it’s <code>Err</code> it contains an <code>E</code> value. For a specific case, you’d set <code>T</code> to be the successful return type, and <code>E</code> to be the type of error that can happen. And the <code>#[must_use]</code> attribute tells the compiler to warn us if we ignore a <code>Result</code> return value.<sup id="fnref:compiler-warned"><a href="#fn:compiler-warned" class="footnote">4</a></sup></p>
 
 <p>For nix’s <code>fork()</code> function, the return type is <code>Result&lt;ForkResult, Errno&gt;</code>: our happy case is the <code>ForkResult</code> type we talked about earlier. Our sad case is an <code>Errno</code> value, which is simply an integer the OS uses to tell us why our call failed.</p>
 
@@ -259,7 +259,7 @@ pub enum Result&lt;T, E&gt; {
 
 <hr />
 
-<p><small><em>Thanks to Ant6n Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.</em></small></p>
+<p><small><em>Thanks to Ant6n Dubrau, Bryan Newbold, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.</em></small></p>
 <div class="footnotes">
   <ol>
     <li id="fn:not-that-nix">
