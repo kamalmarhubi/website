@@ -180,7 +180,7 @@ pub enum ForkResult {
 }
 ~~~
 
-We can read this definition as saying that a `ForkResult` is either `Parent` and has a `pid_t` value called `child`, or it's `Child`. Rust has [a pattern matching syntax][book-patterns] for easily checking which variant an enum value is. If we have a variable `fork_result`, we can pattern match on it like this:
+We can read this definition as saying that a `ForkResult` is either `Parent` or `Child`. If it's `Parent` then it contains a `pid_t` value named `child`, while if it's `Child` then it contains no value. Rust has [a pattern matching syntax][book-patterns] for easily checking which variant an enum value is. If we have a variable `fork_result`, we can pattern match on it like this:
 
 ~~~
     match fork_result {
@@ -198,7 +198,7 @@ We can read this definition as saying that a `ForkResult` is either `Parent` and
 
 ### Separating the success and failure cases with Result
 
-The other big thing Rust does to help is having a `Result` type that's used to represent the return from functions that can fail. Similar to how `ForkResult` separated the parent and child cases, the built-in `Result` type separates successes from failures. It looks like this:
+The other big thing Rust does to help is having a [`Result`][std-result] type that's used to represent the return from functions that can fail. Similar to how `ForkResult` separated the parent and child cases, the built-in `Result` type separates successes from failures. It looks like this:
 
 ~~~
 #[must_use]
@@ -208,7 +208,9 @@ pub enum Result<T, E> {
 }
 ~~~
 
-We can read this definition as saying that as a `Result<T, E>` is either `Ok` and contains a `T` value, or is `Err` and contains an `E` value. For a specific case, you'd set `T` to be the happy case type, and `E` to be the type of error that can happen. And the `#[must_use]` attribute tells the compiler to warn us if we ignore a `Result` return value.[^compiler-warned]
+[std-result]: http://doc.rust-lang.org/std/result/enum.Result.html
+
+We can read this definition as saying that a `Result<T, E>` is either `Ok` to indicate success, or `Err` to indicate failure. If it's `Ok`, it contains a `T` value, while if it's `Err` it contains an `E` value. For a specific case, you'd set `T` to be the successful return type, and `E` to be the type of error that can happen. And the `#[must_use]` attribute tells the compiler to warn us if we ignore a `Result` return value.[^compiler-warned]
 
 [^compiler-warned]:
     Fun fact: when I first wrote the example for this post, I forgot to check the return value from `kill()`. Woops! But the compiler helpfully warned me that I was ignoring a `Result` return value:
@@ -283,4 +285,4 @@ If this kind of thing interests you too, come help out! We have [good first bug 
 
 ---
 
-<small>*Thanks to Ant6n Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.*</small>
+<small>*Thanks to Ant6n Dubrau, Bryan Newbold, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.*</small>
