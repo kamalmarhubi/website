@@ -1,6 +1,6 @@
 ---
 title: "Rust + nix = easier unix systems programming <3"
-date: 2016-04-12T18:26:50-04:00
+date: 2016-04-13
 ---
 
 Lately I'm writing lots of [Rust], and I'm particularly interested in systems programming on unix. I've been using and contributing to a library called [nix][nix][^not-that-nix], whose mission is to provide ‘Rust friendly bindings to *nix APIs’.
@@ -283,4 +283,4 @@ If this kind of thing interests you too, come help out! We have [good first bug 
 
 ---
 
-<small>*Thanks to Anton Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.*</small>
+<small>*Thanks to Ant6n Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.*</small>
