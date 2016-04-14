@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Rust + nix = easier unix systems programming <3</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2016/04/13/rust-nix-easier-unix-systems-programming-3/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Kamal Marhubi</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Rust + nix = easier unix systems programming <3</h1>
+    <p class="post-meta">Apr 13, 2016</p>
+  </header>
+
+  <article class="post-content">
+    <p>Lately I’m writing lots of <a href="https://www.rust-lang.org/">Rust</a>, and I’m particularly interested in systems programming on unix. I’ve been using and contributing to a library called <a href="https://github.com/nix-rust/nix">nix</a><sup id="fnref:not-that-nix"><a href="#fn:not-that-nix" class="footnote">1</a></sup>, whose mission is to provide ‘Rust friendly bindings to *nix APIs’.</p>
+
+<p>In this blog post, I hope to convince you that you might want to reach for Rust and nix the next time you need to do some unix systems programming, especially if you aren’t fluent in C. It’s no harder to write, you won’t have to write more code, and it makes it much easier to avoid a few classes of mistakes.</p>
+
+<h2 id="first-off-what-is-systems-programming">First off, what is systems programming?</h2>
+
+<p>The term systems programming can mean all sorts of things, and depends a lot on context and who you’re talking to. For this blog post, here’s my incredibly precise definition:</p>
+
+<blockquote>
+  <p>Systems programming is programming where you spend more time reading man pages than reading the internet.</p>
+</blockquote>
+
+<p>(As an aside, this means that systems programming is programming you can happily do on the subway if you happen to be in one of those places that doesn’t have connectivity in the tunnels, like New York. I definitely did this when taking the Q train back from the <a href="https://www.recurse.com/">Recurse Center</a> late at night!)</p>
+
+<p>Here are a few examples of things that fall under this definition:</p>
+
+<ul>
+  <li>managing processes (eg, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html"><code>fork(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html"><code>execve(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/waitpid.html"><code>waitpid(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html"><code>signal(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html"><code>kill(2)</code></a>)</li>
+  <li>working with files (eg, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html"><code>open(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html"><code>ftruncate(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html"><code>unlink(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html"><code>read(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html"><code>write(2)</code></a>)</li>
+  <li>network programming (eg, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html"><code>socket(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsockopt.html"><code>setsockopt(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/listen.html"><code>listen(2)</code></a>, <a href="http://man7.org/linux/man-pages/man2/sendfile.2.html"><code>sendfile(2)</code></a>)</li>
+  <li>Linux containers (eg, <a href="http://man7.org/linux/man-pages/man2/clone.2.html"><code>clone(2)</code></a>, <a href="http://man7.org/linux/man-pages/man2/unshare.2.html"><code>unshare(2)</code></a>, <a href="http://man7.org/linux/man-pages/man2/pivot_root.2.html"><code>pivot_root(2)</code></a>, <a href="http://man7.org/linux/man-pages/man2/mount.2.html"><code>mount(2)</code></a>)</li>
+  <li>interacting with hardware (eg, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/ioctl.html"><code>ioctl(2)</code></a>, <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/mmap.html"><code>mmap(2)</code></a>)</li>
+</ul>
+
+<h2 id="fork2-and-kill2-an-example-of-how-badly-things-can-go">fork(2) and kill(2): an example of how badly things can go</h2>
+
+<p>Here’s a fairly innocuous looking C program that uses <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html"><code>fork(2)</code></a> and <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html"><code>kill(2)</code></a> to spawn and kill a process:</p>
+
+<pre><code>#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+
+int main(void) {
+        pid_t child = fork();
+        if (child) {  // in parent
+                sleep(5);
+                kill(child, SIGKILL);
+        } else {  // in child
+                for (;;);  // loop until killed
+        }
+
+        return 0;
+}
+</code></pre>
+
+<p>This program compiles with no errors or warnings, not even with <code>-Wall -Wextra -Werror</code>. I recommend you don’t run it though, and here’s why. From the POSIX specification for <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html"><code>fork(2)</code></a>:</p>
+
+<blockquote>
+  <p>Upon successful completion, fork() shall return 0 to the child process and shall return the process ID of the child process to the parent process. Both processes shall continue to execute from the fork() function. Otherwise, -1 shall be returned to the parent process, no child process shall be created, and errno shall be set to indicate the error.</p>
+</blockquote>
+
+<p>And from the specification for <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html"><code>kill(2)</code></a>:</p>
+
+<blockquote>
+  <p>If pid is -1, <strong>sig shall be sent to all processes</strong> (excluding an unspecified set of system processes) for which the process has permission to send that signal.</p>
+</blockquote>
+
+<p>Putting the two together, that program could really ruin our day. If the <code>fork()</code> call fails for some reason<sup id="fnref:fork-failures"><a href="#fn:fork-failures" class="footnote">2</a></sup>, we store <code>-1</code> in <code>child</code>. Later, we call <code>kill(-1, SIGKILL)</code>, which tries to kill all our processes, and most likely hose our login. Not even <code>screen</code> or <code>tmux</code> will save us!<sup id="fnref:rachel-fork-citation"><a href="#fn:rachel-fork-citation" class="footnote">3</a></sup></p>
+
+<p>It’s a pretty scary failure mode, and neither the library nor the language do anything at all to prevent us from having a terrible day.</p>
+
+<h2 id="why-fork-and-kill-go-so-terribly-together">Why fork and kill go so terribly together</h2>
+
+<p>I believe the main issue here is that the C library forces us to try and stick several meanings into one value. For <code>fork(2)</code>, the return value is conveying <em>three</em> different things all at once:</p>
+
+<ul>
+  <li>whether or not the call succeeded (return value <code>-1</code>)</li>
+  <li>if it succeeded, whether or not we are in the child (return value <code>0</code>)</li>
+  <li>if we are the parent, what the child’s PID is (strictly positive return value)</li>
+</ul>
+
+<p>That’s a lot of information for one poor little <code>pid_t</code>—usually a 32-bit integer—to convey!</p>
+
+<p>In the case of <code>kill(2)</code>, the <code>pid</code> parameter conflates several different behaviors. From <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html#tag_16_286_03">the POSIX specification</a> again:</p>
+
+<blockquote>
+  <ul>
+    <li>If pid is greater than 0, sig shall be sent to the process whose process ID is equal to pid.</li>
+    <li>If pid is 0, sig shall be sent to all processes (excluding an unspecified set of system processes) whose process group ID is equal to the process group ID of the sender, and for which the process has permission to send a signal.</li>
+    <li>If pid is -1, sig shall be sent to all processes (excluding an unspecified set of system processes) for which the process has permission to send that signal.</li>
+    <li>If pid is negative, but not -1, sig shall be sent to all processes (excluding an unspecified set of system processes) whose process group ID is equal to the absolute value of pid, and for which the process has permission to send a signal.</li>
+  </ul>
+</blockquote>
+
+<p>Some extra badness comes from C’s way of treating all non-zero integral values as truthy in conditions, so our <code>if (child)</code> check takes the true branch even when <code>fork()</code> failed and returned <code>-1</code>!</p>
+
+<p>The combination of <code>-1</code> as failure value from <code>fork(2)</code> and as a special value to <code>kill(2)</code> is unfortunate and makes this example especially bad. But other functions treat a <code>pid</code> value of <code>-1</code> in a special way too, so even if we didn’t call <code>kill(2)</code> this could still turn out badly. For example, if we called <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/waitpid.html"><code>waitpid(2)</code></a> instead, we’d end up either blocking execution waiting for termination of a child that doesn’t exist, or reaping a child that some other thread is waiting for. While they won’t ruin our system in quite the same way as <code>kill(-1, sig)</code>, neither are failure modes that should be so easy to end up in!</p>
+
+<h2 id="how-nix-and-rust-help-with-the-fork--kill-problem">How nix and Rust help with the fork / kill problem</h2>
+
+<p>Here’s what this example would look like in Rust + nix:</p>
+
+<pre><code>extern crate nix;
+
+use nix::sys::signal::*;
+use nix::unistd::*;
+
+fn main() {
+    match fork().expect("fork failed") {
+        ForkResult::Parent{ child } =&gt; {
+            sleep(5);
+            kill(child, SIGKILL).expect("kill failed");
+        }
+        ForkResult::Child =&gt; {
+            loop {}  // until killed
+        }
+    }
+}
+</code></pre>
+
+<p>We’ll go over it in detail below, but for now we’ll just notice that the structure and length are really similar to the C version. But it’s much safer, and won’t go on a process killing rampage!</p>
+
+<p>The nix wrapper for <code>fork(2)</code> does two things to make it much easier to avoid accidentally killing all our processes. Both use <a href="https://doc.rust-lang.org/stable/book/enums.html">Rust’s enums</a>, which are effectively tagged unions.</p>
+
+<h3 id="separating-the-parent-and-child-returns-with-an-enum">Separating the parent and child returns with an enum</h3>
+
+<p>For the success case, nix’s <code>fork()</code> makes a really great use of a custom enum. Instead of returning just a plain <code>pid_t</code>, it returns a <code>ForkResult</code> type. The <code>ForkResult</code> enum looks like this:</p>
+
+<pre><code>pub enum ForkResult {
+    Parent {
+        child: pid_t
+    },
+    Child
+}
+</code></pre>
+
+<p>We can read this definition as saying that a <code>ForkResult</code> is either <code>Parent</code> and has a <code>pid_t</code> value called <code>child</code>, or it’s <code>Child</code>. Rust has <a href="https://doc.rust-lang.org/stable/book/match.html#matching-on-enums">a pattern matching syntax</a> for easily checking which variant an enum value is. If we have a variable <code>fork_result</code>, we can pattern match on it like this:</p>
+
+<pre><code>    match fork_result {
+        ForkResult::Parent { child } =&gt; {
+            // stuff to do if we're in the parent
+        }
+        ForkResult::Child =&gt; {
+            // stuff do do if we're in the child
+        }
+    }
+</code></pre>
+
+<h3 id="separating-the-success-and-failure-cases-with-result">Separating the success and failure cases with Result</h3>
+
+<p>The other big thing Rust does to help is having a <code>Result</code> type that’s used to represent the return from functions that can fail. Similar to how <code>ForkResult</code> separated the parent and child cases, the built-in <code>Result</code> type separates successes from failures. It looks like this:</p>
+
+<pre><code>#[must_use]
+pub enum Result&lt;T, E&gt; {
+    Ok(T),
+    Err(E),
+}
+</code></pre>
+
+<p>We can read this definition as saying that as a <code>Result&lt;T, E&gt;</code> is either <code>Ok</code> and contains a <code>T</code> value, or is <code>Err</code> and contains an <code>E</code> value. For a specific case, you’d set <code>T</code> to be the happy case type, and <code>E</code> to be the type of error that can happen. And the <code>#[must_use]</code> attribute tells the compiler to warn us if we ignore a <code>Result</code> return value.<sup id="fnref:compiler-warned"><a href="#fn:compiler-warned" class="footnote">4</a></sup></p>
+
+<p>For nix’s <code>fork()</code> function, the return type is <code>Result&lt;ForkResult, Errno&gt;</code>: our happy case is the <code>ForkResult</code> type we talked about earlier. Our sad case is an <code>Errno</code> value, which is simply an integer the OS uses to tell us why our call failed.</p>
+
+<p>We <em>could</em> match on the return value of <code>fork()</code> directly like this:</p>
+
+<pre><code>    match fork() {
+        Ok(ForkResult::Parent { child }) =&gt; {
+            // stuff to do if we're in the parent
+        }
+        Ok(ForkResult::Child) =&gt; {
+            // stuff do do if we're in the child
+        }
+        Err(errno) =&gt; {
+            // stuff to do if there was an error
+        }
+    }
+</code></pre>
+
+<p>However, Rust has some idioms useful for dealing with <code>Result</code> values that make code a little bit tidier. The one we’ll rely on in this post is <a href="http://doc.rust-lang.org/std/result/enum.Result.html#method.expect"><code>expect()</code></a>. It unwraps the success value from an <code>Ok</code> result, or panics with a given error message if called on an <code>Err</code> result. It’s a handy way to just crash the program with a semi-useful error message when an error happens. That’s pretty much perfect for prototyping, or for quick and dirty programs.</p>
+
+<p>With <code>expect()</code>, our match only has to consider the success cases:</p>
+
+<pre><code>    match fork().expect("fork failed") {
+        ForkResult::Parent { child } =&gt; {
+            // stuff to do if we're in the parent
+        }
+        ForkResult::Child =&gt; {
+            // stuff do do if we're in the child
+        }
+    }
+</code></pre>
+
+<p>If <code>fork()</code> failed, our program will exit with an error message that looks something like this:</p>
+
+<pre><code>thread '&lt;main&gt;' panicked at 'fork failed: ENOMEM', ../src/libcore/result.rs:709
+</code></pre>
+
+<p>This tells us what failed, and why. For our tiny program, that’s enough to see what went wrong. For a more complicated program, we could ask for a backtrace by setting <code>RUST_BACKTRACE=1</code> in the environment.</p>
+
+<p>If you want to find out more about error handling in Rust, The Rust book has <a href="https://doc.rust-lang.org/stable/book/error-handling.html">a chapter</a> with a fantastic and detailed look at different approaches. I highly recommend reading it!</p>
+
+<h2 id="join-us">Join us!</h2>
+
+<p>I’ve really been enjoying doing this kind of programming in Rust. So much that I became a maintainer for nix! We’ve been exploring a few ways of using Rust’s features to help make systems programming safer and easier to not mess up.</p>
+
+<p>If this kind of thing interests you too, come help out! We have <a href="https://github.com/nix-rust/nix/issues?q=is%3Aissue+is%3Aopen+label%3AE-good-first-bug">good first bug label</a> on our issue tracker, as well as a <a href="https://github.com/nix-rust/nix/issues?q=is%3Aissue+is%3Aopen+label%3AE-mentor">mentored bug label</a>. We’d love to have your input and your help!</p>
+
+<p><br /></p>
+
+<hr />
+
+<p><small><em>Thanks to Ant6n Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.</em></small></p>
+<div class="footnotes">
+  <ol>
+    <li id="fn:not-that-nix">
+
+      <p>Confusingly for some, the library has nothing to do with the <a href="https://nixos.org/nix/">Nix package manager</a>, <a href="https://nixos.org/">NixOS</a>, or any of the related projects. <a href="#fnref:not-that-nix" class="reversefootnote">&#8617;</a></p>
+    </li>
+    <li id="fn:fork-failures">
+
+      <p>There are two main ways <code>fork(2)</code> can fail:</p>
+
+      <ul>
+        <li>the system is out of memory</li>
+        <li>we’re at our process limit</li>
+      </ul>
+
+      <p>Either of these can happen, and code should be ready if they do! <a href="#fnref:fork-failures" class="reversefootnote">&#8617;</a></p>
+    </li>
+    <li id="fn:rachel-fork-citation">
+
+      <p>I first came across this issue in <a href="http://rachelbythebay.com/w/2014/08/19/fork/">a post on Rachel by the Bay</a>—which incidentally is a great blog! <a href="#fnref:rachel-fork-citation" class="reversefootnote">&#8617;</a></p>
+    </li>
+    <li id="fn:compiler-warned">
+
+      <p>Fun fact: when I first wrote the example for this post, I forgot to check the return value from <code>kill()</code>. Woops! But the compiler helpfully warned me that I was ignoring a <code>Result</code> return value:</p>
+
+      <pre><code>$ cargo build
+   Compiling fork-rs v0.1.0 (file:///home/kamal/projects/talks/2016-03-24-rc/fork-rs)
+src/main.rs:13:13: 13:34 warning: unused result which must be used, #[warn(unused_must_use)] on by default
+src/main.rs:13             kill(child, SIGKILL);
+                           ^~~~~~~~~~~~~~~~~~~~~
+</code></pre>
+      <p><a href="#fnref:compiler-warned" class="reversefootnote">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:kamal@marhubi.com">kamal@marhubi.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/kamalmarhubi">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/kamalmarhubi">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text"></p>
+      </div>
+    </div>
+
+  </div>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-39994628-3', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</footer>
+
+
+  </body>
+
+</html>

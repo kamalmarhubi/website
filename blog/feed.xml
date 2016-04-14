@@ -5,9 +5,255 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sat, 09 Apr 2016 12:09:09 -0400</pubDate>
-    <lastBuildDate>Sat, 09 Apr 2016 12:09:09 -0400</lastBuildDate>
+    <pubDate>Wed, 13 Apr 2016 22:42:21 -0400</pubDate>
+    <lastBuildDate>Wed, 13 Apr 2016 22:42:21 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Rust + nix = easier unix systems programming &lt;3</title>
+        <description>&lt;p&gt;Lately I’m writing lots of &lt;a href=&quot;https://www.rust-lang.org/&quot;&gt;Rust&lt;/a&gt;, and I’m particularly interested in systems programming on unix. I’ve been using and contributing to a library called &lt;a href=&quot;https://github.com/nix-rust/nix&quot;&gt;nix&lt;/a&gt;&lt;sup id=&quot;fnref:not-that-nix&quot;&gt;&lt;a href=&quot;#fn:not-that-nix&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;, whose mission is to provide ‘Rust friendly bindings to *nix APIs’.&lt;/p&gt;
+
+&lt;p&gt;In this blog post, I hope to convince you that you might want to reach for Rust and nix the next time you need to do some unix systems programming, especially if you aren’t fluent in C. It’s no harder to write, you won’t have to write more code, and it makes it much easier to avoid a few classes of mistakes.&lt;/p&gt;
+
+&lt;h2 id=&quot;first-off-what-is-systems-programming&quot;&gt;First off, what is systems programming?&lt;/h2&gt;
+
+&lt;p&gt;The term systems programming can mean all sorts of things, and depends a lot on context and who you’re talking to. For this blog post, here’s my incredibly precise definition:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Systems programming is programming where you spend more time reading man pages than reading the internet.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;(As an aside, this means that systems programming is programming you can happily do on the subway if you happen to be in one of those places that doesn’t have connectivity in the tunnels, like New York. I definitely did this when taking the Q train back from the &lt;a href=&quot;https://www.recurse.com/&quot;&gt;Recurse Center&lt;/a&gt; late at night!)&lt;/p&gt;
+
+&lt;p&gt;Here are a few examples of things that fall under this definition:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;managing processes (eg, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html&quot;&gt;&lt;code&gt;fork(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html&quot;&gt;&lt;code&gt;execve(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/waitpid.html&quot;&gt;&lt;code&gt;waitpid(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html&quot;&gt;&lt;code&gt;signal(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html&quot;&gt;&lt;code&gt;kill(2)&lt;/code&gt;&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;working with files (eg, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html&quot;&gt;&lt;code&gt;open(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/ftruncate.html&quot;&gt;&lt;code&gt;ftruncate(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html&quot;&gt;&lt;code&gt;unlink(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/read.html&quot;&gt;&lt;code&gt;read(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html&quot;&gt;&lt;code&gt;write(2)&lt;/code&gt;&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;network programming (eg, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html&quot;&gt;&lt;code&gt;socket(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsockopt.html&quot;&gt;&lt;code&gt;setsockopt(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/listen.html&quot;&gt;&lt;code&gt;listen(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://man7.org/linux/man-pages/man2/sendfile.2.html&quot;&gt;&lt;code&gt;sendfile(2)&lt;/code&gt;&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Linux containers (eg, &lt;a href=&quot;http://man7.org/linux/man-pages/man2/clone.2.html&quot;&gt;&lt;code&gt;clone(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://man7.org/linux/man-pages/man2/unshare.2.html&quot;&gt;&lt;code&gt;unshare(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://man7.org/linux/man-pages/man2/pivot_root.2.html&quot;&gt;&lt;code&gt;pivot_root(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://man7.org/linux/man-pages/man2/mount.2.html&quot;&gt;&lt;code&gt;mount(2)&lt;/code&gt;&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;interacting with hardware (eg, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/ioctl.html&quot;&gt;&lt;code&gt;ioctl(2)&lt;/code&gt;&lt;/a&gt;, &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/mmap.html&quot;&gt;&lt;code&gt;mmap(2)&lt;/code&gt;&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;fork2-and-kill2-an-example-of-how-badly-things-can-go&quot;&gt;fork(2) and kill(2): an example of how badly things can go&lt;/h2&gt;
+
+&lt;p&gt;Here’s a fairly innocuous looking C program that uses &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html&quot;&gt;&lt;code&gt;fork(2)&lt;/code&gt;&lt;/a&gt; and &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html&quot;&gt;&lt;code&gt;kill(2)&lt;/code&gt;&lt;/a&gt; to spawn and kill a process:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#include &amp;lt;signal.h&amp;gt;
+#include &amp;lt;unistd.h&amp;gt;
+
+int main(void) {
+        pid_t child = fork();
+        if (child) {  // in parent
+                sleep(5);
+                kill(child, SIGKILL);
+        } else {  // in child
+                for (;;);  // loop until killed
+        }
+
+        return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This program compiles with no errors or warnings, not even with &lt;code&gt;-Wall -Wextra -Werror&lt;/code&gt;. I recommend you don’t run it though, and here’s why. From the POSIX specification for &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html&quot;&gt;&lt;code&gt;fork(2)&lt;/code&gt;&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Upon successful completion, fork() shall return 0 to the child process and shall return the process ID of the child process to the parent process. Both processes shall continue to execute from the fork() function. Otherwise, -1 shall be returned to the parent process, no child process shall be created, and errno shall be set to indicate the error.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;And from the specification for &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html&quot;&gt;&lt;code&gt;kill(2)&lt;/code&gt;&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;If pid is -1, &lt;strong&gt;sig shall be sent to all processes&lt;/strong&gt; (excluding an unspecified set of system processes) for which the process has permission to send that signal.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Putting the two together, that program could really ruin our day. If the &lt;code&gt;fork()&lt;/code&gt; call fails for some reason&lt;sup id=&quot;fnref:fork-failures&quot;&gt;&lt;a href=&quot;#fn:fork-failures&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;, we store &lt;code&gt;-1&lt;/code&gt; in &lt;code&gt;child&lt;/code&gt;. Later, we call &lt;code&gt;kill(-1, SIGKILL)&lt;/code&gt;, which tries to kill all our processes, and most likely hose our login. Not even &lt;code&gt;screen&lt;/code&gt; or &lt;code&gt;tmux&lt;/code&gt; will save us!&lt;sup id=&quot;fnref:rachel-fork-citation&quot;&gt;&lt;a href=&quot;#fn:rachel-fork-citation&quot; class=&quot;footnote&quot;&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;p&gt;It’s a pretty scary failure mode, and neither the library nor the language do anything at all to prevent us from having a terrible day.&lt;/p&gt;
+
+&lt;h2 id=&quot;why-fork-and-kill-go-so-terribly-together&quot;&gt;Why fork and kill go so terribly together&lt;/h2&gt;
+
+&lt;p&gt;I believe the main issue here is that the C library forces us to try and stick several meanings into one value. For &lt;code&gt;fork(2)&lt;/code&gt;, the return value is conveying &lt;em&gt;three&lt;/em&gt; different things all at once:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;whether or not the call succeeded (return value &lt;code&gt;-1&lt;/code&gt;)&lt;/li&gt;
+  &lt;li&gt;if it succeeded, whether or not we are in the child (return value &lt;code&gt;0&lt;/code&gt;)&lt;/li&gt;
+  &lt;li&gt;if we are the parent, what the child’s PID is (strictly positive return value)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;That’s a lot of information for one poor little &lt;code&gt;pid_t&lt;/code&gt;—usually a 32-bit integer—to convey!&lt;/p&gt;
+
+&lt;p&gt;In the case of &lt;code&gt;kill(2)&lt;/code&gt;, the &lt;code&gt;pid&lt;/code&gt; parameter conflates several different behaviors. From &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html#tag_16_286_03&quot;&gt;the POSIX specification&lt;/a&gt; again:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ul&gt;
+    &lt;li&gt;If pid is greater than 0, sig shall be sent to the process whose process ID is equal to pid.&lt;/li&gt;
+    &lt;li&gt;If pid is 0, sig shall be sent to all processes (excluding an unspecified set of system processes) whose process group ID is equal to the process group ID of the sender, and for which the process has permission to send a signal.&lt;/li&gt;
+    &lt;li&gt;If pid is -1, sig shall be sent to all processes (excluding an unspecified set of system processes) for which the process has permission to send that signal.&lt;/li&gt;
+    &lt;li&gt;If pid is negative, but not -1, sig shall be sent to all processes (excluding an unspecified set of system processes) whose process group ID is equal to the absolute value of pid, and for which the process has permission to send a signal.&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Some extra badness comes from C’s way of treating all non-zero integral values as truthy in conditions, so our &lt;code&gt;if (child)&lt;/code&gt; check takes the true branch even when &lt;code&gt;fork()&lt;/code&gt; failed and returned &lt;code&gt;-1&lt;/code&gt;!&lt;/p&gt;
+
+&lt;p&gt;The combination of &lt;code&gt;-1&lt;/code&gt; as failure value from &lt;code&gt;fork(2)&lt;/code&gt; and as a special value to &lt;code&gt;kill(2)&lt;/code&gt; is unfortunate and makes this example especially bad. But other functions treat a &lt;code&gt;pid&lt;/code&gt; value of &lt;code&gt;-1&lt;/code&gt; in a special way too, so even if we didn’t call &lt;code&gt;kill(2)&lt;/code&gt; this could still turn out badly. For example, if we called &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/waitpid.html&quot;&gt;&lt;code&gt;waitpid(2)&lt;/code&gt;&lt;/a&gt; instead, we’d end up either blocking execution waiting for termination of a child that doesn’t exist, or reaping a child that some other thread is waiting for. While they won’t ruin our system in quite the same way as &lt;code&gt;kill(-1, sig)&lt;/code&gt;, neither are failure modes that should be so easy to end up in!&lt;/p&gt;
+
+&lt;h2 id=&quot;how-nix-and-rust-help-with-the-fork--kill-problem&quot;&gt;How nix and Rust help with the fork / kill problem&lt;/h2&gt;
+
+&lt;p&gt;Here’s what this example would look like in Rust + nix:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;extern crate nix;
+
+use nix::sys::signal::*;
+use nix::unistd::*;
+
+fn main() {
+    match fork().expect(&quot;fork failed&quot;) {
+        ForkResult::Parent{ child } =&amp;gt; {
+            sleep(5);
+            kill(child, SIGKILL).expect(&quot;kill failed&quot;);
+        }
+        ForkResult::Child =&amp;gt; {
+            loop {}  // until killed
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We’ll go over it in detail below, but for now we’ll just notice that the structure and length are really similar to the C version. But it’s much safer, and won’t go on a process killing rampage!&lt;/p&gt;
+
+&lt;p&gt;The nix wrapper for &lt;code&gt;fork(2)&lt;/code&gt; does two things to make it much easier to avoid accidentally killing all our processes. Both use &lt;a href=&quot;https://doc.rust-lang.org/stable/book/enums.html&quot;&gt;Rust’s enums&lt;/a&gt;, which are effectively tagged unions.&lt;/p&gt;
+
+&lt;h3 id=&quot;separating-the-parent-and-child-returns-with-an-enum&quot;&gt;Separating the parent and child returns with an enum&lt;/h3&gt;
+
+&lt;p&gt;For the success case, nix’s &lt;code&gt;fork()&lt;/code&gt; makes a really great use of a custom enum. Instead of returning just a plain &lt;code&gt;pid_t&lt;/code&gt;, it returns a &lt;code&gt;ForkResult&lt;/code&gt; type. The &lt;code&gt;ForkResult&lt;/code&gt; enum looks like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;pub enum ForkResult {
+    Parent {
+        child: pid_t
+    },
+    Child
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can read this definition as saying that a &lt;code&gt;ForkResult&lt;/code&gt; is either &lt;code&gt;Parent&lt;/code&gt; and has a &lt;code&gt;pid_t&lt;/code&gt; value called &lt;code&gt;child&lt;/code&gt;, or it’s &lt;code&gt;Child&lt;/code&gt;. Rust has &lt;a href=&quot;https://doc.rust-lang.org/stable/book/match.html#matching-on-enums&quot;&gt;a pattern matching syntax&lt;/a&gt; for easily checking which variant an enum value is. If we have a variable &lt;code&gt;fork_result&lt;/code&gt;, we can pattern match on it like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    match fork_result {
+        ForkResult::Parent { child } =&amp;gt; {
+            // stuff to do if we&#39;re in the parent
+        }
+        ForkResult::Child =&amp;gt; {
+            // stuff do do if we&#39;re in the child
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;separating-the-success-and-failure-cases-with-result&quot;&gt;Separating the success and failure cases with Result&lt;/h3&gt;
+
+&lt;p&gt;The other big thing Rust does to help is having a &lt;code&gt;Result&lt;/code&gt; type that’s used to represent the return from functions that can fail. Similar to how &lt;code&gt;ForkResult&lt;/code&gt; separated the parent and child cases, the built-in &lt;code&gt;Result&lt;/code&gt; type separates successes from failures. It looks like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#[must_use]
+pub enum Result&amp;lt;T, E&amp;gt; {
+    Ok(T),
+    Err(E),
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can read this definition as saying that as a &lt;code&gt;Result&amp;lt;T, E&amp;gt;&lt;/code&gt; is either &lt;code&gt;Ok&lt;/code&gt; and contains a &lt;code&gt;T&lt;/code&gt; value, or is &lt;code&gt;Err&lt;/code&gt; and contains an &lt;code&gt;E&lt;/code&gt; value. For a specific case, you’d set &lt;code&gt;T&lt;/code&gt; to be the happy case type, and &lt;code&gt;E&lt;/code&gt; to be the type of error that can happen. And the &lt;code&gt;#[must_use]&lt;/code&gt; attribute tells the compiler to warn us if we ignore a &lt;code&gt;Result&lt;/code&gt; return value.&lt;sup id=&quot;fnref:compiler-warned&quot;&gt;&lt;a href=&quot;#fn:compiler-warned&quot; class=&quot;footnote&quot;&gt;4&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;p&gt;For nix’s &lt;code&gt;fork()&lt;/code&gt; function, the return type is &lt;code&gt;Result&amp;lt;ForkResult, Errno&amp;gt;&lt;/code&gt;: our happy case is the &lt;code&gt;ForkResult&lt;/code&gt; type we talked about earlier. Our sad case is an &lt;code&gt;Errno&lt;/code&gt; value, which is simply an integer the OS uses to tell us why our call failed.&lt;/p&gt;
+
+&lt;p&gt;We &lt;em&gt;could&lt;/em&gt; match on the return value of &lt;code&gt;fork()&lt;/code&gt; directly like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    match fork() {
+        Ok(ForkResult::Parent { child }) =&amp;gt; {
+            // stuff to do if we&#39;re in the parent
+        }
+        Ok(ForkResult::Child) =&amp;gt; {
+            // stuff do do if we&#39;re in the child
+        }
+        Err(errno) =&amp;gt; {
+            // stuff to do if there was an error
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;However, Rust has some idioms useful for dealing with &lt;code&gt;Result&lt;/code&gt; values that make code a little bit tidier. The one we’ll rely on in this post is &lt;a href=&quot;http://doc.rust-lang.org/std/result/enum.Result.html#method.expect&quot;&gt;&lt;code&gt;expect()&lt;/code&gt;&lt;/a&gt;. It unwraps the success value from an &lt;code&gt;Ok&lt;/code&gt; result, or panics with a given error message if called on an &lt;code&gt;Err&lt;/code&gt; result. It’s a handy way to just crash the program with a semi-useful error message when an error happens. That’s pretty much perfect for prototyping, or for quick and dirty programs.&lt;/p&gt;
+
+&lt;p&gt;With &lt;code&gt;expect()&lt;/code&gt;, our match only has to consider the success cases:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    match fork().expect(&quot;fork failed&quot;) {
+        ForkResult::Parent { child } =&amp;gt; {
+            // stuff to do if we&#39;re in the parent
+        }
+        ForkResult::Child =&amp;gt; {
+            // stuff do do if we&#39;re in the child
+        }
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If &lt;code&gt;fork()&lt;/code&gt; failed, our program will exit with an error message that looks something like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;thread &#39;&amp;lt;main&amp;gt;&#39; panicked at &#39;fork failed: ENOMEM&#39;, ../src/libcore/result.rs:709
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This tells us what failed, and why. For our tiny program, that’s enough to see what went wrong. For a more complicated program, we could ask for a backtrace by setting &lt;code&gt;RUST_BACKTRACE=1&lt;/code&gt; in the environment.&lt;/p&gt;
+
+&lt;p&gt;If you want to find out more about error handling in Rust, The Rust book has &lt;a href=&quot;https://doc.rust-lang.org/stable/book/error-handling.html&quot;&gt;a chapter&lt;/a&gt; with a fantastic and detailed look at different approaches. I highly recommend reading it!&lt;/p&gt;
+
+&lt;h2 id=&quot;join-us&quot;&gt;Join us!&lt;/h2&gt;
+
+&lt;p&gt;I’ve really been enjoying doing this kind of programming in Rust. So much that I became a maintainer for nix! We’ve been exploring a few ways of using Rust’s features to help make systems programming safer and easier to not mess up.&lt;/p&gt;
+
+&lt;p&gt;If this kind of thing interests you too, come help out! We have &lt;a href=&quot;https://github.com/nix-rust/nix/issues?q=is%3Aissue+is%3Aopen+label%3AE-good-first-bug&quot;&gt;good first bug label&lt;/a&gt; on our issue tracker, as well as a &lt;a href=&quot;https://github.com/nix-rust/nix/issues?q=is%3Aissue+is%3Aopen+label%3AE-mentor&quot;&gt;mentored bug label&lt;/a&gt;. We’d love to have your input and your help!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;em&gt;Thanks to Ant6n Dubrau, Dan Luu, Julia Evans, and Mathieu Guay-Paquet for feedback on drafts of this post.&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:not-that-nix&quot;&gt;
+
+      &lt;p&gt;Confusingly for some, the library has nothing to do with the &lt;a href=&quot;https://nixos.org/nix/&quot;&gt;Nix package manager&lt;/a&gt;, &lt;a href=&quot;https://nixos.org/&quot;&gt;NixOS&lt;/a&gt;, or any of the related projects. &lt;a href=&quot;#fnref:not-that-nix&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:fork-failures&quot;&gt;
+
+      &lt;p&gt;There are two main ways &lt;code&gt;fork(2)&lt;/code&gt; can fail:&lt;/p&gt;
+
+      &lt;ul&gt;
+        &lt;li&gt;the system is out of memory&lt;/li&gt;
+        &lt;li&gt;we’re at our process limit&lt;/li&gt;
+      &lt;/ul&gt;
+
+      &lt;p&gt;Either of these can happen, and code should be ready if they do! &lt;a href=&quot;#fnref:fork-failures&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:rachel-fork-citation&quot;&gt;
+
+      &lt;p&gt;I first came across this issue in &lt;a href=&quot;http://rachelbythebay.com/w/2014/08/19/fork/&quot;&gt;a post on Rachel by the Bay&lt;/a&gt;—which incidentally is a great blog! &lt;a href=&quot;#fnref:rachel-fork-citation&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:compiler-warned&quot;&gt;
+
+      &lt;p&gt;Fun fact: when I first wrote the example for this post, I forgot to check the return value from &lt;code&gt;kill()&lt;/code&gt;. Woops! But the compiler helpfully warned me that I was ignoring a &lt;code&gt;Result&lt;/code&gt; return value:&lt;/p&gt;
+
+      &lt;pre&gt;&lt;code&gt;$ cargo build
+   Compiling fork-rs v0.1.0 (file:///home/kamal/projects/talks/2016-03-24-rc/fork-rs)
+src/main.rs:13:13: 13:34 warning: unused result which must be used, #[warn(unused_must_use)] on by default
+src/main.rs:13             kill(child, SIGKILL);
+                           ^~~~~~~~~~~~~~~~~~~~~
+&lt;/code&gt;&lt;/pre&gt;
+      &lt;p&gt;&lt;a href=&quot;#fnref:compiler-warned&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Wed, 13 Apr 2016 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/04/13/rust-nix-easier-unix-systems-programming-3/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/04/13/rust-nix-easier-unix-systems-programming-3/</guid>
+        
+        
+      </item>
     
       <item>
         <title>100:10:1 update 6</title>
@@ -706,105 +952,6 @@ some ‘pictures’!&lt;/p&gt;
         <pubDate>Tue, 02 Feb 2016 22:46:25 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/02/02/100-10-1-update-1/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/02/100-10-1-update-1/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Eat your greens and read your man pages</title>
-        <description>&lt;p&gt;I’ve been working on a little tool to let unprivileged users run commands in
-the context of a container image’s filesystem on Linux.  I’m really bad at
-names, so let’s call it &lt;code&gt;containy-thing&lt;/code&gt;. That also evokes about the right
-level of completeness: it’s quite far from done.&lt;/p&gt;
-
-&lt;p&gt;Anyway, this is a little field report from working on it. Its moral is: read
-your man pages.&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;containy-thing&lt;/code&gt; uses a few Linux tricks to do its job, the main ones being
-&lt;a href=&quot;http://man7.org/linux/man-pages/man7/user_namespaces.7.html&quot;&gt;user&lt;/a&gt; and mount &lt;a href=&quot;http://man7.org/linux/man-pages/man7/namespaces.7.html&quot;&gt;namespaces&lt;/a&gt;. It takes a directory to use as the
-container root filesystem, and a command to run, and runs the command. If
-you’ve used docker,&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ containy-thing /path/to/rootfs /bin/ls -l
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;would be similar to&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# docker run my-image /bin/ls -l
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;(Note the &lt;code&gt;$&lt;/code&gt; vs &lt;code&gt;#&lt;/code&gt; prompts! The main point of this project is that you can
-run it as an unprivileged user; docker needs superuser privileges.)&lt;/p&gt;
-
-&lt;p&gt;I was trying to test it out and had an extracted root filesystem for an
-Ubuntu-derived image. I attempted to run &lt;code&gt;/bin/ls -l&lt;/code&gt;, but it kept failing.
-Investigating a bit, I found that the &lt;code&gt;execve(2)&lt;/code&gt; system call to start
-&lt;code&gt;/bin/ls&lt;/code&gt; was failing with &lt;code&gt;EACCES&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h1 id=&quot;read-your-man-pages&quot;&gt;read your man pages&lt;/h1&gt;
-
-&lt;p&gt;I’ve done bits and pieces of systems programming, and the man pages are pretty
-great most of the time. The man page for &lt;a href=&quot;http://man7.org/linux/man-pages/man2/execve.2.html#ERRORS&quot;&gt;&lt;code&gt;execve(2)&lt;/code&gt;&lt;/a&gt; definitely falls
-under ‘most of the time’, and is pretty exhaustive. It lists the circumstances
-that could result in &lt;code&gt;EACCES&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;       EACCES Search permission is denied on a component of the path prefix of
-              filename or the name of a script interpreter.  (See also
-              path_resolution(7).)
-
-       EACCES The file or a script interpreter is not a regular file.
-
-       EACCES Execute permission is denied for the file or a script or ELF
-              interpreter.
-
-       EACCES The filesystem is mounted noexec.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I went through these one by one:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;checked that all path components (namely, &lt;code&gt;/bin&lt;/code&gt;) had the search permission
-(&lt;code&gt;a+x&lt;/code&gt;) set (&lt;code&gt;/bin/ls&lt;/code&gt; is not a script, and so there was no script
-interpreter to check)&lt;/li&gt;
-  &lt;li&gt;checked that &lt;code&gt;/bin/ls&lt;/code&gt; was there, and was a file&lt;/li&gt;
-  &lt;li&gt;checked that &lt;code&gt;/bin/ls&lt;/code&gt;/ had the execute permission (&lt;code&gt;a+x&lt;/code&gt;)&lt;/li&gt;
-  &lt;li&gt;double checked the mount to be sure it wasn’t &lt;code&gt;noexec&lt;/code&gt;, which disallows
-execution of all files on the filesystem&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Nothing came up. I did this a bunch of times, and still nothing came up.&lt;/p&gt;
-
-&lt;h1 id=&quot;no-really-read-your-man-pages&quot;&gt;no really, read your man pages&lt;/h1&gt;
-
-&lt;p&gt;Eventually, I finally realized what the problem was. The third reason for
-&lt;code&gt;EACCES&lt;/code&gt; was&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;       EACCES Execute permission is denied for the file or a script or ELF
-              interpreter.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;but I was reading&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;       EACCES Execute permission is denied for the file or a script       
-              interpreter.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I didn’t even stop to think that something could be wrong with the ELF
-interpreter. I only even vaguely understand what an ELF interpreter does! But
-after wasting probably a day and a bit trying to figure this out, I finally
-took a look. The interpreter for x86-64 programs on Linux is at
-&lt;code&gt;/lib64/ld-linux-x86-64.so.2&lt;/code&gt;, at least on Debian and Ubuntu…. and its
-permissions were wrong.&lt;/p&gt;
-</description>
-        <pubDate>Tue, 26 Jan 2016 10:19:54 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/01/26/eat-your-greens-and-read-your-man-pages/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/01/26/eat-your-greens-and-read-your-man-pages/</guid>
         
         
       </item>
