@@ -1,0 +1,52 @@
+---
+title: "100:10:1 update 7"
+date: 2016-04-25
+---
+
+It's been a month since the last update, which is definitely too long.
+Here we go!
+
+## projects I worked since last update
+
+### cargo fmt-diff
+
+After weeks of being "almost there", I finally tidied up my initial work
+into [a pull request][line-ranges-pr]! The pull request and commit
+messages are good if you want to see details of what I did. The tl;dr is
+that there is a `--experimental-file-lines` flag that allows you to
+specify `FILE:RANGE,RANGE,...` to limit formatting to specific lines. It
+only formats statements for now though!
+
+I had to do a bit of redesigning of my initial approach. I had been
+assuming each run of the formatting function would affect only specific
+files. However, by default it formats reachable files in the same crate.
+This made me change the field on the configuration object from a set of
+lines for a single file to a map from file names to line sets.
+
+There's still some more refactoring work to put the line checks in the
+right place, as well as making it handle more than just statements.
+I wanted to get feedback on it before going further, since it's already
+a `+704 −131` change. I was hoping it'd fall in at closer to `+400` net.
+Some of the surplus comes from including a few refactorings that *could*
+have been split out, but that I think make most sense in context of this
+PR.
+
+[line-ranges-pr]: https://github.com/rust-lang-nursery/rustfmt/pull/959
+
+### silly key-value store
+
+I did some experiments which resulted in the OOM killer going on a rampage
+on my laptop. This was fun!
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">oh that was cool! I just got the OOM killer to kill stuff because I tried to fill 4GB of pipe buffers on system with 4GB RAM. still running!</p>&mdash; Kamal Marhubi (@kamalmarhubi) <a href="https://twitter.com/kamalmarhubi/status/720386837953404928">April 13, 2016</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+This is the project I'm expecting to work on most this week. There will
+probably be a blog post or two as a result, and hopefully an exciting
+update next time!
+
+
+## projects I didn't work on
+
+- tufcrates
+- containy-thing
