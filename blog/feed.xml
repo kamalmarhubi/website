@@ -5,9 +5,65 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 13 Apr 2016 23:40:42 -0400</pubDate>
-    <lastBuildDate>Wed, 13 Apr 2016 23:40:42 -0400</lastBuildDate>
+    <pubDate>Mon, 25 Apr 2016 13:22:09 -0400</pubDate>
+    <lastBuildDate>Mon, 25 Apr 2016 13:22:09 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>100:10:1 update 7</title>
+        <description>&lt;p&gt;It’s been a month since the last update, which is definitely too long.
+Here we go!&lt;/p&gt;
+
+&lt;h2 id=&quot;projects-i-worked-since-last-update&quot;&gt;projects I worked since last update&lt;/h2&gt;
+
+&lt;h3 id=&quot;cargo-fmt-diff&quot;&gt;cargo fmt-diff&lt;/h3&gt;
+
+&lt;p&gt;After weeks of being “almost there”, I finally tidied up my initial work
+into &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/959&quot;&gt;a pull request&lt;/a&gt;! The pull request and commit
+messages are good if you want to see details of what I did. The tl;dr is
+that there is a &lt;code&gt;--experimental-file-lines&lt;/code&gt; flag that allows you to
+specify &lt;code&gt;FILE:RANGE,RANGE,...&lt;/code&gt; to limit formatting to specific lines. It
+only formats statements for now though!&lt;/p&gt;
+
+&lt;p&gt;I had to do a bit of redesigning of my initial approach. I had been
+assuming each run of the formatting function would affect only specific
+files. However, by default it formats reachable files in the same crate.
+This made me change the field on the configuration object from a set of
+lines for a single file to a map from file names to line sets.&lt;/p&gt;
+
+&lt;p&gt;There’s still some more refactoring work to put the line checks in the
+right place, as well as making it handle more than just statements.
+I wanted to get feedback on it before going further, since it’s already
+a &lt;code&gt;+704 −131&lt;/code&gt; change. I was hoping it’d fall in at closer to &lt;code&gt;+400&lt;/code&gt; net.
+Some of the surplus comes from including a few refactorings that &lt;em&gt;could&lt;/em&gt;
+have been split out, but that I think make most sense in context of this
+PR.&lt;/p&gt;
+
+&lt;h3 id=&quot;silly-key-value-store&quot;&gt;silly key-value store&lt;/h3&gt;
+
+&lt;p&gt;I did some experiments which resulted in the OOM killer going on a rampage
+on my laptop. This was fun!&lt;/p&gt;
+
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;oh that was cool! I just got the OOM killer to kill stuff because I tried to fill 4GB of pipe buffers on system with 4GB RAM. still running!&lt;/p&gt;&amp;mdash; Kamal Marhubi (@kamalmarhubi) &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/720386837953404928&quot;&gt;April 13, 2016&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;This is the project I’m expecting to work on most this week. There will
+probably be a blog post or two as a result, and hopefully an exciting
+update next time!&lt;/p&gt;
+
+&lt;h2 id=&quot;projects-i-didnt-work-on&quot;&gt;projects I didn’t work on&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;tufcrates&lt;/li&gt;
+  &lt;li&gt;containy-thing&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 25 Apr 2016 00:00:00 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/04/25/100-10-1-update-7/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/04/25/100-10-1-update-7/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Rust + nix = easier unix systems programming &lt;3</title>
@@ -888,70 +944,6 @@ run &lt;code&gt;cargo fmt-diff&lt;/code&gt; or whatever the command ends up bein
         <pubDate>Tue, 09 Feb 2016 22:04:15 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/02/09/100-10-1-update-2/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/09/100-10-1-update-2/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>100:10:1 update 1</title>
-        <description>&lt;p&gt;I’m going to try and write little updates as I work on &lt;a href=&quot;http://kamalmarhubi.com/blog/2016/01/25/100-10-1/&quot;&gt;100:10:1&lt;/a&gt;.
-Here’s the first!&lt;/p&gt;
-
-&lt;h1 id=&quot;picking-1-of-the-10&quot;&gt;Picking 1 of the 10&lt;/h1&gt;
-
-&lt;p&gt;I haven’t made my short list of 10 prototypes quite yet, but I have picked one
-of them. Loads of the projects I’m thinking of are in Rust, so I’m preemptively
-shaving a yak and working on making the &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt&quot;&gt;rustfmt&lt;/a&gt; formatting tool work
-incrementally. This was in the original list of 100 as&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;rustfmt line range &amp;amp; diff reading (format a patch)&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Translating from Kamal-scribble-speak: make it so that rustfmt can format only a
-specific set of lines. Then on top of that, make it format only the lines that
-have changed according to a diff. This way you can always run rustfmt, safe in
-the knowledge that it won’t be sticking all kinds of style changes across the
-codebase along with your actual changes. It should even be possible to put it in
-a pre-commit hook.&lt;/p&gt;
-
-&lt;p&gt;I actually &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/issues/434&quot;&gt;filed an issue&lt;/a&gt; about this back in October, and even started
-trying to work on it. It turns out it’s really hard to implement something
-non-trivial in a codebase you’re unfamiliar with in a language you don’t know.&lt;/p&gt;
-
-&lt;p&gt;But I’ve been doing some Rust since then, including working on &lt;a href=&quot;https://github.com/rust-lang/rust/pull/31056&quot;&gt;a patch to the
-standard library&lt;/a&gt;. I’m way more fluent now, though there are still some
-bits of the Rust library and type system I need to absorb further.&lt;/p&gt;
-
-&lt;p&gt;Working myself up to the line ranges change, I’ve put &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pulls?utf8=%E2%9C%93&amp;amp;q=is%3Apr+author%3Akamalmarhubi+created%3A2016-01-31..2016-02-02&quot;&gt;a bunch of improvements
-out&lt;/a&gt;, mostly small. The big one was unifying the config object that
-is passed through all parts of the formatting process. This will give me a place
-to store the line ranges to be formatted. I’m waiting on &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/801&quot;&gt;the
-review&lt;/a&gt; for it:&lt;/p&gt;
-
-&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;tfw you want someone to review your code from 5 hours ago but they are in new zealand&lt;/p&gt;&amp;mdash; Kamal Marhubi (@kamalmarhubi) &lt;a href=&quot;https://twitter.com/kamalmarhubi/status/694639801765527552&quot;&gt;February 2, 2016&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-
-&lt;h1 id=&quot;up-next&quot;&gt;Up next&lt;/h1&gt;
-
-&lt;p&gt;Actually implement the thing! I’ll probably write up some notes as I do this.
-I’m pretty glad to have picked this project because it involves getting to know
-a bit about how the Rust &lt;abbr title=&quot;abstract syntax tree&quot;&gt;AST&lt;/abbr&gt; is organized.&lt;/p&gt;
-
-&lt;p&gt;rustfmt is an &lt;abbr title=&quot;abstract syntax tree&quot;&gt;AST&lt;/abbr&gt;-based formatter, rather than a token-based one. Instead of
-moving bits of text around, it actually parses the entire program, and then
-pretty prints it according to style rules. There’s &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/blob/master/Design.md&quot;&gt;a brief outline of the
-design&lt;/a&gt; that’s pretty good if you want to read about it.&lt;/p&gt;
-
-&lt;p&gt;For my change, the line ranges need to be translated to a set of &lt;abbr title=&quot;abstract syntax tree&quot;&gt;AST&lt;/abbr&gt; nodes, and
-then selectively formatted. There will be some niggles around sets of lines that
-straddle node boundaries which I’ll have to think about. And maybe even draw
-some ‘pictures’!&lt;/p&gt;
-
-</description>
-        <pubDate>Tue, 02 Feb 2016 22:46:25 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/02/02/100-10-1-update-1/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/02/100-10-1-update-1/</guid>
         
         
       </item>
