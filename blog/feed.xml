@@ -5,9 +5,209 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 25 Apr 2016 13:22:09 -0400</pubDate>
-    <lastBuildDate>Mon, 25 Apr 2016 13:22:09 -0400</lastBuildDate>
+    <pubDate>Mon, 25 Apr 2016 21:34:33 -0400</pubDate>
+    <lastBuildDate>Mon, 25 Apr 2016 21:34:33 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Segfaults are our friends and teachers</title>
+        <description>&lt;p&gt;This afternoon, I got a segmentation fault in a Rust program, and was confused. This is Rust, I shouldn’t get segfaults! I quickly checked the couple of places I used &lt;code&gt;unsafe&lt;/code&gt;, and they were either calling C functions (and checking the errors), or telling the compiler not to initialize some memory because I was going to write into it unconditionally before reading from it.&lt;/p&gt;
+
+&lt;p&gt;So, everything should be fine, right?&lt;/p&gt;
+
+&lt;p&gt;Evidently not:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ cargo build --quiet
+$ target/debug/kern-value 1
+Segmentation fault
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;ok-but-what-is-a-segfault&quot;&gt;ok, but what is a segfault?&lt;/h2&gt;
+
+&lt;p&gt;If you’ve written some C, you’ve almost certainly seen a segmentation fault at some point. I spent a long time thinking of it as a ‘thing that happens when you use pointers wrong in C’. That’s mostly true, but a segmentation fault actually has a very specific meaning. You get one when a process tries to access memory in a way that it’s not allowed to, or accessing invalid memory.&lt;/p&gt;
+
+&lt;p&gt;Here’s an example of a really simple program that will segfault:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ cat segfault.c
+#include &amp;lt;stdio.h&amp;gt;
+
+int main(void) {
+    char *uninitialized;
+    printf(&quot;%c&quot;, *uninitialized);
+
+    return 0;
+}
+$ gcc segfault.c
+$ ./a.out
+Segmentation fault
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This program segfaults because the entire stack is set to &lt;code&gt;0&lt;/code&gt; at program start. This includes the &lt;code&gt;uninitialized&lt;/code&gt; pointer, which will be a null pointer, pointing to &lt;code&gt;0x0&lt;/code&gt;. When the program tries to print the value it points to, it attempts to read from the null address. That address is invalid, and that’s why we get a segmentation fault.&lt;/p&gt;
+
+&lt;p&gt;Segmentation faults are raised by the memory management unit (MMU), which is a piece of hardware! Sections of memory can have different access permissions on them: read, write, and execute. Operating systems use this to isolate processes, and to protect kernel memory from being written to by user code.&lt;/p&gt;
+
+&lt;p&gt;If a process tries to write to read-only memory, say, or execute non-executable memory, then the MMU hardware tells the kernel there was a segmentation fault. The kernel delivers the news to the process as a signal: &lt;code&gt;SIGSEGV&lt;/code&gt;. By default, that terminates the process.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-we-got-the-segfault&quot;&gt;how we got the segfault&lt;/h2&gt;
+
+&lt;p&gt;Some context: I’m playing around with reading and writing to pipes with large buffers. I’d previously been setting the pipe size to 1 MB, which is the maximum an unprivileged process can set it to on my machine:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ cat /proc/sys/fs/pipe-max-size
+1048576
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;My code had a constant &lt;code&gt;PIPE_SIZE&lt;/code&gt; for the size of the pipe. I was &lt;em&gt;also&lt;/em&gt; using it as the size of a stack-allocated buffer. For my experiments, I’d just changed that constant from 1 MB to 16 MB to test bigger pipes when running as root.&lt;/p&gt;
+
+&lt;p&gt;Realising this this set off something in the back of my mind: I vaguely remembered that stacks on Linux default to 8MB. Could the segfault be from going past the stack limit?&lt;/p&gt;
+
+&lt;p&gt;I switched to C to verify it:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ cat -n test-stack.c
+     1  #include &amp;lt;stdio.h&amp;gt;
+     2
+     3  #define BUF_SIZE (16*1024*1024)
+     4
+     5  int main(void) {
+     6      char buf[BUF_SIZE];
+     7      printf(&quot;%lu\n&quot;, sizeof(buf));
+     8
+     9      return 0;
+    10  }
+$ gcc -Wall -Wextra -Werror test-stack.c
+$ ./a.out
+Segmentation fault
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Aha! A pretty minimal C program that has the same result. This program allocates a 16 MB array on the stack, and then prints its size. Except it segfaults instead. With the &lt;code&gt;BUF_SIZE&lt;/code&gt; set to 8 KB less than 8 MB, everything works. With it set to 8 MB, it segfaults.&lt;sup id=&quot;fnref:why-8-mb&quot;&gt;&lt;a href=&quot;#fn:why-8-mb&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; Hypothesis confirmed!&lt;sup id=&quot;fnref:why-rust-ok&quot;&gt;&lt;a href=&quot;#fn:why-rust-ok&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;seeing-which-instruction-failed&quot;&gt;seeing which instruction failed&lt;/h2&gt;
+
+&lt;p&gt;I wanted to get an idea of exactly &lt;em&gt;when&lt;/em&gt; the segfault happened, so I ran it under gdb:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ gcc -g -Wall -Wextra -Werror test-stack.c
+$ gdb -silent a.out
+Reading symbols from a.out...done.
+(gdb) run
+Starting program: /tmp/a.out
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000000000400520 in main () at test-stack.c:7
+7               printf(&quot;%lu\n&quot;, sizeof(buf));
+(gdb) backtrace
+#0  0x0000000000400520 in main () at test-stack.c:7
+(gdb) disassemble
+Dump of assembler code for function main:
+   0x0000000000400506 &amp;lt;+0&amp;gt;:     push   %rbp
+   0x0000000000400507 &amp;lt;+1&amp;gt;:     mov    %rsp,%rbp
+   0x000000000040050a &amp;lt;+4&amp;gt;:     sub    $0x1000000,%rsp
+   0x0000000000400511 &amp;lt;+11&amp;gt;:    mov    $0x1000000,%esi
+   0x0000000000400516 &amp;lt;+16&amp;gt;:    mov    $0x4005b4,%edi
+   0x000000000040051b &amp;lt;+21&amp;gt;:    mov    $0x0,%eax
+=&amp;gt; 0x0000000000400520 &amp;lt;+26&amp;gt;:    callq  0x4003e0 &amp;lt;printf@plt&amp;gt;
+   0x0000000000400525 &amp;lt;+31&amp;gt;:    mov    $0x0,%eax
+   0x000000000040052a &amp;lt;+36&amp;gt;:    leaveq
+   0x000000000040052b &amp;lt;+37&amp;gt;:    retq
+End of assembler dump.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;So the failure was on the call to &lt;code&gt;printf&lt;/code&gt;. &lt;code&gt;0x1000000&lt;/code&gt; is 16 MB, the size of the buffer. The &lt;code&gt;sub    $0x1000000,%rsp&lt;/code&gt; instruction is modifying the stack pointer register &lt;code&gt;%rsp&lt;/code&gt; to make space for the buffer. When we get to the &lt;code&gt;callq&lt;/code&gt; instruction, things exploded!&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;callq&lt;/code&gt; instruction on x86 first pushes the return address onto the stack, then jumps to the called function. The return address is the current value instruction pointer register &lt;code&gt;%ip&lt;/code&gt;, and is where the &lt;code&gt;ret&lt;/code&gt; instruction in &lt;code&gt;printf&lt;/code&gt; will jump back to. The segfault happens at this point: the CPU attempts to store the return address somewhere outside of the region of memory that’s set aside for the stack, and boom!&lt;/p&gt;
+
+&lt;h2 id=&quot;luck-and-guard-pages&quot;&gt;luck and guard pages&lt;/h2&gt;
+
+&lt;p&gt;I think we’re actually kind of lucky to get a segfault. It’s quite possible the bit of memory that’s a few megabytes past our stack &lt;em&gt;was&lt;/em&gt; writeable by our process. We’d then go happily corrupting whatever memory was there and probably all kinds of bad things would happen. Segmentation faults are actually our friends!&lt;/p&gt;
+
+&lt;p&gt;Modern compilers have stack protection features that help detect overflows. I’m &lt;em&gt;very&lt;/em&gt; hazy on the details, but I think they include setting some pages of memory just after the stack to be read only. These are called guard pages. Attempts to write there would result in a segmentation fault. This helps catch stack overflow attempts that involve marching off the end of the stack. However, writing 8 MB after the end of the stack is beyond the guard pages, so we &lt;em&gt;could&lt;/em&gt; have ended up in writeable memory.&lt;/p&gt;
+
+&lt;h2 id=&quot;setting-stack-size-limits-in-the-shell-ulimit&quot;&gt;setting stack size limits in the shell: ulimit&lt;/h2&gt;
+
+&lt;p&gt;I took this as an opportunity to Learn. I wanted to make this program run without changing its source. At first I thought I could set the stack size with compiler options, but some searching revealed this wasn’t true on Linux. It turns out you can set it with the &lt;code&gt;ulimit&lt;/code&gt; shell built-in&lt;sup id=&quot;fnref:why-builtin&quot;&gt;&lt;a href=&quot;#fn:why-builtin&quot; class=&quot;footnote&quot;&gt;3&lt;/a&gt;&lt;/sup&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ulimit --soft --stack-size 32768
+$ ./a.out
+16777216
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Success, and without changing the source &lt;em&gt;or&lt;/em&gt; the binary! The &lt;code&gt;--stack-size&lt;/code&gt; flag says we’re setting the stack size to 32768 KB or 32 MB. The &lt;code&gt;--soft&lt;/code&gt; flag says to set the soft limit. I’ll just paste from my &lt;code&gt;man ulimit&lt;/code&gt; on my system to explain the difference between hard and soft limits—the &lt;code&gt;-S&lt;/code&gt; flag is short for &lt;code&gt;--soft&lt;/code&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;A hard limit can only be decreased. Once it is set it cannot be increased; a soft limit may be increased up to the value of the hard limit. If neither &lt;code&gt;-H&lt;/code&gt; nor &lt;code&gt;-S&lt;/code&gt; is specified, both the soft and hard limits are updated when assigning a new limit value, and the soft limit is used when reporting the current value.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;setting-stack-size-limits-from-inside-your-program-setrlimit2&quot;&gt;setting stack size limits from inside your program: setrlimit(2)&lt;/h2&gt;
+
+&lt;p&gt;If you use a lot of stack, it’s not great to force the user to run &lt;code&gt;ulimit&lt;/code&gt; before running your program. Instead, you can set it yourself using the &lt;a href=&quot;http://pubs.opengroup.org/onlinepubs/9699919799/functions/setrlimit.html&quot;&gt;&lt;code&gt;setrlimit(2)&lt;/code&gt;&lt;/a&gt; system call. Here’s proof it works:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ cat -n test-stack.c
+     1  #include &amp;lt;errno.h&amp;gt;
+     2  #include &amp;lt;stdio.h&amp;gt;
+     3  #include &amp;lt;sys/resource.h&amp;gt;
+     4
+     5  #define BUF_SIZE (16*1024*1024)
+     6
+     7  void run(void) {
+     8      char buf[BUF_SIZE];
+     9      printf(&quot;%lu\n&quot;, sizeof(buf));
+    10  }
+    11
+    12  int main(void) {
+    13      struct rlimit stack_limit = {
+    14          .rlim_cur = 2 * BUF_SIZE,
+    15          .rlim_max = RLIM_INFINITY,
+    16      };
+    17
+    18      if (setrlimit(RLIMIT_STACK, &amp;amp;stack_limit)) {
+    19          perror(&quot;setrlimit failed&quot;);
+    20          return 1;
+    21      }
+    22
+    23      run();
+    24
+    25      return 0;
+    26  }
+$ gcc -Wall -Wextra -Werror test-stack.c
+$ ulimit -Ss 8192
+$ ./a.out
+16777216
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A fun note: we had to put the buffer in a separate function. Otherwise the stack pointer would be adjusted before the call to &lt;code&gt;setrlimit&lt;/code&gt;, and then &lt;em&gt;that&lt;/em&gt; call would result in a segfault! This way the stack adjustment happens after calling &lt;code&gt;setrlimit&lt;/code&gt;, and everything works out.&lt;/p&gt;
+
+&lt;p&gt;Allocating lots of stack space in main isn’t a great idea anyway, since you limit what’s available for the rest of your program. A static buffer would probably be better for this program; for others a heap buffer would work better.&lt;/p&gt;
+
+&lt;h2 id=&quot;diving-into-the-depths-for-fun-and-learning&quot;&gt;diving into the depths for fun and learning&lt;/h2&gt;
+
+&lt;p&gt;I had a fun hour or two investigating this. It’s not always possible to take the time in the moment, but it’s really rewarding when you can. I only vaguely knew about the &lt;code&gt;ulimit&lt;/code&gt; command, and didn’t know anything at all about &lt;code&gt;setrlimit(2)&lt;/code&gt;. Since I’ve been programming in languages that output native code a bunch lately, I’ve also wanted to learn more about object file formats, linkers, in-process memory layout, and more. Learning a bit more about stack guard pages is a great step in that direction!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;em&gt;Thanks to Julia Evans for feedback on this post.&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:why-8-mb&quot;&gt;
+
+      &lt;p&gt;Curiously, I found that if I had a buffer size of even 1 byte over (8 MB - 8 KB), I still got the segfault. I’m not yet sure what’s going on there! &lt;a href=&quot;#fnref:why-8-mb&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:why-rust-ok&quot;&gt;
+
+      &lt;p&gt;Rust really likes to tout its memory safety. This seems like it should mean no segmentation faults, which is why I was confused at getting one. There’s &lt;a href=&quot;http://doc.rust-lang.org/reference.html#behavior-considered-undefined&quot;&gt;a very specific set of behaviors&lt;/a&gt; that aren’t allowed in Rust programs. The Rust program got a segmentation fault because it attempted to write to inaccessible memory, but only through the stack pointer. None of the undefined behaviors disallow this, which I think is why it’s ok for this Rust program to segfault. &lt;a href=&quot;#fnref:why-rust-ok&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:why-builtin&quot;&gt;
+
+      &lt;p&gt;&lt;code&gt;ulimit&lt;/code&gt; must be a shell built-in and not an executable file because it sets a property of the shell’s process. Other fun examples include setting the working directory (&lt;code&gt;cd&lt;/code&gt;), and setting environment variables (&lt;code&gt;set -x&lt;/code&gt; in bash). These were some fun things I found out when &lt;a href=&quot;https://github.com/kamalmarhubi/shell-workshop&quot;&gt;building a shell&lt;/a&gt;, which is a totally worthwhile and fun exercise! &lt;a href=&quot;#fnref:why-builtin&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Mon, 25 Apr 2016 16:47:14 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/04/25/segfaults-are-our-friends-and-teachers/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/04/25/segfaults-are-our-friends-and-teachers/</guid>
+        
+        
+      </item>
     
       <item>
         <title>100:10:1 update 7</title>
@@ -902,48 +1102,6 @@ issues&lt;/a&gt; if you come across any bugs!&lt;/p&gt;
         <pubDate>Tue, 23 Feb 2016 16:36:47 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/02/23/rust-bisect-tracking-down-the-rust-nightly-that-changed-some-behavior/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/23/rust-bisect-tracking-down-the-rust-nightly-that-changed-some-behavior/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>100:10:1 update 2</title>
-        <description>&lt;p&gt;I’m still being slow on picking the 10, but I’ve added a new one to the list. It
-now stands at two items!&lt;/p&gt;
-
-&lt;h2 id=&quot;a-very-silly-key-value-store&quot;&gt;A very silly key-value store&lt;/h2&gt;
-&lt;p&gt;I’m really excited about the new idea. It’s a very silly key-value store. The
-exact nature of the silliness will wait until I’m further along. I’ll make it
-speak either the memcached or redis protocol—or both! This makes it fit under
-one or both of these items from the &lt;a href=&quot;http://kamalmarhubi.com/blog/2016/01/25/100-10-1/&quot;&gt;original 100&lt;/a&gt;:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;memcached speaking thing&lt;/li&gt;
-  &lt;li&gt;redis speaking thing&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;I’ll be doing this in Rust—naturally. As a bit of preparation, I’ve already added
-&lt;a href=&quot;https://github.com/rust-lang-nursery/libc/pull/170&quot;&gt;&lt;code&gt;sendfile(2)&lt;/code&gt;&lt;/a&gt; and &lt;a href=&quot;https://github.com/rust-lang-nursery/libc/pull/172&quot;&gt;&lt;code&gt;splice(2)&lt;/code&gt;, &lt;code&gt;tee(2)&lt;/code&gt;, and
-&lt;code&gt;vmsplice(2)&lt;/code&gt;&lt;/a&gt; to the libc crate, and am working on adding them to
-&lt;a href=&quot;https://github.com/carllerche/nix-rust&quot;&gt;nix&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Once that’s done, I should be able to start on the silly part! :-)&lt;/p&gt;
-
-&lt;h2 id=&quot;rustfmt-diff-formatting&quot;&gt;rustfmt diff formatting&lt;/h2&gt;
-&lt;p&gt;I finally got &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/812&quot;&gt;a pull request&lt;/a&gt; tidying up some config stuff
-merged. This was neither my &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/795&quot;&gt;first attempt&lt;/a&gt; nor my &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/pull/801&quot;&gt;second
-attempt&lt;/a&gt;, but it got there eventually!&lt;/p&gt;
-
-&lt;p&gt;I’ve exhausted what I’ve decided was some &lt;a href=&quot;http://composition.al/blog/2015/12/29/refactoring-as-a-way-to-understand-code/&quot;&gt;refactoring as a way to understand
-code&lt;/a&gt;, but have not made a start on the actual task quite yet. I’m
-working on a couple of other Rust developer infrastructure kinds of projects in
-the meantime, but should get on with this one. I &lt;em&gt;really&lt;/em&gt; want to be able to
-run &lt;code&gt;cargo fmt-diff&lt;/code&gt; or whatever the command ends up being.&lt;/p&gt;
-
-</description>
-        <pubDate>Tue, 09 Feb 2016 22:04:15 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/02/09/100-10-1-update-2/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/09/100-10-1-update-2/</guid>
         
         
       </item>
