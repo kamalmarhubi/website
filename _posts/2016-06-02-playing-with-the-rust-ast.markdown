@@ -1,5 +1,5 @@
 ---
-title: Playing with the Rust AST
+title: Things you could do with the Rust AST
 date: 2016-06-02T12:47:58+02:00
 ---
 
