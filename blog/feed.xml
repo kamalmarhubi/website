@@ -5,9 +5,158 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 25 Apr 2016 21:35:29 -0400</pubDate>
-    <lastBuildDate>Mon, 25 Apr 2016 21:35:29 -0400</lastBuildDate>
+    <pubDate>Thu, 02 Jun 2016 16:50:49 -0400</pubDate>
+    <lastBuildDate>Thu, 02 Jun 2016 16:50:49 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Playing with the Rust AST</title>
+        <description>&lt;p&gt;Lately I’ve been contributing to &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt&quot;&gt;rustfmt&lt;/a&gt;, which is a tool for formatting Rust code. Right now, it formats entire files, which is great if you keep your entire project formatted by rustfmt. If you’re adding code to an existing unrustfmted project, using rustfmt leads to big diffs where most of the changes are just formatting. These can be really annoying to review, so the feature I’m working on is to allow it to format just parts of files. Then you could just reformat the parts you actually changed, making things much nicer for whoever is reviewing the change.&lt;/p&gt;
+
+&lt;p&gt;Working on rustfmt has meant getting a bit of familiarity with Rust’s abstract syntax tree (AST), which is how the rustc compiler represents source code. The AST has nodes to represent each expression, statement, function, module, and all the other bits of syntax that make up a Rust program.
+It’s been interesting and kind of cool to work with, and I wanted to share a bit!&lt;/p&gt;
+
+&lt;h2 id=&quot;libsyntax-and-syntexsyntax&quot;&gt;libsyntax and syntex_syntax&lt;/h2&gt;
+
+&lt;p&gt;The Rust compiler’s own parsing code is in a library called libsyntax. Sadly for programs that aren’t rustc, this is a private library inside the compiler source repository. If you’re willing to use the nightly compiler, there are some incantations that will tell rustc to let you use these internal libraries, but it’s not really encouraged. The Rust folks want to be able to make changes as they keep working on making Rust better, and not have to worry about breaking outside projects.&lt;/p&gt;
+
+&lt;p&gt;But someone maintains a copy in Crates.io called &lt;a href=&quot;https://crates.io/crates/syntex_syntax&quot;&gt;syntex_syntax&lt;/a&gt;, with modifications to build with stable Rust. It’s part of a suite of tools for generating Rust code, initially created for &lt;a href=&quot;https://github.com/serde-rs/serde&quot;&gt;a serialization framework&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The upshot of this is that we can just add the line&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;syntex_syntax = &quot;0.33&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;to our &lt;code&gt;Cargo.toml&lt;/code&gt; file, and then we can parse Rust code in our programs!&lt;/p&gt;
+
+&lt;h2 id=&quot;a-small-example-of-working-with-the-ast&quot;&gt;A small example of working with the AST&lt;/h2&gt;
+
+&lt;p&gt;To get an idea of what working with the AST looks like, let’s look at a small example: printing the number of arguments for each function in a file.&lt;/p&gt;
+
+&lt;p&gt;syntex_syntax has a &lt;code&gt;Visitor&lt;/code&gt; trait you can implement to walk an AST. The default implementation just walks the whole tree and doesn’t do anything else. To write a custom visitor, you can implement the &lt;code&gt;visit&lt;/code&gt; function for the node type you’re interested in, and leave the rest out. If you’re more used to Java-esque type systems, you can imagine inheriting from a base &lt;code&gt;DefaultVisitor&lt;/code&gt; class, and overriding the functions relating to the syntactic elements you are interested in.&lt;/p&gt;
+
+&lt;p&gt;For our example, we override the implementation for &lt;code&gt;visit_fn&lt;/code&gt; to store the funciton name and number of arguments in a hashmap. The &lt;a href=&quot;https://github.com/kamalmarhubi/syntex-syntax-example&quot;&gt;full code is up on GitHub&lt;/a&gt;, but here are the important parts:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct CountFnArgs&amp;lt;&#39;a&amp;gt; {
+    arg_counts: HashMap&amp;lt;String, usize&amp;gt;,
+    // The codemap is necessary to go from a `Span` to actual line &amp;amp; column
+    // numbers for closures.
+    codemap: &amp;amp;&#39;a CodeMap,
+}
+
+impl&amp;lt;&#39;v, &#39;a&amp;gt; Visitor&amp;lt;&#39;v&amp;gt; for CountFnArgs&amp;lt;&#39;a&amp;gt; {
+    fn visit_fn(&amp;amp;mut self,
+                fn_kind: FnKind&amp;lt;&#39;v&amp;gt;,
+                fn_decl: &amp;amp;&#39;v ast::FnDecl,
+                block: &amp;amp;&#39;v ast::Block,
+                span: Span,
+                _id: ast::NodeId) {
+        let fn_name = match fn_kind {
+            FnKind::ItemFn(id, _, _, _, _, _) |
+            FnKind::Method(id, _, _) =&amp;gt; id.name.as_str().to_string(),
+            FnKind::Closure =&amp;gt; format!(&quot;&amp;lt;closure at {}&amp;gt;&quot;, self.format_span(span)),
+        };
+
+        self.arg_counts.insert(fn_name, fn_decl.inputs.len());
+
+        // Continue walking the rest of the funciton so we pick up any functions
+        // or closures defined in its body.
+        visit::walk_fn(self, fn_kind, fn_decl, block, span);
+    }
+}
+
+fn count_fn_args(krate: &amp;amp;ast::Crate, codemap: &amp;amp;CodeMap) -&amp;gt; HashMap&amp;lt;String, usize&amp;gt; {
+    let mut visitor = CountFnArgs {
+        arg_counts: HashMap::new(),
+        codemap: codemap,
+    };
+    visitor.visit_mod(&amp;amp;krate.module, krate.span, 0);
+
+    visitor.arg_counts
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Rust’s pattern matching really shines when working with ASTs. You can get a small glimpse of it here: we match on the &lt;code&gt;FnKind&lt;/code&gt; to see if the function is a method, a free function (&lt;code&gt;ItemFn&lt;/code&gt;), or a closure. In the first two cases, we just pull out the function’s name; in the third we get the source location to identify it better.&lt;/p&gt;
+
+&lt;p&gt;Here’s the output for our little program running on its own source:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FUNCTION                         ARGS
+&amp;lt;closure at 40:19-40:39&amp;gt;         2
+count_fn_args                    2
+format_loc                       1
+format_span                      2
+main                             0
+parse                            2
+visit_fn                         6
+visit_mac                        2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Not bad!&lt;/p&gt;
+
+&lt;h2 id=&quot;things-you-can-do-with-an-ast&quot;&gt;Things you can do with an AST&lt;/h2&gt;
+
+&lt;p&gt;Being able to programmatically parse and work with source code opens up all kinds of cool possibilities. Here are a few.&lt;/p&gt;
+
+&lt;h3 id=&quot;format-rust-code&quot;&gt;Format Rust code!&lt;/h3&gt;
+
+&lt;p&gt;As I kind of mentioned at the start of this post, rustfmt uses the AST to format code. First it parses a file into an AST. Then it walks the tree, recursively printing each node according to a bunch of formatting fules. The &lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/blob/master/Design.md#operate-on-the-ast&quot;&gt;design document&lt;/a&gt; gives bit more background on the approach, and why rustfmt works the way it does.&lt;/p&gt;
+
+&lt;h3 id=&quot;throughly-test-c-apis&quot;&gt;Throughly test C APIs&lt;/h3&gt;
+
+&lt;p&gt;The &lt;a href=&quot;https://github.com/rust-lang/libc&quot;&gt;libc crate&lt;/a&gt; is full of function declarations, struct definitions, and constants for working with system libraries. It has a really cool and thorough test suite that makes sure all the items match what’s in the system C headers. It works by parsing the Rust source, and &lt;em&gt;generating C code&lt;/em&gt; where it tests for equality of constants and matching type signatures and so on. It then generates some Rust code that calls the generated C code to check everything. So much code generation!&lt;/p&gt;
+
+&lt;p&gt;Here’s a snippet of the generated C code to give you an idea of what it’s like:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static int __test_const_O_RDONLY_val = O_RDONLY;
+int* __test_const_O_RDONLY(void) {
+    return &amp;amp;__test_const_O_RDONLY_val;
+}
+
+
+static int __test_const_O_WRONLY_val = O_WRONLY;
+int* __test_const_O_WRONLY(void) {
+    return &amp;amp;__test_const_O_WRONLY_val;
+}
+
+
+static int __test_const_O_RDWR_val = O_RDWR;
+int* __test_const_O_RDWR(void) {
+    return &amp;amp;__test_const_O_RDWR_val;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and it goes on and on and on for over 10,000 lines! The result is that the definitions in libc can be pretty safely relied on to match the definitions on the platform you’re working with, which is really great for doing systems programming (&lt;a href=&quot;http://kamalmarhubi.com/blog/2016/04/13/rust-nix-easier-unix-systems-programming-3/&quot;&gt;one of my favourite things&lt;/a&gt;).&lt;/p&gt;
+
+&lt;h3 id=&quot;other-things-you-could-do&quot;&gt;Other things you could do!&lt;/h3&gt;
+
+&lt;p&gt;There are all kinds of other things we can do! For example, it should be possible to build a syntax-aware find-and-replace tool to make some refactorings easier. I’m imagining something like &lt;a href=&quot;https://github.com/facebook/jscodeshift&quot;&gt;FaceBook’s jscodeshift tool for JavaScript&lt;/a&gt;, or their &lt;a href=&quot;https://github.com/facebook/pfff/wiki/Spatch&quot;&gt;spatch&lt;/a&gt; for PHP and some other languages. This would be great for situations like where you just changed the type of the third argument of that function from &lt;code&gt;String&lt;/code&gt; to &lt;code&gt;&amp;amp;str&lt;/code&gt; (string slice) and now you have to change all the call sites everywhere to call &lt;code&gt;.as_str()&lt;/code&gt;&lt;sup id=&quot;fnref:fn-asref&quot;&gt;&lt;a href=&quot;#fn:fn-asref&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
+
+&lt;p&gt;If we’re willing to go a bit deeper into compiler internals—and require nighty Rust to build our project—we can also make tools that use type information. There’s no reason something like &lt;a href=&quot;https://www.haskell.org/hoogle/&quot;&gt;Hoogle&lt;/a&gt; couldn’t exist for Rust. Hoogle was amazing back when I used to write Haskell. You search by &lt;em&gt;type signature&lt;/em&gt;. It’s kind of magical to be able to say &lt;a href=&quot;https://www.haskell.org/hoogle/?hoogle=%5Ba%5D+-%3E+Int&quot;&gt;“I have a a list and I want an int”&lt;/a&gt; and it would have the &lt;code&gt;length&lt;/code&gt; function at the top of the results page.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/mozilla/dxr&quot;&gt;DXR&lt;/a&gt; is an example of an exisiting project using type information in Rust. It’s an indexing engine and web interface with fancy cross referencing of source code. As an example, you can &lt;a href=&quot;https://dxr.mozilla.org/rustfmt/source/src/visitor.rs#133&quot;&gt;browse things around the &lt;code&gt;visit_fn&lt;/code&gt; function in rustfmt&lt;/a&gt;. It’s really cool! This kind of interwingly source browsing can be really really powerful for understanding a new codebase.&lt;/p&gt;
+
+&lt;p&gt;I really love tools like these that make developers’ lives easier. If you have any ideas for Rust, or examples from other languages to “borrow”, please send them my way!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;small&gt;&lt;em&gt;Thanks to Julia Evans for feedback on this post, and for suggesting I write it in the first place!&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:fn-asref&quot;&gt;
+
+      &lt;p&gt;Though you should consider changing the third argument of that function to take &lt;a href=&quot;http://doc.rust-lang.org/std/convert/trait.AsRef.html&quot;&gt;&lt;code&gt;AsRef&amp;lt;str&amp;gt;&lt;/code&gt;&lt;/a&gt; instead. That way you could pass either &lt;code&gt;String&lt;/code&gt;, or a &lt;code&gt;&amp;amp;str&lt;/code&gt;. The &lt;a href=&quot;http://doc.rust-lang.org/std/convert/index.html&quot;&gt;conversion traits&lt;/a&gt; are really really great! :-) &lt;a href=&quot;#fnref:fn-asref&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Thu, 02 Jun 2016 06:47:58 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/06/02/playing-with-the-rust-ast/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/06/02/playing-with-the-rust-ast/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Segfaults are our friends and teachers</title>
@@ -1053,55 +1202,6 @@ is as yet undisclosed&lt;/li&gt;
         <pubDate>Mon, 29 Feb 2016 13:17:09 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/02/29/100-10-1-update-3/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/29/100-10-1-update-3/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>rust-bisect: tracking down the Rust nightly that changed some behavior</title>
-        <description>&lt;p&gt;After a bit more tinkering that expected, I’m finally (almost&lt;sup id=&quot;fnref:almost&quot;&gt;&lt;a href=&quot;#fn:almost&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;) releasing my first
-Rust crate!&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect&quot;&gt;rust-bisect&lt;/a&gt; helps track down when a change—usually a bug!—was
-introduced into Rust. Rather than &lt;code&gt;git bisect&lt;/code&gt; directly on the Rust repository,
-it uses nightly builds to speed up the process. This is faster in at least a
-couple of ways:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;at over 100 pull requests merged per week, there are far more commits
-to bisect than there are nightly builds&lt;/li&gt;
-  &lt;li&gt;to run an individual test, all rust-bisect needs to do is download the
-nightly: no slow Rust build at each step!&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;This was a really fun project to work on! I made a few changes to related
-crates, and even had to solve a stereotypical &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/blob/master/src/bisect.rs&quot;&gt;algorithms interview
-problem&lt;/a&gt;. And of course, there’s something extremely satisfying about
-seeing it bisect and actually find the right nightly…&lt;/p&gt;
-
-&lt;h1 id=&quot;try-it-out&quot;&gt;Try it out!&lt;/h1&gt;
-
-&lt;p&gt;If you want to give it a shot, check out &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect&quot;&gt;the repository&lt;/a&gt;—especially the
-&lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect#example&quot;&gt;example&lt;/a&gt;!  I’d &lt;em&gt;really&lt;/em&gt; love to hear if this is useful to you. And please &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/issues&quot;&gt;open
-issues&lt;/a&gt; if you come across any bugs!&lt;/p&gt;
-
-&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:almost&quot;&gt;
-
-      &lt;p&gt;It’s not on &lt;a href=&quot;https://crates.io/&quot;&gt;crates.io&lt;/a&gt; yet because it’s using some unreleased changes to
-&lt;a href=&quot;https://github.com/Diggsey/multirust-rs&quot;&gt;multirust-rs&lt;/a&gt;… &lt;a href=&quot;https://github.com/Diggsey/multirust-rs/issues/54&quot;&gt;soon though&lt;/a&gt;! &lt;a href=&quot;#fnref:almost&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Tue, 23 Feb 2016 16:36:47 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/02/23/rust-bisect-tracking-down-the-rust-nightly-that-changed-some-behavior/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/23/rust-bisect-tracking-down-the-rust-nightly-that-changed-some-behavior/</guid>
         
         
       </item>
