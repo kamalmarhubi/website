@@ -139,10 +139,7 @@ and it goes on and on and on for over 10,000 lines! The result is that the defin
 
 ### Other things you could do!
 
-There are all kinds of other things we can do! For example, it should be possible to build a syntax-aware find-and-replace tool to make some refactorings easier. I'm imagining something like [FaceBook's jscodeshift tool for JavaScript][jscodeshift], or their [spatch] for PHP and some other languages. This would be great for situations like where you just changed the type of the third argument of that function from `String` to `&str` (string slice) and now you have to change all the call sites everywhere to call `.as_str()`[^fn-asref].
-
-[^fn-asref]:
-    Though you should consider changing the third argument of that function to take [`AsRef<str>`][asref] instead. That way you could pass either `String`, or a `&str`. The [conversion traits][convert] are really really great! :-)
+There are all kinds of other things we can do! For example, it should be possible to build a syntax-aware find-and-replace tool to make some refactorings easier. I'm imagining something like [FaceBook's jscodeshift tool for JavaScript][jscodeshift], or their [spatch] for PHP and some other languages. This would be great for situations like where you just changed the type of the third argument of that function from `String` to `&str` (string slice) and now you have to change all the call sites everywhere to add an `&` to take a reference.
 
 [asref]: http://doc.rust-lang.org/std/convert/trait.AsRef.html
 [convert]: http://doc.rust-lang.org/std/convert/index.html
