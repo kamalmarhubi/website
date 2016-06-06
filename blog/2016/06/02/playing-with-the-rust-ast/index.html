@@ -177,7 +177,7 @@ int* __test_const_O_RDWR(void) {
 
 <h3 id="other-things-you-could-do">Other things you could do!</h3>
 
-<p>There are all kinds of other things we can do! For example, it should be possible to build a syntax-aware find-and-replace tool to make some refactorings easier. I’m imagining something like <a href="https://github.com/facebook/jscodeshift">FaceBook’s jscodeshift tool for JavaScript</a>, or their <a href="https://github.com/facebook/pfff/wiki/Spatch">spatch</a> for PHP and some other languages. This would be great for situations like where you just changed the type of the third argument of that function from <code>String</code> to <code>&amp;str</code> (string slice) and now you have to change all the call sites everywhere to call <code>.as_str()</code><sup id="fnref:fn-asref"><a href="#fn:fn-asref" class="footnote">1</a></sup>.</p>
+<p>There are all kinds of other things we can do! For example, it should be possible to build a syntax-aware find-and-replace tool to make some refactorings easier. I’m imagining something like <a href="https://github.com/facebook/jscodeshift">FaceBook’s jscodeshift tool for JavaScript</a>, or their <a href="https://github.com/facebook/pfff/wiki/Spatch">spatch</a> for PHP and some other languages. This would be great for situations like where you just changed the type of the third argument of that function from <code>String</code> to <code>&amp;str</code> (string slice) and now you have to change all the call sites everywhere to add an <code>&amp;</code> to take a reference.</p>
 
 <p>If we’re willing to go a bit deeper into compiler internals—and require nighty Rust to build our project—we can also make tools that use type information. There’s no reason something like <a href="https://www.haskell.org/hoogle/">Hoogle</a> couldn’t exist for Rust. Hoogle was amazing back when I used to write Haskell. You search by <em>type signature</em>. It’s kind of magical to be able to say <a href="https://www.haskell.org/hoogle/?hoogle=%5Ba%5D+-%3E+Int">“I have a a list and I want an int”</a> and it would have the <code>length</code> function at the top of the results page.</p>
 
@@ -190,14 +190,6 @@ int* __test_const_O_RDWR(void) {
 <hr />
 
 <p><small><em>Thanks to Julia Evans for feedback on this post, and for suggesting I write it in the first place!</em></small></p>
-<div class="footnotes">
-  <ol>
-    <li id="fn:fn-asref">
-
-      <p>Though you should consider changing the third argument of that function to take <a href="http://doc.rust-lang.org/std/convert/trait.AsRef.html"><code>AsRef&lt;str&gt;</code></a> instead. That way you could pass either <code>String</code>, or a <code>&amp;str</code>. The <a href="http://doc.rust-lang.org/std/convert/index.html">conversion traits</a> are really really great! :-) <a href="#fnref:fn-asref" class="reversefootnote">&#8617;</a></p>
-    </li>
-  </ol>
-</div>
 
   </article>
 
