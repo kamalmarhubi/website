@@ -5,9 +5,88 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 06 Jun 2016 16:41:01 -0400</pubDate>
-    <lastBuildDate>Mon, 06 Jun 2016 16:41:01 -0400</lastBuildDate>
+    <pubDate>Mon, 25 Jul 2016 18:08:23 -0400</pubDate>
+    <lastBuildDate>Mon, 25 Jul 2016 18:08:23 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Some things I learned about libdwarf</title>
+        <description>&lt;p&gt;In the last few days, I got drafted / nerd-sniped into helping Julia Evans on &lt;a href=&quot;http://jvns.ca/blog/2016/06/12/a-weird-system-call-process-vm-readv/&quot;&gt;her Ruby stacktrace spying program&lt;/a&gt;. Specifically, one of the next big things is to read type information out of the Ruby binary so that it’s not hardcoded to work for just one Ruby version.&lt;/p&gt;
+
+&lt;p&gt;Going in, I didn’t know much about DWARF, its data model, or how to access it programmatically. This post is a minidump of things I learned about libdwarf, including reasons I’m probably not going to use it.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-dwarf-is-the-very-very-short-and-incomplete-version&quot;&gt;What DWARF is, the very very short and incomplete version&lt;/h2&gt;
+
+&lt;p&gt;From the &lt;a href=&quot;http://dwarfstd.org/&quot;&gt;DWARF standard’s homepage&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;DWARF is a debugging file format used by many compilers and debuggers to support source level debugging.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Here are some of the things stored in DWARF data:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;symbol names, like functions, parameters, variables&lt;/li&gt;
+  &lt;li&gt;a way to go from source file lines to instruction addresses and vice versa, for setting breakpoints and stepping through functions&lt;/li&gt;
+  &lt;li&gt;a way to find out where data for a variable is at a given point in the program&lt;/li&gt;
+  &lt;li&gt;information about the types in a program, including their size and offsets of their fields&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I’m sure there’s lots of other stuff in there too. For the task at hand, I’m mostly interested in the last of these. The Ruby stacktrace program currently works by using some struct definitions from header files from Ruby itself. This ties it to a specific Ruby version. We want to make it work on any Ruby version by looking up the struct definitions in the DWARF data.&lt;/p&gt;
+
+&lt;h2 id=&quot;libdwarf&quot;&gt;libdwarf&lt;/h2&gt;
+
+&lt;p&gt;Linked off the dwarfstd.org site is libdwarf, a C library for reading DWARF.  This is great, because the DWARF format looks pretty complicated, and I definitely don’t want to write a reader from scratch! There’s an &lt;a href=&quot;https://sourceforge.net/p/libdwarf/code/ci/master/tree/dwarfexample/simplereader.c&quot;&gt;example program&lt;/a&gt; included with libdwarf to show you how to read debug info.&lt;/p&gt;
+
+&lt;h2 id=&quot;things-i-found-weird-about-libdwarf&quot;&gt;Things I found weird about libdwarf&lt;/h2&gt;
+
+&lt;p&gt;I started putting together a Rust wrapper for libdwarf, but ended up finding it a little too weird.&lt;/p&gt;
+
+&lt;p&gt;NB: I don’t do much C programming beyond working with Linux system libraries, so these might not actually be weird practices for C libraries. But they were definitely weird for me!&lt;/p&gt;
+
+&lt;h3 id=&quot;memory-management-tied-to-a-specific-libdwarf-session&quot;&gt;Memory management tied to a specific libdwarf session&lt;/h3&gt;
+
+&lt;p&gt;Some libdwarf functions allocate memory for the data they return. The library provides a special &lt;code&gt;dwarf_dealloc&lt;/code&gt; function to free them. So far so good. But the deallocation also takes a handle to the &lt;code&gt;Dwarf_Debug&lt;/code&gt; session that the memory was allocated for. This isn’t too bad: a Rust wrapped object could just hold a handle to the &lt;code&gt;Dwarf_Debug&lt;/code&gt; session so that &lt;code&gt;dwarf_dealloc&lt;/code&gt; can be called in the destructor. There is a small niggle in that the library will deallocate all these objects for you if you call close the &lt;code&gt;Dwarf_Debug&lt;/code&gt; with &lt;code&gt;dwarf_finish&lt;/code&gt;. This can all be handled in a reasonable way from the Rust side by tying the lifetimes of things to the &lt;code&gt;Dwarf_Debug&lt;/code&gt; instance they came from.&lt;/p&gt;
+
+&lt;h3 id=&quot;function-names-increment-with-library-changes&quot;&gt;Function names increment with library changes&lt;/h3&gt;
+
+&lt;p&gt;Here are four function names from libdwarf:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;dwarf_next_cu_header()&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;dwarf_next_cu_header_b()&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;dwarf_next_cu_header_c()&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;dwarf_next_cu_header_d()&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Each one except for &lt;code&gt;dwarf_next_cu_header_d()&lt;/code&gt; includes a note like:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;It operates exactly like &lt;code&gt;dwarf_next_cu_header_d()&lt;/code&gt; but is missing the &lt;code&gt;header_type&lt;/code&gt; field. This is kept for compatibility. All code using this should be changed to use &lt;code&gt;dwarf_next_cu_header_d()&lt;/code&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;I don’t know how to handle compatibility and API evolution in C, but this is definitely the first time I’ve seen something like this! It does mean that code compiled against older versions will continue to work, which is good. But it strikes me as odd overall.&lt;/p&gt;
+
+&lt;h3 id=&quot;error-handling&quot;&gt;Error handling&lt;/h3&gt;
+
+&lt;p&gt;Most libdwarf functions take a &lt;code&gt;Dwarf_Error*&lt;/code&gt; as their last argument. If you pass a non-null pointer, then error data will stored there. If a null pointer is passed, then the library calls &lt;code&gt;abort()&lt;/code&gt; on your behalf instead. Except if you passed an error handler callback when creating the &lt;code&gt;Dwarf_Debug&lt;/code&gt; instance: errors will get passed to your callback. It’s unclear to me if you are meant the &lt;code&gt;dwarf_dealloc&lt;/code&gt; the error your callback gets passed in that case. If the callback returns (rather than exiting the program or throwing the error as an exception), then I think the whole call looks like nothing went wrong.&lt;/p&gt;
+
+&lt;p&gt;Oh and if you do pass a non-null &lt;code&gt;Dwarf_Error*&lt;/code&gt;, you are in charge of freeing the error with &lt;code&gt;dwarf_dealloc&lt;/code&gt;, passing the &lt;code&gt;Dwarf_Debug&lt;/code&gt; instance, as mentioned above. Except if that error happened in the call to &lt;code&gt;dwarf_init&lt;/code&gt;, in which case there is no valid &lt;code&gt;Dwarf_Debug&lt;/code&gt; instance; in that case, you just free it with &lt;code&gt;free()&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;sometimes-stateful-iteration&quot;&gt;Sometimes stateful iteration&lt;/h3&gt;
+
+&lt;p&gt;There are a bunch of functions for iterating through bits and pieces of DWARF data. For some, there is a &lt;code&gt;next&lt;/code&gt; function that takes the current item and gives the next one. Iteration can be started from the beginning by passing in &lt;code&gt;NULL&lt;/code&gt; as the current item. But in one case, the iteration state is stored in the &lt;code&gt;Dwarf_Debug&lt;/code&gt; instance. You must repeatedly call the same function until it returns NULL: here’s no other way to restart the iteration.&lt;/p&gt;
+
+&lt;h2 id=&quot;libdw&quot;&gt;libdw&lt;/h2&gt;
+
+&lt;p&gt;None of those things were too weird in themselves, but taken together I was wondering about alternatives. The alternative I’m looking at right now is libdw from elfutils. At a short glance, it has a more straightforward API. There’s also a potentially useful higher level “frontend library” called libdwfl. I’ll be taking a closer look this week and putting together a rough binding to see how that goes!&lt;/p&gt;
+</description>
+        <pubDate>Mon, 25 Jul 2016 18:04:02 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/07/25/some-things-i-learned-about-libdwarf/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/07/25/some-things-i-learned-about-libdwarf/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Things you could do with the Rust AST</title>
@@ -1102,98 +1181,6 @@ escaping necessary, but you get the hang of it fairly quickly.&lt;/p&gt;
         <pubDate>Mon, 29 Feb 2016 14:26:27 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/02/29/my-git-aliases/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/29/my-git-aliases/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>100:10:1 update 3</title>
-        <description>&lt;p&gt;I’ve been neglecting the updates, but here we go! Since the last update, I got
-a prototype out, but it was something that wasn’t on my list… I need to
-figure out if it counts as one of the 10 or not :-)&lt;/p&gt;
-
-&lt;h1 id=&quot;rust-bisect&quot;&gt;rust-bisect&lt;/h1&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect&quot;&gt;rust-bisect&lt;/a&gt; is a little tool to help track down changes in Rust nightlies. It
-works a lot like &lt;code&gt;git bisect run&lt;/code&gt;. You give it a command, a nightly build where
-it succeeds, and a nightly build where it fails, and it does binary search to
-find the first nightly where it fails.&lt;/p&gt;
-
-&lt;h1 id=&quot;cargo-fmt-diff&quot;&gt;cargo fmt-diff&lt;/h1&gt;
-
-&lt;p&gt;I’ve decided to give a name to the project formerly described as ‘rustfmt line
-range &amp;amp; diff reading (format a patch)’: &lt;code&gt;cargo fmt-diff&lt;/code&gt;. It’ll be a command
-you can run to format the lines you’ve changed. Ideally, you’ll be able to put
-it in a VCS commit hook, and never introduce bad formatting. Think of it as a
-style-oriented analogue of not rocket science:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;&lt;strong&gt;The Not Rocket Science Rule Of Software Engineering:&lt;/strong&gt;&lt;/p&gt;
-
-  &lt;p&gt;automatically maintain a repository of code that always passes all the tests&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;―&lt;a href=&quot;http://graydon2.dreamwidth.org/1597.html&quot;&gt;Graydon Hoare&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;A (very!) rough plan of how I intend to get this done:&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;add command line flag that takes a set of line ranges to format (progress:
-&lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/issues/844&quot;&gt;rustfmt PR #844, ‘rustfmt: Add an ineffectual –file-lines flag behind a
-feature’&lt;/a&gt;)&lt;/li&gt;
-  &lt;li&gt;parse a unified diff to get sets of line ranges to pass to the above flag&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;If you’re especially interested in this feature, the rustfmt issue to track is
-&lt;a href=&quot;https://github.com/rust-lang-nursery/rustfmt/issues/434&quot;&gt;#434&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h1 id=&quot;containy-thing-name-tbc&quot;&gt;containy-thing (name TBC)&lt;/h1&gt;
-
-&lt;p&gt;I’m promoting a project I was working on over the holidays onto my list of 10:
-containy-thing. It was formerly described as ‘container thing for running
-commands in container context without privileges’, and I mentioned it in &lt;a href=&quot;http://kamalmarhubi.com/blog/2016/01/26/eat-your-greens-and-read-your-man-pages/&quot;&gt;Eat
-your greens and read your man pages&lt;/a&gt; a month ago. The goal is to
-allow running commands in a container environment without root privileges. I
-just pushed up &lt;a href=&quot;https://github.com/kamalmarhubi/containy-thing&quot;&gt;a basic repository&lt;/a&gt; for it.&lt;/p&gt;
-
-&lt;h1 id=&quot;rust-and-the-update-framework&quot;&gt;Rust and The Update Framework&lt;/h1&gt;
-
-&lt;p&gt;I’m also promoting a fairly ambitious project onto the list of ten. In the list
-of 100, it was cryptically described as ‘tuf + rust + crates’. The goal of this
-project is to secure the Rust crate ecosystem using &lt;a href=&quot;http://theupdateframework.com/&quot;&gt;The Update Framework&lt;/a&gt;
-(TUF). I’ve been interested in this project since well before I wrote any Rust.
-Verifiable provenance of software artifacts is extremely important, and Rust
-absolutely should have a good approach to it.&lt;/p&gt;
-
-&lt;p&gt;The Update Framework is a really well-designed and well-thought out approach to
-securing software updates and distribution. It’s being implemented for Python,
-Docker, and other ecosystems. While I was in New York attending the Recurse
-Center, I met up with the researchers behind TUF (&lt;a href=&quot;https://github.com/rust-lang/crates.io/issues/75#issuecomment-179904144&quot;&gt;minutes&lt;/a&gt;) to talk about
-implementing it for Rust, but I hadn’t followed up until recently. The issue to
-watch for this one is &lt;a href=&quot;https://github.com/rust-lang/crates.io/issues/75&quot;&gt;#75&lt;/a&gt; on the Crates.io repository.&lt;/p&gt;
-
-&lt;p&gt;This project is really exciting, and more than a little bit scary because of
-how important it is to get right. But I won’t be working on it alone, so that’s
-great! The first steps are to refamiliarize myself with TUF, and then put
-together a Rust RFC. The TUF folks have recently had &lt;a href=&quot;https://isis.poly.edu/~jcappos/papers/kuppusamy_nsdi_16.pdf&quot;&gt;a paper
-accepted&lt;/a&gt; that describes how they have improved TUF even further,
-and I’m starting with reading that.&lt;/p&gt;
-
-&lt;h1 id=&quot;summary-of-the-list-of-ten&quot;&gt;Summary of the list-of-ten:&lt;/h1&gt;
-
-&lt;p&gt;My list of ten now contains four projects:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;cargo fmt-diff&lt;/li&gt;
-  &lt;li&gt;containy-thing&lt;/li&gt;
-  &lt;li&gt;silly memcached or redis-speaking key value store whose nature of silliness
-is as yet undisclosed&lt;/li&gt;
-  &lt;li&gt;TUF and Crates.io&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-        <pubDate>Mon, 29 Feb 2016 13:17:09 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/02/29/100-10-1-update-3/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/29/100-10-1-update-3/</guid>
         
         
       </item>
