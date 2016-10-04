@@ -5,9 +5,200 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 25 Jul 2016 18:08:23 -0400</pubDate>
-    <lastBuildDate>Mon, 25 Jul 2016 18:08:23 -0400</lastBuildDate>
+    <pubDate>Mon, 03 Oct 2016 23:57:46 -0400</pubDate>
+    <lastBuildDate>Mon, 03 Oct 2016 23:57:46 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Spying on Android events without modifying source code</title>
+        <description>&lt;p&gt;Let’s say you want to intercept events in an Android app, but don’t want to modify your source code. As a simple example, you want to add logging whenever the user clicks on any button in your app. I got a bit curious about whether it was possible so I spent some time last week figuring out how this might work. This was extra fun because I’ve never written and Android app, and it’s been years since I did anything in the Java ecosystem.&lt;/p&gt;
+
+&lt;h2 id=&quot;whats-hard-about-intercepting-events-on-android&quot;&gt;What’s hard about intercepting events on Android?&lt;/h2&gt;
+
+&lt;p&gt;There are a few things going on that make this harder to do on Android than on the web. JavaScript and the DOM let you do all kinds of things at runtime—which is the only time! Adding &lt;code&gt;&amp;lt;script src=&quot;blah.js&quot;&amp;gt;&lt;/code&gt; can pretty much catch anything you want without modifying any other code.&lt;/p&gt;
+
+&lt;p&gt;In Java, once a class is loaded it’s fixed. You can do tricksy things to it via reflection, but that’s all you can do. You can’t get it to call custom code in response to a method call. On the JVM, you can provide a custom class loader and do even trickier things before a class is loaded, including modifying the bytecode. This would allow you to insert the custom code at the start of the method.&lt;/p&gt;
+
+&lt;p&gt;But Android doesn’t run the JVM, and it doesn’t run JVM bytecode. Instead the code is translated to DEX, another bytecode format. In current Android versions, &lt;a href=&quot;http://source.android.com/devices/tech/dalvik/index.html&quot;&gt;even that isn’t what is actually run&lt;/a&gt;. Instead the DEX gets compiled further at install time, this time to native code for the device. This makes the modify-at-load-time approach seem somewhere between daunting and impossible.&lt;/p&gt;
+
+&lt;p&gt;So, runtime modification and instrumentation isn’t going to work. We can drop back to compile-time instrumentation instead. We could modify either the JVM bytecode before DEX translation, or the DEX bytecode. There’s a lot of support for JVM bytecode modification, and JVM bytecode is easier to modify&lt;sup id=&quot;fnref:ft-jvm-easier&quot;&gt;&lt;a href=&quot;#fn:ft-jvm-easier&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; so we’ll go with that.&lt;/p&gt;
+
+&lt;p&gt;As one last thing that makes things more difficult, the base SDK classes are completely off limits. For example, instrumenting the &lt;a href=&quot;https://developer.android.com/reference/android/view/View.html&quot;&gt;base &lt;code&gt;View&lt;/code&gt; class&lt;/a&gt; might be a useful thing to do, but we just can’t. They are preloaded in the &lt;a href=&quot;https://developer.android.com/topic/performance/memory-overview.html#SharingRAM&quot;&gt;zygote&lt;/a&gt;, which is sort of the primordial goop of a process that all apps launch from. This is to speed up app launch, and to save on some memory by allowing all apps to share those pages.&lt;/p&gt;
+
+&lt;h2 id=&quot;lets-modify-the-bytecode&quot;&gt;Let’s modify the bytecode&lt;/h2&gt;
+
+&lt;p&gt;So now we know we want to modify JVM bytecode, let’s actually do it. There are a bunch of libraries that help with Java bytecode instrumentation. I went with &lt;a href=&quot;http://asm.ow2.org/&quot;&gt;ASM&lt;/a&gt; for this experiment because I’d heard of it before.&lt;/p&gt;
+
+&lt;p&gt;We only need to intercept one type of event to prove that this approach works. In this post we’ll just look at spying on clicks. There’s a &lt;a href=&quot;https://developer.android.com/guide/topics/ui/controls/button.html#ClickListener&quot;&gt;&lt;code&gt;View.OnClickListener&lt;/code&gt;&lt;/a&gt; interface that any listener implements. We need to check if a class implements that interface, and if so instrument its &lt;code&gt;onClick(View)&lt;/code&gt; method&lt;sup id=&quot;fnref:ft-onclick&quot;&gt;&lt;a href=&quot;#fn:ft-onclick&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
+
+&lt;p&gt;ASM presents a streaming view of the contents of a class, and calls methods on classes you define as it encounters the bits of a class file. For example, it calls &lt;code&gt;visit&lt;/code&gt; with the class name and some other stuff when it starts a new class, and it calls &lt;code&gt;visitMethod&lt;/code&gt; on each method.&lt;/p&gt;
+
+&lt;p&gt;Because we only have this one-way streaming view of a class, we have to we’ll need to check the list of interfaces at the start and track whether we’re meant to do any work in an instance variable.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;@Override
+public void visit(
+    int version,
+    int access,
+    String name,
+    String signature,
+    String superName,
+    String[] interfaces) {
+
+  // Call down the class visitor chain.
+  cv.visit(version, access, name, signature, superName, interfaces);
+
+  shouldInstrumentOnClick =
+      Arrays.asList(interfaces).contains(&quot;android/view/View$OnClickListener&quot;);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Later, when we’re inspecting a method, we check to see if its name is &lt;code&gt;onClick&lt;/code&gt;. If so, we make sure to instrument it. The way this works is by returning a modified &lt;code&gt;MethodVisitor&lt;/code&gt; from &lt;code&gt;visitMethod&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;@Override
+public MethodVisitor visitMethod(
+    int access, String name, String desc, String signature, String[] exceptions) {
+  // Get a method visitor from further down the class visitor chain.
+  MethodVisitor mv = cv.visitMethod(access, name, desc, signature, exceptions);
+
+  if (shouldInstrumentOnClick &amp;amp;&amp;amp; name.equals(&quot;onClick&quot;)) {
+    // Add our method visitor to the chain.
+    mv = new LogClickAdapter(mv);
+  }
+  return mv;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now the part that actually adds the code! We just want to insert some code at the start of the method, which we can do in &lt;code&gt;visitCode&lt;/code&gt; in our &lt;code&gt;MethodVisitor&lt;/code&gt;. ASM calls this library just before it goes through any bytecode instructions, so adding code here puts it at the start of the method. This isn’t the nicest thing to look at, as we’re mirroring the bytecode we’re adding:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;@Override
+public void visitCode() {
+  mv.visitCode();
+
+  mv.visitLdcInsn(&quot;SPY&quot;);
+  mv.visitTypeInsn(NEW, &quot;java/lang/StringBuilder&quot;);
+  mv.visitInsn(DUP);
+  mv.visitMethodInsn(INVOKESPECIAL, &quot;java/lang/StringBuilder&quot;, &quot;&amp;lt;init&amp;gt;&quot;, &quot;()V&quot;, false);
+  mv.visitLdcInsn(&quot;saw click on &quot;);
+  mv.visitMethodInsn(
+      INVOKEVIRTUAL,
+      &quot;java/lang/StringBuilder&quot;,
+      &quot;append&quot;,
+      &quot;(Ljava/lang/String;)Ljava/lang/StringBuilder;&quot;,
+      false);
+  mv.visitVarInsn(ALOAD, 1);
+  mv.visitMethodInsn(
+      INVOKEVIRTUAL,
+      &quot;java/lang/StringBuilder&quot;,
+      &quot;append&quot;,
+      &quot;(Ljava/lang/Object;)Ljava/lang/StringBuilder;&quot;,
+      false);
+  mv.visitMethodInsn(
+      INVOKEVIRTUAL, &quot;java/lang/StringBuilder&quot;, &quot;toString&quot;, &quot;()Ljava/lang/String;&quot;, false);
+  mv.visitMethodInsn(
+      INVOKESTATIC, &quot;android/util/Log&quot;, &quot;d&quot;, &quot;(Ljava/lang/String;Ljava/lang/String;)I&quot;, false);
+  mv.visitInsn(POP);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;That’s the ASM way to write out the bytecode corresponding to this Java code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Log.d(&quot;SPY&quot;, &quot;saw a click on &quot; + view);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Luckily, there’s a nifty utility called ASMifier which outputs the ASM code necessary to generate a class file. Even if you are familiar with JVM bytecode, the ASMified version isn’t going to be fun to write, so that’s really handy.&lt;/p&gt;
+
+&lt;h2 id=&quot;making-it-super-easy-adding-a-plugin-to-the-build&quot;&gt;Making it super easy: adding a plugin to the build&lt;/h2&gt;
+
+&lt;p&gt;Great! Now we can modify classes to add our custom spying code. But the aim here is to make this require as little modification to the application as possible. Android uses Gradle as its standard app build tool, so we can wrap the whole thing up in a Gradle plugin. This would reduce it down to just adding a couple of lines to the &lt;code&gt;build.gradle&lt;/code&gt; file for the app.&lt;/p&gt;
+
+&lt;p&gt;This actually turned out to be the most time consuming part! I already knew enough about JVM bytecode and compilation to make the ASM part fairly straightforward. All I had to do was learn enough about the ASM API to do what I needed to do. For the plugin, I had to get my head around some Gradle architecture, and the overall Android build system so that I could decide where to slot the instrumentation in.&lt;/p&gt;
+
+&lt;p&gt;In the end, it turned out that the Android build system folks did a great job of providing an API to transform classes before they get compiled to DEX. This is the well-named &lt;a href=&quot;http://google.github.io/android-gradle-dsl/javadoc/current/com/android/build/api/transform/package-summary.html&quot;&gt;Transform API&lt;/a&gt;. After I defined the transform, the plugin’s body was pretty much just a call to &lt;code&gt;registerTransform&lt;/code&gt; on the Android plugin. That handled setting up the Gradle task, its inputs and outputs and whatever else is involved.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-it-looks-like&quot;&gt;What it looks like&lt;/h2&gt;
+
+&lt;p&gt;This isn’t exactly exciting, perhaps unless you’re me and you just got it to work. But here’s 
+ &lt;a href=&quot;https://developer.android.com/samples/BorderlessButtons/index.html&quot;&gt;one of the Android samples&lt;/a&gt; with and without instrumentation.&lt;/p&gt;
+
+&lt;h3 id=&quot;without-instrumentation&quot;&gt;Without instrumentation&lt;/h3&gt;
+
+&lt;center&gt;
+&lt;video width=&quot;100%&quot; src=&quot;/static/android-no-spy.webm&quot; autoplay=&quot;&quot; loop=&quot;&quot;&gt;&lt;/video&gt;
+&lt;/center&gt;
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;with-instrumentation&quot;&gt;With instrumentation&lt;/h3&gt;
+
+&lt;p&gt;As I click on the buttons, it logs lines with &lt;code&gt;D/SPY&lt;/code&gt; and details on the thing I clicked on.&lt;/p&gt;
+
+&lt;center&gt;
+&lt;video width=&quot;100%&quot; src=&quot;/static/android-with-spy.webm&quot; autoplay=&quot;&quot; loop=&quot;&quot;&gt;&lt;/video&gt;
+&lt;/center&gt;
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;the-diff&quot;&gt;The diff&lt;/h3&gt;
+
+&lt;p&gt;The only differences between the two are in the &lt;code&gt;build.gradle&lt;/code&gt; file:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;diff --git a/Application/build.gradle b/Application/build.gradle
+index 990c615..8d05e53 100644
+--- a/Application/build.gradle
++++ b/Application/build.gradle
+@@ -1,15 +1,18 @@
+ 
+ buildscript {
+     repositories {
++        flatDir dirs: &quot;/home/kamal/projects/asm/build/libs&quot;
+         jcenter()
+     }
+ 
+     dependencies {
++        classpath &#39;me:plugin:1&#39;
+         classpath &#39;com.android.tools.build:gradle:2.2.0&#39;
+     }
+ }
+ 
+ apply plugin: &#39;com.android.application&#39;
++apply plugin: &#39;track-plugin&#39;
+ 
+ repositories {
+     jcenter()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;exploring-unfamiliar-ecosystems-can-be-fun&quot;&gt;Exploring unfamiliar ecosystems can be fun&lt;/h2&gt;
+
+&lt;p&gt;I had a bunch of fun doing this. For one thing, spying on programs is generally a fun activity. Especially if they don’t know you’re doing it. I rarely write programs that respond to user input. While I only tested this on a couple of Android samples, I still saw direct feedback from me clicking on things—even if that feedback was just a log line in the Android Studio console.&lt;/p&gt;
+
+&lt;p&gt;It was also rewarding to go from here’s-an-idea-I-have-no-idea-how-to-implement to totally-working-proof-of-concept in just a few days. Even more so because this was an entire code universe I hadn’t really set foot in before. I can write passable Java, but I’ve never touched a Java build system. My experience with Android is limited to having owned two or three Nexus devices over the years.&lt;/p&gt;
+
+&lt;p&gt;This makes me curious about when it’s possible to dive into an unfamiliar area and do something non-trivial in a short period of time. I think there has to be a degree of familiarity with at least some of what you’re trying to do. In this instance, I wasn’t stumbling with Java syntax, and I’d done some stuff with JVM bytecode before. The unfamiliar areas were Android, and the build tooling.&lt;/p&gt;
+
+&lt;p&gt;At the other end, when I first tried writing Rust, I was trying to do something I didn’t know how to do in a language I didn’t know. That turned out to be quite frustrating, and it was hard to make progress. It ended up delaying me learning Rust by a few months, because I gave up on the project and Rust along with it.&lt;/p&gt;
+
+&lt;p&gt;This makes me think there’s an analog of &lt;a href=&quot;http://mcfunley.com/choose-boring-technology&quot;&gt;‘innovation tokens’&lt;/a&gt; at play here. Except instead of optimizing for reliability, we’re optimizing for a balance between challenge and fun. I’m really curious to hear other people’s experiences, so please &lt;a href=&quot;https://twitter.com/kamalmarhubi&quot;&gt;get in touch&lt;/a&gt;!&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:ft-jvm-easier&quot;&gt;
+
+      &lt;p&gt;In the JVM’s stack-based bytecode, inserted code just needs to ensure it doesn’t pop anything off the stack, or leave anything on the stack. Otherwise you can more or less insert any code with net-zero stack change. In the register-based DEX bytecode, some instructions can only work with a specific subset of the available registers, so you’ll almost certainly have to move data around and restore it afterwards. &lt;a href=&quot;#fnref:ft-jvm-easier&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:ft-onclick&quot;&gt;
+
+      &lt;p&gt;Tracking clicks on Android turns out to be fairly complicated. There are a bunch of ways a click handler can be registered. I think the most obvious ones are &lt;code&gt;setOnClickListener&lt;/code&gt;, and setting the name of a method on the &lt;code&gt;Activity&lt;/code&gt; in the the &lt;code&gt;android:onclick&lt;/code&gt; XML attribute. The method I’ll outline only catches the &lt;code&gt;setOnClickListener&lt;/code&gt; ones. The XML attirbutes are a bit trickier as they result in using an &lt;code&gt;OnClickListener&lt;/code&gt; defined in the base SDK’s &lt;code&gt;View&lt;/code&gt; class. That’s not something we can instrument. Instead, the way to handle those is to get them from the XML layout files, and instrument the named methods. &lt;a href=&quot;#fnref:ft-onclick&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        <pubDate>Mon, 03 Oct 2016 10:10:46 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/10/03/android-events/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/10/03/android-events/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Some things I learned about libdwarf</title>
@@ -1079,108 +1270,6 @@ available by default.&lt;/p&gt;
         <pubDate>Sun, 06 Mar 2016 11:26:53 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/03/06/100-10-1-update-4/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/06/100-10-1-update-4/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>My git aliases</title>
-        <description>&lt;p&gt;&lt;small&gt;&lt;em&gt;This post has been &lt;a href=&quot;http://softdroid.net/moi-psevdonimy-v-git&quot;&gt;translated into Russian&lt;/a&gt;.&lt;/em&gt;&lt;/small&gt;&lt;/p&gt;
-
-&lt;p&gt;I have a few little aliases in &lt;a href=&quot;https://github.com/kamalmarhubi/dotfiles-git/blob/master/.gitconfig&quot;&gt;my &lt;code&gt;.gitconfig&lt;/code&gt;&lt;/a&gt; that I find useful
-and that I thought I’d share.&lt;/p&gt;
-
-&lt;h1 id=&quot;git-root-print-the-absolute-path-of-the-repository-root-directory&quot;&gt;git root: print the absolute path of the repository root directory&lt;/h1&gt;
-
-&lt;pre&gt;&lt;code&gt;# Print absolute path of repo root directory
-root = rev-parse --show-toplevel
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;This is useful in the shell if you end up &lt;code&gt;cd&lt;/code&gt;ed to somewhere deeper in the
-repository but want to apply a command at the root, eg for a rename:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;somewhere/in/repo$ sed -i &#39;s/oldname/newname/g&#39; $(git root)/**
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&quot;git-detach-get-to-a-detached-head-state-on-purpose&quot;&gt;git detach: get to a detached HEAD state on purpose&lt;/h1&gt;
-
-&lt;pre&gt;&lt;code&gt;# Get to a detached HEAD state on purpose! Usage: `git detach [REF]`
-detach = !sh -c &#39;git checkout $(git rev-parse ${1:-HEAD})&#39; --
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Usually a detached HEAD state is something you don’t want to be in, but I’ve
-wanted this in a few instances, so I added it as an alias. Eg, sometimes I want
-to experiment but not actually create a branch. Running &lt;code&gt;git detach&lt;/code&gt; gives me a
-‘branch’ I can make changes to, but without needing to name it, and without needing
-to delete it afterwards. If it turns out I do want to save the work I did, I
-can always &lt;code&gt;git checkout -b new-branch-name&lt;/code&gt;, or &lt;code&gt;git checkout old-branch-name
-&amp;amp;&amp;amp; git merge --ff-only HEAD@{1}&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;This alias uses shell expansion by invoking &lt;code&gt;sh -c&lt;/code&gt;. The bang runs a shell
-command, then &lt;code&gt;sh -c&lt;/code&gt; runs the rest through &lt;code&gt;sh&lt;/code&gt;. The final &lt;code&gt;--&lt;/code&gt; is necessary
-to send any additional arguments to go to &lt;code&gt;git checkout&lt;/code&gt; rather than &lt;code&gt;sh&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h1 id=&quot;git-sha1-print-short-sha1-of-a-commit&quot;&gt;git sha1: print short sha1 of a commit&lt;/h1&gt;
-
-&lt;pre&gt;&lt;code&gt;# Print short sha1; usage: `git sha1 [REF]`
-sha1 = !sh -c &#39;git rev-parse --short ${1:-HEAD}&#39; --
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Most often used with &lt;code&gt;xsel&lt;/code&gt; or &lt;code&gt;pbcopy&lt;/code&gt;, as in &lt;code&gt;git sha1 | xsel -i&lt;/code&gt; to copy the
-current commit’s short sha1 to the clipboard.&lt;/p&gt;
-
-&lt;p&gt;I use &lt;code&gt;sh -c&lt;/code&gt; for shell expansion again, though here it’s just for supplying a
-default ref.&lt;/p&gt;
-
-&lt;h1 id=&quot;git-gh-url-get-the-github-url-for-a-repository&quot;&gt;git gh-url: get the GitHub URL for a repository&lt;/h1&gt;
-
-&lt;pre&gt;&lt;code&gt;# Get the GitHub URL for a GitHub repository. Usage: `git gh-url [REMOTE]`
-gh-url = &quot;!f() { \
-	if ! remote=${1:-$(git config --get \
-		branch.$(git symbolic-ref --short HEAD).remote)}; \
-	then \
-		echo no remote specified and could not get remote for HEAD; \
-		exit; \
-	fi; \
-	if ! remote_url=$(git config --get remote.$remote.url); \
-	then \
-		echo &quot;could not get URL for remote \\`$remote\\`&quot;; \
-		exit; \
-	fi; \
-	case $remote_url in \
-		git@github.com:*.git) \
-			repo=$(echo $remote_url \
-				| sed &#39;s/git@github.com:\\(.*\\).git/\\1/&#39;);; \
-		https://github.com/*) \
-			repo=$(echo $remote_url \
-				| sed &#39;s+https://github.com/\\(.*\\).git+\\1+&#39;);; \
-		*) \
-			echo &quot;\\`$remote\\` does not appear to have &quot; \
-				&quot;a GitHub remote url: $remote_url&quot;; \
-			exit 1;; \
-	esac; \
-	echo https://github.com/$repo; \
-}; \
-f&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;This one is pretty self-explanatory in terms of usage, but it illustrates
-another pattern of git aliases: defining shell function and immediately calling
-it. The general pattern is this:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;my-alias = &quot;!f() { \
-	echo COMMANDS GO HERE, ESCAPING NEWLINES WITH \
-		BACKSLASHES, AND TERMINATING WITH SEMICOLONS; \
-}; \
-f&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Because we’re in a string inside a config file, there’s an annoying amount of
-escaping necessary, but you get the hang of it fairly quickly.&lt;/p&gt;
-</description>
-        <pubDate>Mon, 29 Feb 2016 14:26:27 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/02/29/my-git-aliases/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/02/29/my-git-aliases/</guid>
         
         
       </item>

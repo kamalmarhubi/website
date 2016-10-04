@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Spying on Android events without modifying source code</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2016/10/03/android-events/">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Kamal Marhubi</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Spying on Android events without modifying source code</h1>
+    <p class="post-meta">Oct 3, 2016</p>
+  </header>
+
+  <article class="post-content">
+    <p>Let’s say you want to intercept events in an Android app, but don’t want to modify your source code. As a simple example, you want to add logging whenever the user clicks on any button in your app. I got a bit curious about whether it was possible so I spent some time last week figuring out how this might work. This was extra fun because I’ve never written and Android app, and it’s been years since I did anything in the Java ecosystem.</p>
+
+<h2 id="whats-hard-about-intercepting-events-on-android">What’s hard about intercepting events on Android?</h2>
+
+<p>There are a few things going on that make this harder to do on Android than on the web. JavaScript and the DOM let you do all kinds of things at runtime—which is the only time! Adding <code>&lt;script src="blah.js"&gt;</code> can pretty much catch anything you want without modifying any other code.</p>
+
+<p>In Java, once a class is loaded it’s fixed. You can do tricksy things to it via reflection, but that’s all you can do. You can’t get it to call custom code in response to a method call. On the JVM, you can provide a custom class loader and do even trickier things before a class is loaded, including modifying the bytecode. This would allow you to insert the custom code at the start of the method.</p>
+
+<p>But Android doesn’t run the JVM, and it doesn’t run JVM bytecode. Instead the code is translated to DEX, another bytecode format. In current Android versions, <a href="http://source.android.com/devices/tech/dalvik/index.html">even that isn’t what is actually run</a>. Instead the DEX gets compiled further at install time, this time to native code for the device. This makes the modify-at-load-time approach seem somewhere between daunting and impossible.</p>
+
+<p>So, runtime modification and instrumentation isn’t going to work. We can drop back to compile-time instrumentation instead. We could modify either the JVM bytecode before DEX translation, or the DEX bytecode. There’s a lot of support for JVM bytecode modification, and JVM bytecode is easier to modify<sup id="fnref:ft-jvm-easier"><a href="#fn:ft-jvm-easier" class="footnote">1</a></sup> so we’ll go with that.</p>
+
+<p>As one last thing that makes things more difficult, the base SDK classes are completely off limits. For example, instrumenting the <a href="https://developer.android.com/reference/android/view/View.html">base <code>View</code> class</a> might be a useful thing to do, but we just can’t. They are preloaded in the <a href="https://developer.android.com/topic/performance/memory-overview.html#SharingRAM">zygote</a>, which is sort of the primordial goop of a process that all apps launch from. This is to speed up app launch, and to save on some memory by allowing all apps to share those pages.</p>
+
+<h2 id="lets-modify-the-bytecode">Let’s modify the bytecode</h2>
+
+<p>So now we know we want to modify JVM bytecode, let’s actually do it. There are a bunch of libraries that help with Java bytecode instrumentation. I went with <a href="http://asm.ow2.org/">ASM</a> for this experiment because I’d heard of it before.</p>
+
+<p>We only need to intercept one type of event to prove that this approach works. In this post we’ll just look at spying on clicks. There’s a <a href="https://developer.android.com/guide/topics/ui/controls/button.html#ClickListener"><code>View.OnClickListener</code></a> interface that any listener implements. We need to check if a class implements that interface, and if so instrument its <code>onClick(View)</code> method<sup id="fnref:ft-onclick"><a href="#fn:ft-onclick" class="footnote">2</a></sup>.</p>
+
+<p>ASM presents a streaming view of the contents of a class, and calls methods on classes you define as it encounters the bits of a class file. For example, it calls <code>visit</code> with the class name and some other stuff when it starts a new class, and it calls <code>visitMethod</code> on each method.</p>
+
+<p>Because we only have this one-way streaming view of a class, we have to we’ll need to check the list of interfaces at the start and track whether we’re meant to do any work in an instance variable.</p>
+
+<pre><code>@Override
+public void visit(
+    int version,
+    int access,
+    String name,
+    String signature,
+    String superName,
+    String[] interfaces) {
+
+  // Call down the class visitor chain.
+  cv.visit(version, access, name, signature, superName, interfaces);
+
+  shouldInstrumentOnClick =
+      Arrays.asList(interfaces).contains("android/view/View$OnClickListener");
+}
+</code></pre>
+
+<p>Later, when we’re inspecting a method, we check to see if its name is <code>onClick</code>. If so, we make sure to instrument it. The way this works is by returning a modified <code>MethodVisitor</code> from <code>visitMethod</code>.</p>
+
+<pre><code>@Override
+public MethodVisitor visitMethod(
+    int access, String name, String desc, String signature, String[] exceptions) {
+  // Get a method visitor from further down the class visitor chain.
+  MethodVisitor mv = cv.visitMethod(access, name, desc, signature, exceptions);
+
+  if (shouldInstrumentOnClick &amp;&amp; name.equals("onClick")) {
+    // Add our method visitor to the chain.
+    mv = new LogClickAdapter(mv);
+  }
+  return mv;
+}
+</code></pre>
+
+<p>Now the part that actually adds the code! We just want to insert some code at the start of the method, which we can do in <code>visitCode</code> in our <code>MethodVisitor</code>. ASM calls this library just before it goes through any bytecode instructions, so adding code here puts it at the start of the method. This isn’t the nicest thing to look at, as we’re mirroring the bytecode we’re adding:</p>
+
+<pre><code>@Override
+public void visitCode() {
+  mv.visitCode();
+
+  mv.visitLdcInsn("SPY");
+  mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+  mv.visitInsn(DUP);
+  mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "&lt;init&gt;", "()V", false);
+  mv.visitLdcInsn("saw click on ");
+  mv.visitMethodInsn(
+      INVOKEVIRTUAL,
+      "java/lang/StringBuilder",
+      "append",
+      "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+      false);
+  mv.visitVarInsn(ALOAD, 1);
+  mv.visitMethodInsn(
+      INVOKEVIRTUAL,
+      "java/lang/StringBuilder",
+      "append",
+      "(Ljava/lang/Object;)Ljava/lang/StringBuilder;",
+      false);
+  mv.visitMethodInsn(
+      INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
+  mv.visitMethodInsn(
+      INVOKESTATIC, "android/util/Log", "d", "(Ljava/lang/String;Ljava/lang/String;)I", false);
+  mv.visitInsn(POP);
+}
+</code></pre>
+
+<p>That’s the ASM way to write out the bytecode corresponding to this Java code:</p>
+
+<pre><code>Log.d("SPY", "saw a click on " + view);
+</code></pre>
+
+<p>Luckily, there’s a nifty utility called ASMifier which outputs the ASM code necessary to generate a class file. Even if you are familiar with JVM bytecode, the ASMified version isn’t going to be fun to write, so that’s really handy.</p>
+
+<h2 id="making-it-super-easy-adding-a-plugin-to-the-build">Making it super easy: adding a plugin to the build</h2>
+
+<p>Great! Now we can modify classes to add our custom spying code. But the aim here is to make this require as little modification to the application as possible. Android uses Gradle as its standard app build tool, so we can wrap the whole thing up in a Gradle plugin. This would reduce it down to just adding a couple of lines to the <code>build.gradle</code> file for the app.</p>
+
+<p>This actually turned out to be the most time consuming part! I already knew enough about JVM bytecode and compilation to make the ASM part fairly straightforward. All I had to do was learn enough about the ASM API to do what I needed to do. For the plugin, I had to get my head around some Gradle architecture, and the overall Android build system so that I could decide where to slot the instrumentation in.</p>
+
+<p>In the end, it turned out that the Android build system folks did a great job of providing an API to transform classes before they get compiled to DEX. This is the well-named <a href="http://google.github.io/android-gradle-dsl/javadoc/current/com/android/build/api/transform/package-summary.html">Transform API</a>. After I defined the transform, the plugin’s body was pretty much just a call to <code>registerTransform</code> on the Android plugin. That handled setting up the Gradle task, its inputs and outputs and whatever else is involved.</p>
+
+<h2 id="what-it-looks-like">What it looks like</h2>
+
+<p>This isn’t exactly exciting, perhaps unless you’re me and you just got it to work. But here’s 
+ <a href="https://developer.android.com/samples/BorderlessButtons/index.html">one of the Android samples</a> with and without instrumentation.</p>
+
+<h3 id="without-instrumentation">Without instrumentation</h3>
+
+<center>
+<video width="100%" src="/static/android-no-spy.webm" autoplay="" loop=""></video>
+</center>
+<p><br /></p>
+
+<h3 id="with-instrumentation">With instrumentation</h3>
+
+<p>As I click on the buttons, it logs lines with <code>D/SPY</code> and details on the thing I clicked on.</p>
+
+<center>
+<video width="100%" src="/static/android-with-spy.webm" autoplay="" loop=""></video>
+</center>
+<p><br /></p>
+
+<h3 id="the-diff">The diff</h3>
+
+<p>The only differences between the two are in the <code>build.gradle</code> file:</p>
+
+<pre><code>diff --git a/Application/build.gradle b/Application/build.gradle
+index 990c615..8d05e53 100644
+--- a/Application/build.gradle
++++ b/Application/build.gradle
+@@ -1,15 +1,18 @@
+ 
+ buildscript {
+     repositories {
++        flatDir dirs: "/home/kamal/projects/asm/build/libs"
+         jcenter()
+     }
+ 
+     dependencies {
++        classpath 'me:plugin:1'
+         classpath 'com.android.tools.build:gradle:2.2.0'
+     }
+ }
+ 
+ apply plugin: 'com.android.application'
++apply plugin: 'track-plugin'
+ 
+ repositories {
+     jcenter()
+</code></pre>
+
+<h2 id="exploring-unfamiliar-ecosystems-can-be-fun">Exploring unfamiliar ecosystems can be fun</h2>
+
+<p>I had a bunch of fun doing this. For one thing, spying on programs is generally a fun activity. Especially if they don’t know you’re doing it. I rarely write programs that respond to user input. While I only tested this on a couple of Android samples, I still saw direct feedback from me clicking on things—even if that feedback was just a log line in the Android Studio console.</p>
+
+<p>It was also rewarding to go from here’s-an-idea-I-have-no-idea-how-to-implement to totally-working-proof-of-concept in just a few days. Even more so because this was an entire code universe I hadn’t really set foot in before. I can write passable Java, but I’ve never touched a Java build system. My experience with Android is limited to having owned two or three Nexus devices over the years.</p>
+
+<p>This makes me curious about when it’s possible to dive into an unfamiliar area and do something non-trivial in a short period of time. I think there has to be a degree of familiarity with at least some of what you’re trying to do. In this instance, I wasn’t stumbling with Java syntax, and I’d done some stuff with JVM bytecode before. The unfamiliar areas were Android, and the build tooling.</p>
+
+<p>At the other end, when I first tried writing Rust, I was trying to do something I didn’t know how to do in a language I didn’t know. That turned out to be quite frustrating, and it was hard to make progress. It ended up delaying me learning Rust by a few months, because I gave up on the project and Rust along with it.</p>
+
+<p>This makes me think there’s an analog of <a href="http://mcfunley.com/choose-boring-technology">‘innovation tokens’</a> at play here. Except instead of optimizing for reliability, we’re optimizing for a balance between challenge and fun. I’m really curious to hear other people’s experiences, so please <a href="https://twitter.com/kamalmarhubi">get in touch</a>!</p>
+
+<p><br /></p>
+
+<hr />
+<div class="footnotes">
+  <ol>
+    <li id="fn:ft-jvm-easier">
+
+      <p>In the JVM’s stack-based bytecode, inserted code just needs to ensure it doesn’t pop anything off the stack, or leave anything on the stack. Otherwise you can more or less insert any code with net-zero stack change. In the register-based DEX bytecode, some instructions can only work with a specific subset of the available registers, so you’ll almost certainly have to move data around and restore it afterwards. <a href="#fnref:ft-jvm-easier" class="reversefootnote">&#8617;</a></p>
+    </li>
+    <li id="fn:ft-onclick">
+
+      <p>Tracking clicks on Android turns out to be fairly complicated. There are a bunch of ways a click handler can be registered. I think the most obvious ones are <code>setOnClickListener</code>, and setting the name of a method on the <code>Activity</code> in the the <code>android:onclick</code> XML attribute. The method I’ll outline only catches the <code>setOnClickListener</code> ones. The XML attirbutes are a bit trickier as they result in using an <code>OnClickListener</code> defined in the base SDK’s <code>View</code> class. That’s not something we can instrument. Instead, the way to handle those is to get them from the XML layout files, and instrument the named methods. <a href="#fnref:ft-onclick" class="reversefootnote">&#8617;</a></p>
+    </li>
+  </ol>
+</div>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+    <p style="font-size: 14px; color: #424242; font-style: italic">I am often available for consulting—contact me for details.</p>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:kamal@marhubi.com">kamal@marhubi.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/kamalmarhubi">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/kamalmarhubi">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text"></p>
+      </div>
+    </div>
+
+  </div>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-39994628-3', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</footer>
+
+
+  </body>
+
+</html>
