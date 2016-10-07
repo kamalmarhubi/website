@@ -5,6 +5,8 @@ date: 2016-10-07T15:20:01-04:00
 
 A somewhat unknown bit of git trivia is that `git rebase` is implemented as [a ~600 line shell script][git-rebase].  A few months ago, I did a full-distro upgrade on my machine. I kept working while it updated, and was surprised when `git add --patch` failed, because I was using other `git` commands just fine. Even weirder, plain `git add` worked! The message I got mentioned Perl and .pm files.
 
+[git-rebase]: https://github.com/git/git/blob/master/git-rebase.sh
+
 This made me a bit curious to find out what other bits of git were outside the git binary and not in C. Knowing that `rebase` was a shell script, and that the convention for external subcommands was `git-$SUBCOMMAND`, I could strace git to find out where that script lived:
 
 ~~~
