@@ -63,7 +63,7 @@
   </header>
 
   <article class="post-content">
-    <p>A somewhat unknown bit of git trivia is that <code>git rebase</code> is implemented as [a ~600 line shell script][git-rebase].  A few months ago, I did a full-distro upgrade on my machine. I kept working while it updated, and was surprised when <code>git add --patch</code> failed, because I was using other <code>git</code> commands just fine. Even weirder, plain <code>git add</code> worked! The message I got mentioned Perl and .pm files.</p>
+    <p>A somewhat unknown bit of git trivia is that <code>git rebase</code> is implemented as <a href="https://github.com/git/git/blob/master/git-rebase.sh">a ~600 line shell script</a>.  A few months ago, I did a full-distro upgrade on my machine. I kept working while it updated, and was surprised when <code>git add --patch</code> failed, because I was using other <code>git</code> commands just fine. Even weirder, plain <code>git add</code> worked! The message I got mentioned Perl and .pm files.</p>
 
 <p>This made me a bit curious to find out what other bits of git were outside the git binary and not in C. Knowing that <code>rebase</code> was a shell script, and that the convention for external subcommands was <code>git-$SUBCOMMAND</code>, I could strace git to find out where that script lived:</p>
 
