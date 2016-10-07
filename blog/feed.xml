@@ -5,9 +5,90 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 04 Oct 2016 00:00:16 -0400</pubDate>
-    <lastBuildDate>Tue, 04 Oct 2016 00:00:16 -0400</lastBuildDate>
+    <pubDate>Fri, 07 Oct 2016 15:22:24 -0400</pubDate>
+    <lastBuildDate>Fri, 07 Oct 2016 15:22:24 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Poking around /usr/lib/git-core</title>
+        <description>&lt;p&gt;A somewhat unknown bit of git trivia is that &lt;code&gt;git rebase&lt;/code&gt; is implemented as [a ~600 line shell script][git-rebase].  A few months ago, I did a full-distro upgrade on my machine. I kept working while it updated, and was surprised when &lt;code&gt;git add --patch&lt;/code&gt; failed, because I was using other &lt;code&gt;git&lt;/code&gt; commands just fine. Even weirder, plain &lt;code&gt;git add&lt;/code&gt; worked! The message I got mentioned Perl and .pm files.&lt;/p&gt;
+
+&lt;p&gt;This made me a bit curious to find out what other bits of git were outside the git binary and not in C. Knowing that &lt;code&gt;rebase&lt;/code&gt; was a shell script, and that the convention for external subcommands was &lt;code&gt;git-$SUBCOMMAND&lt;/code&gt;, I could strace git to find out where that script lived:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ strace -fe execve git rebase 2&amp;gt;&amp;amp;1 &amp;gt;/dev/null | grep git-rebase
+[pid 21289] execve(&quot;/usr/lib/git-core/git-rebase&quot;, [&quot;git-rebase&quot;], [/* 51 vars */]) = 0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ok, so &lt;code&gt;/usr/lib/git-core&lt;/code&gt; is the place to look! How many executables in there?&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ find /usr/lib/git-core -type f -executable | wc -l
+37
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;How many are shell scripts?&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ file /usr/lib/git-core/* | grep &#39;shell script&#39; | wc -l
+18
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let’s see which ones!&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ file /usr/lib/git-core/* \
+&amp;gt; | grep &#39;shell script&#39; \
+&amp;gt; | cut -f1 -d: \
+&amp;gt; | xargs basename -a \
+&amp;gt; | column                                       
+git-gui--askpass        git-filter-branch       git-submodule
+git-citool              git-merge-one-file      git-stash
+git-gui                 git-merge-resolve       git-rebase
+git-difftool--helper    git-request-pull        git-bisect
+git-mergetool           git-web--browse         git-quiltimport
+git-merge-octopus       git-instaweb            git-subtree
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Some of the surprising ones for me: &lt;code&gt;git submodule&lt;/code&gt;, and &lt;code&gt;git subtree&lt;/code&gt; because they seem ‘important’, as well as &lt;code&gt;git-stash&lt;/code&gt; which seems like a ‘built-in’ facility. Of course, they are all &lt;em&gt;important&lt;/em&gt; and &lt;em&gt;built-in&lt;/em&gt; in that they come with git-core! I think this is mostly a reflection of my programming background: I’d never implement something complex in shell because I just can’t do it quickly enough for it to make any sense.&lt;/p&gt;
+
+&lt;p&gt;How about stats on the types of files?&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ find /usr/lib/git-core/ -type f -executable \
+&amp;gt; | xargs file \
+&amp;gt; | cut -d&#39; &#39; -f 2- \
+&amp;gt; | sed &#39;s/^ *//;s/, interp.*//&#39; \
+&amp;gt; | sort \
+&amp;gt; | uniq -c
+     16 ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked
+      3 Perl script text executable
+     17 POSIX shell script, ASCII text executable
+      1 POSIX shell script, ASCII text executable, with very long lines
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We came here curious about &lt;code&gt;git add --patch&lt;/code&gt; and Perl, and here we’ve got 3 Perl scripts. What are they?&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ file /usr/lib/git-core/* \
+&amp;gt; | grep &#39;shell script&#39; \
+&amp;gt; | cut -f1 -d: \
+&amp;gt; | xargs basename -a
+git-difftool
+git-relink
+git-add--interactive
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Aha! &lt;code&gt;git-add--interactive&lt;/code&gt; sounds very likely. Of course we could have checked this much earlier on:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ strace -fe execve git add -p 2&amp;gt;&amp;amp;1 &amp;gt;/dev/null | grep add
+execve(&quot;/usr/bin/git&quot;, [&quot;git&quot;, &quot;add&quot;, &quot;-p&quot;], [/* 49 vars */]) = 0
+[pid 22871] execve(&quot;/usr/lib/git-core/git&quot;, [&quot;git&quot;, &quot;add--interactive&quot;, &quot;--patch&quot;, &quot;--&quot;], [/* 51 vars */]) = 0
+[pid 22872] execve(&quot;/usr/lib/git-core/git-add--interactive&quot;, [&quot;git-add--interactive&quot;, &quot;--patch&quot;, &quot;--&quot;], [/* 51 vars */]) = 0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Proof. :-)&lt;/p&gt;
+</description>
+        <pubDate>Fri, 07 Oct 2016 15:20:01 -0400</pubDate>
+        <link>http://kamalmarhubi.com/blog/2016/10/07/git-core/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/10/07/git-core/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Spying on Android events without modifying source code</title>
@@ -1233,43 +1314,6 @@ documentation for tools I use a lot. When I do, I’ll write it up!&lt;/p&gt;
         <pubDate>Tue, 08 Mar 2016 14:38:55 -0500</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/03/08/git-rebase-exec-make-sure-your-tests-pass-at-each-commit-and-other-rebase-goodies/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/08/git-rebase-exec-make-sure-your-tests-pass-at-each-commit-and-other-rebase-goodies/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>100:10:1 update 4</title>
-        <description>&lt;h1 id=&quot;rust-bisect&quot;&gt;rust-bisect&lt;/h1&gt;
-
-&lt;p&gt;I &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/compare/3f2dbe0574ef9139817a5172c3134c62c2aa5f91...97324a58eba48d746b72f132fba0e3be0a9795a7&quot;&gt;spent some time&lt;/a&gt; getting TravisCI to build binary releases for
-{Linux, OS X} × {i686, x86_64}. That makes it possible to use rust-bisect
-without having a nightly build available to build with. This was mostly to get
-around the annoyance of using a git dependency for multirust-rs, which pulled
-hundreds of megabytes of useless binaries, and made the first build take a long
-time.&lt;/p&gt;
-
-&lt;p&gt;I later realized I could put the commit of multirust-rs I wanted in my
-repository with &lt;code&gt;git subtree&lt;/code&gt;, &lt;a href=&quot;https://github.com/kamalmarhubi/rust-bisect/compare/97324a5...290b57c&quot;&gt;which I did&lt;/a&gt;. This at least
-makes it easier to build. I just realized that it even makes it possible for me
-to make a release on Crates.io, which I haven’t done yet.&lt;/p&gt;
-
-&lt;h1 id=&quot;cargo-fmt-diff&quot;&gt;cargo fmt-diff&lt;/h1&gt;
-
-&lt;p&gt;Not too much activity here. I think the main maintainer is on vacation, so my
-first steps are still out for review. I made some changes to how the
-conditionally included flag is conditionally included. I was using a
-compile-time flag before, but I’ve changed to to always be compiled in, but only
-available if an environment variable is set.&lt;/p&gt;
-
-&lt;p&gt;This idea came out of a discussion of what the ‘integration’ in ‘continuous
-integration’ means: changes are always integrated. I decided that having the
-changes always compiled in was safer for when the feature is eventually
-available by default.&lt;/p&gt;
-
-</description>
-        <pubDate>Sun, 06 Mar 2016 11:26:53 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/03/06/100-10-1-update-4/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/06/100-10-1-update-4/</guid>
         
         
       </item>
