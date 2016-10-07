@@ -1,0 +1,83 @@
+---
+title: Poking around /usr/lib/git-core
+date: 2016-10-07T15:20:01-04:00
+---
+
+A somewhat unknown bit of git trivia is that `git rebase` is implemented as [a ~600 line shell script][git-rebase].  A few months ago, I did a full-distro upgrade on my machine. I kept working while it updated, and was surprised when `git add --patch` failed, because I was using other `git` commands just fine. Even weirder, plain `git add` worked! The message I got mentioned Perl and .pm files.
+
+This made me a bit curious to find out what other bits of git were outside the git binary and not in C. Knowing that `rebase` was a shell script, and that the convention for external subcommands was `git-$SUBCOMMAND`, I could strace git to find out where that script lived:
+
+~~~
+$ strace -fe execve git rebase 2>&1 >/dev/null | grep git-rebase
+[pid 21289] execve("/usr/lib/git-core/git-rebase", ["git-rebase"], [/* 51 vars */]) = 0
+~~~
+
+Ok, so `/usr/lib/git-core` is the place to look! How many executables in there?
+
+~~~
+$ find /usr/lib/git-core -type f -executable | wc -l
+37
+~~~
+
+How many are shell scripts?
+
+~~~
+$ file /usr/lib/git-core/* | grep 'shell script' | wc -l
+18
+~~~
+
+Let's see which ones!
+
+~~~
+$ file /usr/lib/git-core/* \
+> | grep 'shell script' \
+> | cut -f1 -d: \
+> | xargs basename -a \
+> | column                                       
+git-gui--askpass        git-filter-branch       git-submodule
+git-citool              git-merge-one-file      git-stash
+git-gui                 git-merge-resolve       git-rebase
+git-difftool--helper    git-request-pull        git-bisect
+git-mergetool           git-web--browse         git-quiltimport
+git-merge-octopus       git-instaweb            git-subtree
+~~~
+
+Some of the surprising ones for me: `git submodule`, and `git subtree` because they seem ‘important’, as well as `git-stash` which seems like a ‘built-in’ facility. Of course, they are all *important* and *built-in* in that they come with git-core! I think this is mostly a reflection of my programming background: I'd never implement something complex in shell because I just can't do it quickly enough for it to make any sense.
+
+How about stats on the types of files?
+
+~~~
+$ find /usr/lib/git-core/ -type f -executable \
+> | xargs file \
+> | cut -d' ' -f 2- \
+> | sed 's/^ *//;s/, interp.*//' \
+> | sort \
+> | uniq -c
+     16 ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked
+      3 Perl script text executable
+     17 POSIX shell script, ASCII text executable
+      1 POSIX shell script, ASCII text executable, with very long lines
+~~~
+
+We came here curious about `git add --patch` and Perl, and here we've got 3 Perl scripts. What are they?
+
+~~~
+$ file /usr/lib/git-core/* \
+> | grep 'shell script' \
+> | cut -f1 -d: \
+> | xargs basename -a
+git-difftool
+git-relink
+git-add--interactive
+~~~
+
+Aha! `git-add--interactive` sounds very likely. Of course we could have checked this much earlier on:
+
+~~~
+$ strace -fe execve git add -p 2>&1 >/dev/null | grep add
+execve("/usr/bin/git", ["git", "add", "-p"], [/* 49 vars */]) = 0
+[pid 22871] execve("/usr/lib/git-core/git", ["git", "add--interactive", "--patch", "--"], [/* 51 vars */]) = 0
+[pid 22872] execve("/usr/lib/git-core/git-add--interactive", ["git-add--interactive", "--patch", "--"], [/* 51 vars */]) = 0
+~~~
+
+Proof. :-)
