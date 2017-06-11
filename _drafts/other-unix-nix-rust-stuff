@@ -1,0 +1,19 @@
+Things that suck:
+  - error handling
+  - flag types
+
+I particularly mean Unix stuff where you're doing processes and files and blah blah.
+
+In C you need to read the man page to know what the error return is, and then check errno. Nobody shouts at you if you don't.
+
+Nix wraps these things in a very thin layer of Rustiness: the return value / errno dance is wrapped up in a Result. You also get warnings if you don't check them.
+
+This means you can write programs against the system libraries with idiomatic error handling.
+
+You also get typesafe flags, so if you're using `mount` in Linux you can't accidentally pass `MNT_FLAGS` in place of `MS_FLAGS`.
+
+Optional arguments are also flagged as such using `Option`.
+
+This makes systems programming available to people who don't have a background in C and reading man pages.
+
+You use C. You get to know your man pages, especially the `RETURN VALUE` and `ERRORS` sections. You use `goto` to clean up in case of errors.
