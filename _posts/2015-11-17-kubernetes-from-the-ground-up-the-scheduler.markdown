@@ -184,7 +184,7 @@ Breaking it down in the same way:
 
 # The scheduler
 
-This is where the sheduler comes in: its job is to take pods that aren't bound
+This is where the scheduler comes in: its job is to take pods that aren't bound
 to a node, and assign them one. Once the pod has a node assigned, the normal
 behavior of the kubelet kicks in, and the pod gets started.
 
