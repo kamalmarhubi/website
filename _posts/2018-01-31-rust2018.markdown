@@ -1,0 +1,192 @@
+---
+title: "Rust should be an excellent open source citizen #rust2018"
+date: 2018-01-31
+---
+
+Here's my late [#rust2018][rust2018] post. I contribute code to a lot of
+projects in a lot of different languages. I think it's really important not to
+think about Rust in isolation, but in the context of the greater open source
+world. Here area few specific ways I think about this:
+
+- ease of contributing to projects in rust
+- interoperability with other languages (both directions)
+- ripgrep should be in debian
+- don't fracture the ecosystem
+
+The rest of this post is going through these in turn.
+
+[rust2018]: https://blog.rust-lang.org/2018/01/03/new-years-rust-a-call-for-community-blogposts.html
+
+## Rust projects should be easy to contribute to
+
+I make a fair number of open source contributions, whether to fix small bugs,
+or scratch an itch. Sometimes the projects are in languages I don't know well,
+or even at all. As a casual contributor, I want to be able to get in and make
+my change with as little incidental difficulty and frustration as possible.
+
+But it doesn't always work like that. The language a project is written in is a
+huge factor in how easy or hard it is.
+
+My biggest wish for Rust in 2018 is that **I would like to feel free to write
+programs in Rust without worrying that I'm excluding people from contributing**.
+
+I see a few ways that choice of language can affect who can contribute code
+changes, and how easily:
+
+- readability
+- writability
+- community coding style
+- tooling
+
+### Readability
+
+To make a code change, you need to understand what the code is doing. The
+language itself plays a big part. For example, Python code is very easy to
+read, and Go is almost comically easy to read. It's great!
+
+Rust is doing ok here, but there's room for improvement. The ergonomics work
+from 2017 will make a huge difference. It just needs to land! In particular,
+`impl Trait` and argument lifetimes will cut down on a huge amount of angle
+bracket noise, and match default bindings will get rid of most uses of the
+`ref` keyword, which doesn't come up anywhere else in the language.
+
+A core focus of 2017 was ergonomics and I don't want that to go away.  Rust
+should keep pushing on this throughout 2018, and beyond.
+
+
+### Writability
+
+If you're making a small code contribution to a program you use, often you get
+started by copy-paste-modify. Ideally the language doesn't make that too hard.
+This is another place where ergonomics are important. Ownership and borrowing
+make this inherently harder than in other languages: I don't know any other
+languages where
+
+    foo(x);
+    foo(x);
+
+can be a compiler error!
+
+The compiler messages keep getting better, and this really does make a
+difference.
+
+Going beyond copy-paste-modify coding, Rust's syntax has a fair number of
+gotchas.  Luckily there's a bunch of ergonomics improvements that should land
+soon. Even as a fairly experienced Rust programmer, I find the "how much
+`&*[..]` random noise do I need to add to make a thing work?" thing annoying.
+I'm _really_ thankful for the effort that's being poured into this.
+
+I can't wait to be able to stop saying to people, ‘I know it's bad, but it's
+being worked on’, and start saying ‘have you tried 1.28? All that nonsense is
+gone now!’
+
+### Community coding style
+
+The kind of code that a language community prefers to write also makes a huge
+difference. There was a project I wanted to make a change to, and it happened
+to be written in Scala. The community coding style there is heavily slanted
+towards highly generic code, even when solving a very specific and concrete
+problem. I found it to be enough of an impediment that I never contributed.
+
+Rust's expressive type system is responsible for so much of for so much of how
+Rust can be low level and high level at the same time. Luckily it's not quite
+expressive enough yet to allow monads to enter normal discourse. :-)
+
+Most of the Rust projects whose code I've looked at have shied away from
+complicating things via incidental cleverness. I want the community to keep
+writing readable-if-verbose code as the type system learns more tricks.
+
+
+### Tooling
+
+It should be dead simple to clone a project, build it, run its tests, and
+modify its dependencies.
+
+Rust is doing a fantastic job of this: cargo is pretty damned amazing. I'm
+struggling to think of a crate I've worked that didn't use the default cargo
+workflow for building, testing, and dependency management.
+
+If you compare the experience to Go, it's really striking. I actually feel dumb
+every time I try to contribute to a Go program.  I'm sure that if you're
+writing Go regularly, GOPATH and the seemingly random mishmash of plain `go
+build`, Makefiles, and other stuff are all easy to deal with. I'm usually
+trying to get in and make a small change, and move on. All that non-uniformity
+is a borderline showstopper. And that's not even thinking about needing to
+modify dependencies!  (Incidentally, I'm really excited to see Go making
+improvements here this year!)
+
+If I had to pick one place I'd like to see get better, it'd be in finding the
+right crate for the job among all the ones that are out there. The crates.io
+search is not really all that great. I know that this is being worked on, and
+I'm excited to see what this looks like in a few months.
+
+
+## Interoperate well with other languages
+
+Rust's lack of a runtime is a huge strength. It can call into C without
+worrying about a GIL, or pinning threads or memory, or anything like that. And
+other languages can call into Rust just as easily as into C.
+
+I want to see Rust really take advantage of this. Let's avoid rewriting the
+world in pure Rust, and instead make using existing C and C++ libraries way
+easier. I'd like to see something like the Rust API guidelines, but focused on
+FFI wrapping libraries and the question of how to best turn a C API into an
+ergonomic and idiomatic Rust one. I want there to be a well-supported way of
+handling C dependencies, including being easily able to depend on system
+versions.
+
+In the other direction, there are some _really_ interesting projects out there
+focused on making it easy to write native extensions in Rust. Here I'm thinking
+of things like [Helix] for Ruby, [Neon] for node. It's just magical that this
+is possible:
+
+    #[macro_use]                                | $ irb                              
+    extern crate helix;                         | >> require "console"               
+                                                | >> Console.log("I'm in your Rust") 
+    ruby! {                                     | LOG: "I'm in your Rust"            
+        class Console {                         |
+            def log(string: &str) {             |
+                println!("LOG: {:?}", string);  |
+            }                                   |
+        }                                       |
+    }                                           |
+
+
+Rust has a lot to offer as a safe way to enter the world native extensions,
+whether for performance, low level capabilities, or just fun. I'd love to see
+these projects get more attention!
+
+
+[helix]: https://usehelix.com/
+[neon]: https://www.neon-bindings.com/
+
+## ripgrep should be in Debian
+
+Or your favourite non-bleeding-edge distro. This sounds simple but it's not.
+There's a lot of work in working out to fit Rust into the Debian packaging
+rules. I think a lot of the policy work is done, but the tooling isn't quite at
+the point where ripgrep and all its dependencies can be packaged. The six week
+release cycle that allows Rust to get better so quickly also works against
+this. As an example, the Firefox nightly PPA I use has had a failing build for
+the last week because Firefox now needs Rust 1.23.0 to build. I have no idea
+how to reconcile the Rust release cycle with the annual or semiannual release
+cycle many distros have, but it's something the community must figure out.
+
+
+## Don't fracture the ecosystem
+
+The Rust async story is coming along nicely. But the community needs to take
+care not to split the crate ecosystem up unnecessarily. For example,
+historically Python had Twisted and Tornado that were two quite separate worlds
+with a lot of duplicated functionality. And in Scala, there's the world of
+Twitter futures, the world of standard library Futures, and the world of akka.
+I think Rust is not at too much risk, but it's something I worry about a bit.
+
+## Closing
+
+I think a great way to judge how Rust is doing is to see there be more programs
+in Rust that aren't _about_ Rust. ripgrep is an inspiring example of taking the
+power of Rust, and making a difference to a much wider audience. It's even
+included by default in at least a couple of text editors!
+
+I'd love to see more of this in 2018.
