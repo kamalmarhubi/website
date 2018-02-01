@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Rust should be an excellent open source citizen #rust2018</title>
+    <meta name="description" content="">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="canonical" href="http://kamalmarhubi.com/blog/2018/01/31/rust2018/">
+    <script type="text/javascript">
+    window.heap=window.heap||[],heap.load=function(e,t){window.heap.appid=e,window.heap.config=t=t||{};var r=t.forceSSL||"https:"===document.location.protocol,a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=(r?"https:":"http:")+"//cdn.heapanalytics.com/js/heap-"+e+".js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n);for(var o=function(e){return function(){heap.push([e].concat(Array.prototype.slice.call(arguments,0)))}},p=["addEventProperties","addUserProperties","clearEventProperties","identify","removeEventProperty","setEventProperties","track","unsetEventProperty"],c=0;c<p.length;c++)heap[p[c]]=o(p[c])};
+      heap.load("3759692636");
+    </script>
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Kamal Marhubi</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Rust should be an excellent open source citizen #rust2018</h1>
+    <p class="post-meta">Jan 31, 2018</p>
+  </header>
+
+  <article class="post-content">
+    <p>Here’s my late <a href="https://blog.rust-lang.org/2018/01/03/new-years-rust-a-call-for-community-blogposts.html">#rust2018</a> post. I contribute code to a lot of
+projects in a lot of different languages. I think it’s really important not to
+think about Rust in isolation, but in the context of the greater open source
+world. Here area few specific ways I think about this:</p>
+
+<ul>
+  <li>ease of contributing to projects in rust</li>
+  <li>interoperability with other languages (both directions)</li>
+  <li>ripgrep should be in debian</li>
+  <li>don’t fracture the ecosystem</li>
+</ul>
+
+<p>The rest of this post is going through these in turn.</p>
+
+<h2 id="rust-projects-should-be-easy-to-contribute-to">Rust projects should be easy to contribute to</h2>
+
+<p>I make a fair number of open source contributions, whether to fix small bugs,
+or scratch an itch. Sometimes the projects are in languages I don’t know well,
+or even at all. As a casual contributor, I want to be able to get in and make
+my change with as little incidental difficulty and frustration as possible.</p>
+
+<p>But it doesn’t always work like that. The language a project is written in is a
+huge factor in how easy or hard it is.</p>
+
+<p>My biggest wish for Rust in 2018 is that <strong>I would like to feel free to write
+programs in Rust without worrying that I’m excluding people from contributing</strong>.</p>
+
+<p>I see a few ways that choice of language can affect who can contribute code
+changes, and how easily:</p>
+
+<ul>
+  <li>readability</li>
+  <li>writability</li>
+  <li>community coding style</li>
+  <li>tooling</li>
+</ul>
+
+<h3 id="readability">Readability</h3>
+
+<p>To make a code change, you need to understand what the code is doing. The
+language itself plays a big part. For example, Python code is very easy to
+read, and Go is almost comically easy to read. It’s great!</p>
+
+<p>Rust is doing ok here, but there’s room for improvement. The ergonomics work
+from 2017 will make a huge difference. It just needs to land! In particular,
+<code>impl Trait</code> and argument lifetimes will cut down on a huge amount of angle
+bracket noise, and match default bindings will get rid of most uses of the
+<code>ref</code> keyword, which doesn’t come up anywhere else in the language.</p>
+
+<p>A core focus of 2017 was ergonomics and I don’t want that to go away.  Rust
+should keep pushing on this throughout 2018, and beyond.</p>
+
+<h3 id="writability">Writability</h3>
+
+<p>If you’re making a small code contribution to a program you use, often you get
+started by copy-paste-modify. Ideally the language doesn’t make that too hard.
+This is another place where ergonomics are important. Ownership and borrowing
+make this inherently harder than in other languages: I don’t know any other
+languages where</p>
+
+<pre><code>foo(x);
+foo(x);
+</code></pre>
+
+<p>can be a compiler error!</p>
+
+<p>The compiler messages keep getting better, and this really does make a
+difference.</p>
+
+<p>Going beyond copy-paste-modify coding, Rust’s syntax has a fair number of
+gotchas.  Luckily there’s a bunch of ergonomics improvements that should land
+soon. Even as a fairly experienced Rust programmer, I find the “how much
+<code>&amp;*[..]</code> random noise do I need to add to make a thing work?” thing annoying.
+I’m <em>really</em> thankful for the effort that’s being poured into this.</p>
+
+<p>I can’t wait to be able to stop saying to people, ‘I know it’s bad, but it’s
+being worked on’, and start saying ‘have you tried 1.28? All that nonsense is
+gone now!’</p>
+
+<h3 id="community-coding-style">Community coding style</h3>
+
+<p>The kind of code that a language community prefers to write also makes a huge
+difference. There was a project I wanted to make a change to, and it happened
+to be written in Scala. The community coding style there is heavily slanted
+towards highly generic code, even when solving a very specific and concrete
+problem. I found it to be enough of an impediment that I never contributed.</p>
+
+<p>Rust’s expressive type system is responsible for so much of for so much of how
+Rust can be low level and high level at the same time. Luckily it’s not quite
+expressive enough yet to allow monads to enter normal discourse. :-)</p>
+
+<p>Most of the Rust projects whose code I’ve looked at have shied away from
+complicating things via incidental cleverness. I want the community to keep
+writing readable-if-verbose code as the type system learns more tricks.</p>
+
+<h3 id="tooling">Tooling</h3>
+
+<p>It should be dead simple to clone a project, build it, run its tests, and
+modify its dependencies.</p>
+
+<p>Rust is doing a fantastic job of this: cargo is pretty damned amazing. I’m
+struggling to think of a crate I’ve worked that didn’t use the default cargo
+workflow for building, testing, and dependency management.</p>
+
+<p>If you compare the experience to Go, it’s really striking. I actually feel dumb
+every time I try to contribute to a Go program.  I’m sure that if you’re
+writing Go regularly, GOPATH and the seemingly random mishmash of plain <code>go
+build</code>, Makefiles, and other stuff are all easy to deal with. I’m usually
+trying to get in and make a small change, and move on. All that non-uniformity
+is a borderline showstopper. And that’s not even thinking about needing to
+modify dependencies!  (Incidentally, I’m really excited to see Go making
+improvements here this year!)</p>
+
+<p>If I had to pick one place I’d like to see get better, it’d be in finding the
+right crate for the job among all the ones that are out there. The crates.io
+search is not really all that great. I know that this is being worked on, and
+I’m excited to see what this looks like in a few months.</p>
+
+<h2 id="interoperate-well-with-other-languages">Interoperate well with other languages</h2>
+
+<p>Rust’s lack of a runtime is a huge strength. It can call into C without
+worrying about a GIL, or pinning threads or memory, or anything like that. And
+other languages can call into Rust just as easily as into C.</p>
+
+<p>I want to see Rust really take advantage of this. Let’s avoid rewriting the
+world in pure Rust, and instead make using existing C and C++ libraries way
+easier. I’d like to see something like the Rust API guidelines, but focused on
+FFI wrapping libraries and the question of how to best turn a C API into an
+ergonomic and idiomatic Rust one. I want there to be a well-supported way of
+handling C dependencies, including being easily able to depend on system
+versions.</p>
+
+<p>In the other direction, there are some <em>really</em> interesting projects out there
+focused on making it easy to write native extensions in Rust. Here I’m thinking
+of things like <a href="https://usehelix.com/">Helix</a> for Ruby, <a href="https://www.neon-bindings.com/">Neon</a> for node. It’s just magical that this
+is possible:</p>
+
+<pre><code>#[macro_use]                                | $ irb                              
+extern crate helix;                         | &gt;&gt; require "console"               
+                                            | &gt;&gt; Console.log("I'm in your Rust") 
+ruby! {                                     | LOG: "I'm in your Rust"            
+    class Console {                         |
+        def log(string: &amp;str) {             |
+            println!("LOG: {:?}", string);  |
+        }                                   |
+    }                                       |
+}                                           |
+</code></pre>
+
+<p>Rust has a lot to offer as a safe way to enter the world native extensions,
+whether for performance, low level capabilities, or just fun. I’d love to see
+these projects get more attention!</p>
+
+<h2 id="ripgrep-should-be-in-debian">ripgrep should be in Debian</h2>
+
+<p>Or your favourite non-bleeding-edge distro. This sounds simple but it’s not.
+There’s a lot of work in working out to fit Rust into the Debian packaging
+rules. I think a lot of the policy work is done, but the tooling isn’t quite at
+the point where ripgrep and all its dependencies can be packaged. The six week
+release cycle that allows Rust to get better so quickly also works against
+this. As an example, the Firefox nightly PPA I use has had a failing build for
+the last week because Firefox now needs Rust 1.23.0 to build. I have no idea
+how to reconcile the Rust release cycle with the annual or semiannual release
+cycle many distros have, but it’s something the community must figure out.</p>
+
+<h2 id="dont-fracture-the-ecosystem">Don’t fracture the ecosystem</h2>
+
+<p>The Rust async story is coming along nicely. But the community needs to take
+care not to split the crate ecosystem up unnecessarily. For example,
+historically Python had Twisted and Tornado that were two quite separate worlds
+with a lot of duplicated functionality. And in Scala, there’s the world of
+Twitter futures, the world of standard library Futures, and the world of akka.
+I think Rust is not at too much risk, but it’s something I worry about a bit.</p>
+
+<h2 id="closing">Closing</h2>
+
+<p>I think a great way to judge how Rust is doing is to see there be more programs
+in Rust that aren’t <em>about</em> Rust. ripgrep is an inspiring example of taking the
+power of Rust, and making a difference to a much wider audience. It’s even
+included by default in at least a couple of text editors!</p>
+
+<p>I’d love to see more of this in 2018.</p>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+    <p style="font-size: 14px; color: #424242; font-style: italic">I am often available for consulting—contact me for details.</p>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li><a href="mailto:kamal@marhubi.com" aria-label="Send me an email">
+            kamal@marhubi.com
+          </a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/kamalmarhubi"
+             aria-label="Follow me on GitHub">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+
+          
+          <li>
+            <a href="https://twitter.com/kamalmarhubi"
+             aria-label="Follow me on Twitter">
+              <span class="icon  icon--twitter">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                  c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+                </svg>
+              </span>
+
+              <span class="username">kamalmarhubi</span>
+            </a>
+          </li>
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text"></p>
+      </div>
+    </div>
+
+  </div>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-39994628-3', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</footer>
+
+
+  </body>
+
+</html>

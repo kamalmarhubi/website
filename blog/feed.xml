@@ -5,9 +5,201 @@
     <description></description>
     <link>http://kamalmarhubi.com/</link>
     <atom:link href="http://kamalmarhubi.com/blog/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Wed, 31 Jan 2018 23:08:27 -0500</pubDate>
-    <lastBuildDate>Wed, 31 Jan 2018 23:08:27 -0500</lastBuildDate>
+    <pubDate>Wed, 31 Jan 2018 23:37:20 -0500</pubDate>
+    <lastBuildDate>Wed, 31 Jan 2018 23:37:20 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>Rust should be an excellent open source citizen #rust2018</title>
+        <description>&lt;p&gt;Here’s my late &lt;a href=&quot;https://blog.rust-lang.org/2018/01/03/new-years-rust-a-call-for-community-blogposts.html&quot;&gt;#rust2018&lt;/a&gt; post. I contribute code to a lot of
+projects in a lot of different languages. I think it’s really important not to
+think about Rust in isolation, but in the context of the greater open source
+world. Here area few specific ways I think about this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;ease of contributing to projects in rust&lt;/li&gt;
+  &lt;li&gt;interoperability with other languages (both directions)&lt;/li&gt;
+  &lt;li&gt;ripgrep should be in debian&lt;/li&gt;
+  &lt;li&gt;don’t fracture the ecosystem&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The rest of this post is going through these in turn.&lt;/p&gt;
+
+&lt;h2 id=&quot;rust-projects-should-be-easy-to-contribute-to&quot;&gt;Rust projects should be easy to contribute to&lt;/h2&gt;
+
+&lt;p&gt;I make a fair number of open source contributions, whether to fix small bugs,
+or scratch an itch. Sometimes the projects are in languages I don’t know well,
+or even at all. As a casual contributor, I want to be able to get in and make
+my change with as little incidental difficulty and frustration as possible.&lt;/p&gt;
+
+&lt;p&gt;But it doesn’t always work like that. The language a project is written in is a
+huge factor in how easy or hard it is.&lt;/p&gt;
+
+&lt;p&gt;My biggest wish for Rust in 2018 is that &lt;strong&gt;I would like to feel free to write
+programs in Rust without worrying that I’m excluding people from contributing&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;I see a few ways that choice of language can affect who can contribute code
+changes, and how easily:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;readability&lt;/li&gt;
+  &lt;li&gt;writability&lt;/li&gt;
+  &lt;li&gt;community coding style&lt;/li&gt;
+  &lt;li&gt;tooling&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;readability&quot;&gt;Readability&lt;/h3&gt;
+
+&lt;p&gt;To make a code change, you need to understand what the code is doing. The
+language itself plays a big part. For example, Python code is very easy to
+read, and Go is almost comically easy to read. It’s great!&lt;/p&gt;
+
+&lt;p&gt;Rust is doing ok here, but there’s room for improvement. The ergonomics work
+from 2017 will make a huge difference. It just needs to land! In particular,
+&lt;code&gt;impl Trait&lt;/code&gt; and argument lifetimes will cut down on a huge amount of angle
+bracket noise, and match default bindings will get rid of most uses of the
+&lt;code&gt;ref&lt;/code&gt; keyword, which doesn’t come up anywhere else in the language.&lt;/p&gt;
+
+&lt;p&gt;A core focus of 2017 was ergonomics and I don’t want that to go away.  Rust
+should keep pushing on this throughout 2018, and beyond.&lt;/p&gt;
+
+&lt;h3 id=&quot;writability&quot;&gt;Writability&lt;/h3&gt;
+
+&lt;p&gt;If you’re making a small code contribution to a program you use, often you get
+started by copy-paste-modify. Ideally the language doesn’t make that too hard.
+This is another place where ergonomics are important. Ownership and borrowing
+make this inherently harder than in other languages: I don’t know any other
+languages where&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;foo(x);
+foo(x);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;can be a compiler error!&lt;/p&gt;
+
+&lt;p&gt;The compiler messages keep getting better, and this really does make a
+difference.&lt;/p&gt;
+
+&lt;p&gt;Going beyond copy-paste-modify coding, Rust’s syntax has a fair number of
+gotchas.  Luckily there’s a bunch of ergonomics improvements that should land
+soon. Even as a fairly experienced Rust programmer, I find the “how much
+&lt;code&gt;&amp;amp;*[..]&lt;/code&gt; random noise do I need to add to make a thing work?” thing annoying.
+I’m &lt;em&gt;really&lt;/em&gt; thankful for the effort that’s being poured into this.&lt;/p&gt;
+
+&lt;p&gt;I can’t wait to be able to stop saying to people, ‘I know it’s bad, but it’s
+being worked on’, and start saying ‘have you tried 1.28? All that nonsense is
+gone now!’&lt;/p&gt;
+
+&lt;h3 id=&quot;community-coding-style&quot;&gt;Community coding style&lt;/h3&gt;
+
+&lt;p&gt;The kind of code that a language community prefers to write also makes a huge
+difference. There was a project I wanted to make a change to, and it happened
+to be written in Scala. The community coding style there is heavily slanted
+towards highly generic code, even when solving a very specific and concrete
+problem. I found it to be enough of an impediment that I never contributed.&lt;/p&gt;
+
+&lt;p&gt;Rust’s expressive type system is responsible for so much of for so much of how
+Rust can be low level and high level at the same time. Luckily it’s not quite
+expressive enough yet to allow monads to enter normal discourse. :-)&lt;/p&gt;
+
+&lt;p&gt;Most of the Rust projects whose code I’ve looked at have shied away from
+complicating things via incidental cleverness. I want the community to keep
+writing readable-if-verbose code as the type system learns more tricks.&lt;/p&gt;
+
+&lt;h3 id=&quot;tooling&quot;&gt;Tooling&lt;/h3&gt;
+
+&lt;p&gt;It should be dead simple to clone a project, build it, run its tests, and
+modify its dependencies.&lt;/p&gt;
+
+&lt;p&gt;Rust is doing a fantastic job of this: cargo is pretty damned amazing. I’m
+struggling to think of a crate I’ve worked that didn’t use the default cargo
+workflow for building, testing, and dependency management.&lt;/p&gt;
+
+&lt;p&gt;If you compare the experience to Go, it’s really striking. I actually feel dumb
+every time I try to contribute to a Go program.  I’m sure that if you’re
+writing Go regularly, GOPATH and the seemingly random mishmash of plain &lt;code&gt;go
+build&lt;/code&gt;, Makefiles, and other stuff are all easy to deal with. I’m usually
+trying to get in and make a small change, and move on. All that non-uniformity
+is a borderline showstopper. And that’s not even thinking about needing to
+modify dependencies!  (Incidentally, I’m really excited to see Go making
+improvements here this year!)&lt;/p&gt;
+
+&lt;p&gt;If I had to pick one place I’d like to see get better, it’d be in finding the
+right crate for the job among all the ones that are out there. The crates.io
+search is not really all that great. I know that this is being worked on, and
+I’m excited to see what this looks like in a few months.&lt;/p&gt;
+
+&lt;h2 id=&quot;interoperate-well-with-other-languages&quot;&gt;Interoperate well with other languages&lt;/h2&gt;
+
+&lt;p&gt;Rust’s lack of a runtime is a huge strength. It can call into C without
+worrying about a GIL, or pinning threads or memory, or anything like that. And
+other languages can call into Rust just as easily as into C.&lt;/p&gt;
+
+&lt;p&gt;I want to see Rust really take advantage of this. Let’s avoid rewriting the
+world in pure Rust, and instead make using existing C and C++ libraries way
+easier. I’d like to see something like the Rust API guidelines, but focused on
+FFI wrapping libraries and the question of how to best turn a C API into an
+ergonomic and idiomatic Rust one. I want there to be a well-supported way of
+handling C dependencies, including being easily able to depend on system
+versions.&lt;/p&gt;
+
+&lt;p&gt;In the other direction, there are some &lt;em&gt;really&lt;/em&gt; interesting projects out there
+focused on making it easy to write native extensions in Rust. Here I’m thinking
+of things like &lt;a href=&quot;https://usehelix.com/&quot;&gt;Helix&lt;/a&gt; for Ruby, &lt;a href=&quot;https://www.neon-bindings.com/&quot;&gt;Neon&lt;/a&gt; for node. It’s just magical that this
+is possible:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#[macro_use]                                | $ irb                              
+extern crate helix;                         | &amp;gt;&amp;gt; require &quot;console&quot;               
+                                            | &amp;gt;&amp;gt; Console.log(&quot;I&#39;m in your Rust&quot;) 
+ruby! {                                     | LOG: &quot;I&#39;m in your Rust&quot;            
+    class Console {                         |
+        def log(string: &amp;amp;str) {             |
+            println!(&quot;LOG: {:?}&quot;, string);  |
+        }                                   |
+    }                                       |
+}                                           |
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Rust has a lot to offer as a safe way to enter the world native extensions,
+whether for performance, low level capabilities, or just fun. I’d love to see
+these projects get more attention!&lt;/p&gt;
+
+&lt;h2 id=&quot;ripgrep-should-be-in-debian&quot;&gt;ripgrep should be in Debian&lt;/h2&gt;
+
+&lt;p&gt;Or your favourite non-bleeding-edge distro. This sounds simple but it’s not.
+There’s a lot of work in working out to fit Rust into the Debian packaging
+rules. I think a lot of the policy work is done, but the tooling isn’t quite at
+the point where ripgrep and all its dependencies can be packaged. The six week
+release cycle that allows Rust to get better so quickly also works against
+this. As an example, the Firefox nightly PPA I use has had a failing build for
+the last week because Firefox now needs Rust 1.23.0 to build. I have no idea
+how to reconcile the Rust release cycle with the annual or semiannual release
+cycle many distros have, but it’s something the community must figure out.&lt;/p&gt;
+
+&lt;h2 id=&quot;dont-fracture-the-ecosystem&quot;&gt;Don’t fracture the ecosystem&lt;/h2&gt;
+
+&lt;p&gt;The Rust async story is coming along nicely. But the community needs to take
+care not to split the crate ecosystem up unnecessarily. For example,
+historically Python had Twisted and Tornado that were two quite separate worlds
+with a lot of duplicated functionality. And in Scala, there’s the world of
+Twitter futures, the world of standard library Futures, and the world of akka.
+I think Rust is not at too much risk, but it’s something I worry about a bit.&lt;/p&gt;
+
+&lt;h2 id=&quot;closing&quot;&gt;Closing&lt;/h2&gt;
+
+&lt;p&gt;I think a great way to judge how Rust is doing is to see there be more programs
+in Rust that aren’t &lt;em&gt;about&lt;/em&gt; Rust. ripgrep is an inspiring example of taking the
+power of Rust, and making a difference to a much wider audience. It’s even
+included by default in at least a couple of text editors!&lt;/p&gt;
+
+&lt;p&gt;I’d love to see more of this in 2018.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 31 Jan 2018 00:00:00 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/2018/01/31/rust2018/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2018/01/31/rust2018/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Poking around /usr/lib/git-core</title>
@@ -1157,163 +1349,6 @@ directory might work, but would force at most one bisect at a time.&lt;/li&gt;
         <pubDate>Mon, 14 Mar 2016 11:59:21 -0400</pubDate>
         <link>http://kamalmarhubi.com/blog/2016/03/14/100-10-1-update-5/</link>
         <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/14/100-10-1-update-5/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>git rebase --exec: make sure your tests pass at each commit! (and other rebase goodies)</title>
-        <description>&lt;p&gt;I learned about the &lt;code&gt;--exec&lt;/code&gt; option to &lt;code&gt;git rebase&lt;/code&gt; recently, and I needed to
-share! The basic structure is this:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;git rebase --interactive --exec &quot;cmd&quot; some-ref
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;This brings up the usual interactive rebase todo list, but with &lt;code&gt;exec &quot;cmd&quot;&lt;/code&gt;
-added after each commit. Saving the todo list as-is will run &lt;code&gt;cmd&lt;/code&gt; at each
-commit between &lt;code&gt;some-ref&lt;/code&gt; and the current &lt;code&gt;HEAD&lt;/code&gt;. You can use the short option
-&lt;code&gt;-x&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;git rebase -ix &quot;cmd&quot; some-ref
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The rebase will stop any time the &lt;code&gt;cmd&lt;/code&gt; exits unsuccessfully, giving you a
-chance to inspect why it failed.&lt;/p&gt;
-
-&lt;h2 id=&quot;making-sure-the-tests-always-pass&quot;&gt;making sure the tests always pass!&lt;/h2&gt;
-
-&lt;p&gt;I like to have my pull requests broken up into small commits, eg one that does
-a small refactor, one that adds a type, another that uses the new type. In the
-run up to actually opening the pull request, I make lots of small
-changes—style, documentation, comments, and so on.&lt;/p&gt;
-
-&lt;p&gt;These finishing touches affect all the commits, so I do lots of little rebases.
-There’s a risk of one of the intermediate commits being broken—not passing
-tests, not building, having bad style or lint errors. If I was feeling extra
-diligent, sometimes I’d manually step through the commits by marking them all
-for &lt;code&gt;edit&lt;/code&gt; in &lt;code&gt;git rebase -i&lt;/code&gt;. But now it’s super easy to get right!&lt;/p&gt;
-
-&lt;p&gt;You can even specify &lt;code&gt;--exec&lt;/code&gt; (&lt;code&gt;-x&lt;/code&gt;) multiple times, and all the commands will
-get run:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;git rebase -i -x &quot;run-tests&quot; -x &quot;run-linter&quot; master
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;other-goodies-in-rebase&quot;&gt;other goodies in rebase&lt;/h2&gt;
-
-&lt;p&gt;After finding out about &lt;code&gt;--exec&lt;/code&gt;, I wanted to be sure I wasn’t missing any
-other life changing options or features, so here’s a quick tour of things I
-discovered.&lt;/p&gt;
-
-&lt;h3 id=&quot;the-options-in-the-rebase-todo-list&quot;&gt;the options in the rebase todo list&lt;/h3&gt;
-
-&lt;p&gt;The &lt;code&gt;--exec&lt;/code&gt; option wouldn’t have surprised me if I ever looked at the options
-that pop up in my editor &lt;em&gt;every time&lt;/em&gt; I use &lt;code&gt;git rebase -i&lt;/code&gt;! Here they are as
-of git version 2.1.4, which is what I’m running:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# Commands:
-#  p, pick = use commit
-#  r, reword = use commit, but edit the commit message
-#  e, edit = use commit, but stop for amending
-#  s, squash = use commit, but meld into previous commit
-#  f, fixup = like &quot;squash&quot;, but discard this commit&#39;s log message
-#  x, exec = run command (the rest of the line) using shell
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I don’t feel like I was missing out &lt;em&gt;too&lt;/em&gt; much though. I make good use of
-&lt;code&gt;fixup&lt;/code&gt; and &lt;code&gt;reword&lt;/code&gt;, as well as the basics: &lt;code&gt;pick&lt;/code&gt;, &lt;code&gt;edit&lt;/code&gt;, and &lt;code&gt;squash&lt;/code&gt;.
-&lt;code&gt;fixup&lt;/code&gt; is great if you make lots of little work-in-progress commits: you can
-just squash them and throw away their messages. I find &lt;code&gt;reword&lt;/code&gt; is useful for
-expanding on commit messages in the run up to opening a pull request.&lt;/p&gt;
-
-&lt;h3 id=&quot;git-rebase---edit-todo&quot;&gt;git rebase –edit-todo&lt;/h3&gt;
-
-&lt;p&gt;When you run &lt;code&gt;git rebase -i&lt;/code&gt;, your editor pops up with a list of commits for
-you to mess with. I sometimes get my choices wrong, and end up doing &lt;code&gt;git
-rebase --abort&lt;/code&gt; and starting over. It turns out I don’t need to! &lt;code&gt;git rebase
---edit-todo&lt;/code&gt; will bring up the same list and let you modify it.&lt;/p&gt;
-
-&lt;h3 id=&quot;git-commit---squash---fixup-and-git-rebase---autosquash&quot;&gt;git commit –squash, –fixup, and git rebase –autosquash&lt;/h3&gt;
-
-&lt;p&gt;I didn’t know about these at all, but I’m excited to try and get them into my
-workflow! I’ll just quote the man page because it describes how to use them
-very well:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;--autosquash, --no-autosquash
-    When the commit log message begins with &quot;squash! ...&quot; (or &quot;fixup!
-    ...&quot;), and there is a commit whose title begins with the same ...,
-    automatically modify the todo list of rebase -i so that the commit
-    marked for squashing comes right after the commit to be modified,
-    and change the action of the moved commit from pick to squash (or
-    fixup). Ignores subsequent &quot;fixup! &quot; or &quot;squash! &quot; after the first,
-    in case you referred to an earlier fixup/squash with git commit
-    --fixup/--squash.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The &lt;code&gt;--squash&lt;/code&gt; and &lt;code&gt;--fixup&lt;/code&gt; options to &lt;code&gt;git commit&lt;/code&gt; take a commit as an
-argument, and formats the commit message for use with &lt;code&gt;--autosquash&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;To make it all even handier, you can set &lt;code&gt;rebase.autosquash&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; in your
-gitconfig. &lt;a href=&quot;https://github.com/kamalmarhubi/dotfiles-git/commit/dee6b4912c077bd06404937854ba053c16f8b880&quot;&gt;I just did&lt;/a&gt;!&lt;/p&gt;
-
-&lt;h3 id=&quot;git-rebase---autostash&quot;&gt;git rebase –autostash&lt;/h3&gt;
-
-&lt;p&gt;The &lt;code&gt;--autostash&lt;/code&gt; option will stash before starting a rebase, and pop the stash
-afterwards. If you ever end up doing a dance like&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;git stash
-git rebase -i master
-git stash pop
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;then the &lt;code&gt;--autostash&lt;/code&gt; option will save you 12 key presses each time. Or you
-can set &lt;code&gt;rebase.autostash&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; in your configuration, and it will happen
-by default, saving you a whopping &lt;em&gt;24&lt;/em&gt; key presses!&lt;/p&gt;
-
-&lt;p&gt;The man page warns that ‘the final stash application after a successful rebase
-might result in non-trivial conflicts’, so I’ve not set this in my &lt;code&gt;gitconfig&lt;/code&gt;.
-I’ll see how useful the option seems first.&lt;/p&gt;
-
-&lt;h3 id=&quot;git-rebase---no-ff&quot;&gt;git rebase –no-ff&lt;/h3&gt;
-
-&lt;p&gt;This forces the rebase to create new commits instead of fast-forwarding over
-the unchanged ones. I’ve manually approximated this in the past to tickle the
-continuous integration into running again if I think the failures were spurious
-or flakes. This could be useful for repositories where you’re not the owner,
-and so don’t have access to the CI system’s retry button.&lt;/p&gt;
-
-&lt;h3 id=&quot;changing-the-merge-strategy&quot;&gt;changing the merge strategy&lt;/h3&gt;
-
-&lt;p&gt;The &lt;code&gt;--strategy&lt;/code&gt; (&lt;code&gt;-s&lt;/code&gt;) option lets you say what merge strategy to use, and the
-&lt;code&gt;--strategy-option&lt;/code&gt; (&lt;code&gt;-X&lt;/code&gt;) option lets you set options on the strategy. I just
-figured out that, together with &lt;code&gt;--autosquash&lt;/code&gt;, this can let me do another
-pre-pull-request-tidy task: making sure all the intermediate commits are
-properly formatted.&lt;/p&gt;
-
-&lt;p&gt;If you have some command &lt;code&gt;format-cmd&lt;/code&gt; that formats your code, then something
-like this will format all the commits:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;git rebase -i \
--x &quot;format-cmd &amp;amp;&amp;amp; git commit -a --allow-empty --fixup=HEAD&quot; \
---strategy-option=theirs \
-origin/master
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Since I now have &lt;code&gt;rebase.autosquash&lt;/code&gt; set in my &lt;code&gt;gitconfig&lt;/code&gt;, this results in a
-nice tidied up set of commits. I still have to tweak it a bit, as I had to &lt;code&gt;git
-rebase --continue&lt;/code&gt; on an empty diff at some point, but it’s looking pretty
-great! I will almost certainly turn it into an alias soon.&lt;/p&gt;
-
-&lt;h2 id=&quot;sometimes-reading-docs-really-pays-off&quot;&gt;sometimes reading docs really pays off&lt;/h2&gt;
-
-&lt;p&gt;I’m pretty happy with this exploration of &lt;code&gt;git rebase&lt;/code&gt;.  I’m pretty sure what I
-just picked up here with &lt;code&gt;git rebase&lt;/code&gt; will make some things a &lt;em&gt;lot&lt;/em&gt; smoother in
-the future. It makes me think I set aside a bit of time each week to read some
-documentation for tools I use a lot. When I do, I’ll write it up!&lt;/p&gt;
-</description>
-        <pubDate>Tue, 08 Mar 2016 14:38:55 -0500</pubDate>
-        <link>http://kamalmarhubi.com/blog/2016/03/08/git-rebase-exec-make-sure-your-tests-pass-at-each-commit-and-other-rebase-goodies/</link>
-        <guid isPermaLink="true">http://kamalmarhubi.com/blog/2016/03/08/git-rebase-exec-make-sure-your-tests-pass-at-each-commit-and-other-rebase-goodies/</guid>
         
         
       </item>
