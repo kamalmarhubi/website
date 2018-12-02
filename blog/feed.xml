@@ -8,6 +8,14 @@
     <pubDate>Wed, 31 Jan 2018 23:37:20 -0500</pubDate>
     <lastBuildDate>Wed, 31 Jan 2018 23:37:20 -0500</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+      <item>
+        <title>hg advent init</title>
+
+        <description>&lt;p&gt;This is the start of a daily series in the run-up to Christmas where I learn mercurial. This first post will be about what's making me want to do this in the first place.</description>
+        <pubDate>Sat, 1 Dec 2018 00:00:00 -0500</pubDate>
+        <link>http://kamalmarhubi.com/blog/hg-advent/</link>
+        <guid isPermaLink="true">http://kamalmarhubi.com/hg-advent/</guid>
+      </item>
     
       <item>
         <title>Rust should be an excellent open source citizen #rust2018</title>
