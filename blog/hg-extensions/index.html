@@ -1,0 +1,69 @@
+<meta charset="utf-8">
+<style>
+body {
+    max-width: 960px
+}
+</style>
+<title>hg advent -m '02: extensions'</title>
+<h1>hg advent -m '02: extensions'</h1>
+<p>Ok, we’re not off to a great start here. First off, this is a day late. For future reference: it’s not a great idea to start a daily blog post series from the airport. Jet lag can get you before you’ve got into the routine.</p>
+<p>But far more annoying to me: I had planned to write about how to make <a href="https://bitbucket.org/durin42/hg-git/overview">hg-git</a> go, and excitedly explain how this blog post is being committed and pushed from a mercurial fork of <a href="https://github.com/kamalmarhubi/website">my site’s repo</a>. There was going to be a digression into how it was a bit of a pain to make HTTP auth work for Github private repos, but that I figured it out in the end.</p>
+<p>Unfortunately, I have simply failed to figure out hg-git at all. I can’t get it to work even for locally cloning a repo with a single commit:</p>
+<pre><code>$ git init git-repo
+Initialized empty Git repository in /tmp/git-repo/.git/
+$ cd git-repo/
+$ echo &#39;A git repo&#39; &gt; README
+$ git add README
+$ git commit -m&#39;README&#39;
+[master (root-commit) e148665] README
+ 1 file changed, 1 insertion(+)
+ create mode 100644 README
+$ cd ..
+$ hg clone git-repo hg-git-repo
+importing git objects into hg
+abort: filtered revision &#39;911b5ec9fbffb99638eb10be7edb803b4898bad9&#39;!
+$ cd ../git-repo
+$ echo &quot;\nDoesn&#39;t work.&quot; &gt;&gt; README
+$ git add README
+$ git commit -m&#39;Update README&#39;
+[master 6b0ae1d] Update README
+ 1 file changed, 1 insertion(+)
+$ cd ..
+$ hg clone git-repo hg-git-repo
+importing git objects into hg
+abort: you appear to have run strip - please run hg git-cleanup
+$ echo &quot;:&#39;(&quot;
+:&#39;(</code></pre>
+<p>So that’ll have to wait.</p>
+<p>Instead I’ll just write something about extensions in general, purely based on things I’ve read on the internet.</p>
+<h2 id="extensions-are-really-cool">extensions are really cool</h2>
+<p>There are <a href="https://www.mercurial-scm.org/wiki/UsingExtensions#Extensions_bundled_with_Mercurial">a lot of features</a> in mercurial that are not “core”, but instead are bundled extensions. This includes at least a couple of the features I called out in the <a href="http://kamalmarhubi.com/blog/hg-advent/">first post</a>. As a specific example, the feature I called out as pushing me over the edge, <code>hg absorb</code>, is an extension.</p>
+<p>It does some some fancy stuff that would be hard to make work as well in a <code>git-absorb</code> “extension” command, for example modifying history without every touching the working directory, and relying on a bespoke algorithm to find which commits changes belong with. I’m sure I could cobble something together in [bash or perl][gitcore-post]<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> to achieve a similar effect, but it would almost certainly use rebase under the hood, and so have to change the working tree.</p>
+<p>I think mercurial being in Python is at least partly responsible for things like absorb being possible to add in extensions. It lets you use internal APIs without a recompile: just drop a file somewhere and tell mercurial where to find it. And those internal APIs are more accessible than git’s for being in Python.</p>
+<p>Oh, and hg-git, the thing that lets you&mdash;but not me, apparently&mdash;use mercurial as a git client? That’s an extension too. :-)</p>
+<h2 id="extensions-are-a-papercut">extensions are a papercut</h2>
+<p><a href="https://internals.rust-lang.org/t/how-the-rust-issue-tracker-works/3951">Once upon a time</a>, the rust community used the issue label <code>I-papercut</code> to refer to</p>
+<blockquote>
+<p>Minor issues, nice-to-haves. Some times these are ergonomics issues which in aggregate are quite important.</p>
+</blockquote>
+<p>I really like metaphor: you won’t die from a single papercut, but it will get in your way. And worse, it could turn you off whatever caused it.</p>
+<p>The fact that so many features in mercurial are in extensions is a papercut. It makes a mess of the first-run experience, especially for users coming from git. The out-of-the-box feature set is a bit limited—again, especially for git users—and I’ve never seen a mercurial guide that didn’t suggest enabling <em>several</em> extensions. To me that’s a really strong suggestion that something is wrong.</p>
+<p>As an example: in the first post, I said I use rebase a lot. Can you rebase in mercurial? Of course, just enable [the extension][rebase]. How about using <a href="http://meldmerge.org/">meld</a> to see a diff? Yup, there’s <a href="https://www.mercurial-scm.org/wiki/ExtdiffExtension">an extension</a>. Colour output in diffs? The answer <a href="https://www.mercurial-scm.org/wiki/ColorExtension">used to be an extension</a>, but thankfully that’s built-in now.</p>
+<p>On a related note, the syntax for enabling an extension is itself a papercut: I find it simultaneously confusing and ugly. Here’s what the rebase docs have as how to enable it:</p>
+<blockquote>
+<p>Enable the extension in the configuration file (e.g. .hg/hgrc):</p>
+<code><pre>[extensions] rebase =</pre></code>
+</blockquote>
+<p>All I can think is “<code>rebase</code> equals what, damnit?!” Yes, I now know that the right hand side is the path to a python module (<code>.py</code> file, or directory containing <code>__init__.py</code>), and that since <code>rebase</code> is distributed with mercurial, it’s in the default search path, so you don’t need to say where to find it. But what’s wrong with something like</p>
+<pre><code>[extensions]
+rebase = on  # or True, or anything more yes-like than the empty string</code></pre>
+<h2 id="moving-on">moving on</h2>
+<p>Day 3 or 4 will hopefully involve me actually using mercurial. I’m going to give myself a bit more time to figure out hg-git, since it’s the only way I can see to fit mercurial into my daily workflow. If I can’t, I’ll just start doing some mini project or other using mercurial for version control.</p>
+<p>Until then!<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>I don’t actually know perl.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>It’s already day 3, so “then” had better be soon if I want to keep up.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
