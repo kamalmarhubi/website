@@ -1,0 +1,65 @@
+<meta charset="utf-8">
+<style>
+body {
+      max-width: 960px
+}
+</style>
+<title>hg advent -m '03: revsets!'</title>
+<h1>hg advent -m '03: revsets!'</h1>
+<p>Today I’m going to follow some advice given to me in <a href="https://lobste.rs/s/f9n7lk/hg_advent_init#c_g7ap6x">a lobste.rs comment</a> on the first post: read <a href="https://www.mercurial-scm.org/repo/hg/help/revsets"><code>hg help revsets</code></a>. (Thanks <span class="citation" data-cites="ngoldbaum">@ngoldbaum</span>!)</p>
+<p>Full disclosure: because of the hg-git setback, I haven’t started using mercurial in any real way yet. But I’m told that my clone-single-commit-repo should have worked, so I hope to hop onto #mercurial on freenode and help / get help debugging. But the result is that this post is still based on things I read rather than things I experienced, though it’s stuff I’m reading from mercurial’s output rather than “the internet”.</p>
+<p>Anyway, I get the feeling this post is going to result in some knowingly smug expressions on mercurial regulars’ faces, together with some kind of “why can’t everyone just get what I’m talking about when I say revsets?” thought. (Sorry, I can’t help.)</p>
+<p>This post will just be excerpts from <code>hg help revsets</code> together with my reactions, thoughts, musings, and so on. This help section begins with a very humble</p>
+<blockquote>
+<p>Mercurial supports several ways to specify revisions.</p>
+</blockquote>
+<p>but then very quickly proceeded to blow my mind. Let’s get started!</p>
+<h2 id="specifying-single-revisions">Specifying single revisions</h2>
+<p>There are a few standouts in even this really basic section.</p>
+<blockquote>
+<p>A plain integer is treated as a revision number. Negative integers are treated as sequential offsets from the tip, with -1 denoting the tip, -2 denoting the revision prior to the tip, and so forth.</p>
+</blockquote>
+<p>From this I glean that <code>0</code> refers to the first changeset in the repo, which is handy. There’s no easy way to refer to this in git though most use cases I have for that are curiosities.</p>
+<blockquote>
+<p>A 40-digit hexadecimal string is treated as a unique revision identifier.</p>
+</blockquote>
+<p>This is much like git. Unambiguous prefixes work, too. The identifier is unique and unambiguous across multiple clones, while the revision numbers could be different. So it seems like revision numbers are meant to be local shorthand.</p>
+<blockquote>
+<p>The reserved name “null” indicates the null revision. This is the revision of an empty repository, and the parent of revision 0.</p>
+</blockquote>
+<p>This one is great. There’s no way to talk about the parent of the first commit in git. And once upon a time, you couldn’t rebase under it. I still have a habit of starting repos off with an empty commit via <code>git commit --allow-empty -m 'Root commit (empty)'</code> even though it’s not needed. I sometimes think about creating the One True Empty Commit and cloning from it, which is exactly what <code>null</code> in mercurial is.</p>
+<blockquote>
+<p>Finally, commands that expect a single revision (like “hg update”) also accept revsets (see below for details). When given a revset, they use the last revision of the revset. A few commands accept two single revisions (like “hg diff”). When given a revset, they use the first and the last revisions of the revset.</p>
+</blockquote>
+<p>This sounds reasonable, but once you get to “seeing below for details”, it starts to make you think of all kinds of possibilities.</p>
+<h2 id="specifying-multiple-revisions">Specifying multiple revisions</h2>
+<p>This is where it gets really fancy and mind-expanding.</p>
+<blockquote>
+<p>Mercurial supports a functional language for selecting a set of revisions. Expressions in this language are called revsets.</p>
+<p>The language supports a number of predicates which are joined by infix operators. Parenthesis can be used for grouping.</p>
+</blockquote>
+<p>Now, let’s take a look at a few of those predicates!</p>
+<h3 id="adds-modifies-removes-file"><code>adds()</code>, <code>modifies()</code>, <code>removes()</code>, <code>file()</code></h3>
+<p>These all take a pattern and include changesets that adds, modifies, removes files matching the pattern. <code>file()</code> is a shorthand for any of those effects.</p>
+<h3 id="author-date-desc"><code>author()</code>, <code>date()</code>, <code>desc()</code>, …</h3>
+<p>These allow specifying changesets by metadata: author, date (takes an interval), and description. There are a bunch of others that look at more fields.</p>
+<h3 id="merge-tag-branchpoint"><code>merge()</code>, <code>tag()</code>, <code>branchpoint()</code></h3>
+<p>These are predicates related to the repo structure: merge changesets, tagged changesets, and changesets with more than one child.</p>
+<h3 id="first-last"><code>first()</code>, <code>last()</code></h3>
+<p>These take the first or last revisions in a revset.</p>
+<h3 id="parents-children-ancestors-descendants-commonancestors"><code>parents()</code>, <code>children()</code>, <code>ancestors()</code>, <code>descendants()</code>, <code>commonancestors()</code></h3>
+<p>These ones actually take revsets and build a new revset. For example, in mercurial you could refer to the equivalent of <code>git merge-base A B C D E</code> as <code>last(commonancestors(A | B | C | D | E))</code>.</p>
+<h2 id="putting-it-together">Putting it together</h2>
+<p>Here’s a quick example: who other than me modified <code>file.txt</code> in the last week?</p>
+<pre><code>hg log -r &#39;modified(file.txt) &amp;&amp; not author(kamal) &amp;&amp; date(-7)&#39;</code></pre>
+<h2 id="revset-aliases">Revset aliases</h2>
+<p>You can define an alias for a revset, which you can then use anywhere a revset is expected. This seems really useful! For example, an <code>unreleased</code> all changes since the last tagged release could be defined as</p>
+<pre><code>[revsetalias]
+unreleased = not(ancestors(tag()))</code></pre>
+<p>You can even define aliases that take arguments! This is the example from the revsets help:</p>
+<pre><code>[revsetalias]
+issue(a1) = grep(r&#39;\bissue[ :]?&#39; ## a1 ## r&#39;\b|\bbug\(&#39; ## a1 ## r&#39;\)&#39;)</code></pre>
+<p>It’s a bit ugly because of the <code>##</code> string concatenation operator, but this defines an <code>issue()</code> alias that looks for a few different syntaxes of mentioning bugs or issues. You can then throw this in a revset and get, for example, the changesets in the last week related to issue 1234:</p>
+<pre><code>hg log -r &#39;issue(1234) &amp;&amp; date(-7)&#39;</code></pre>
+<h2 id="until-next-time">Until next time</h2>
+<p>I’m starting to get bored of reading now, so I hope tomorrow I can figure out what’s up with hg-git. This revset algebra seems like it would fit my brain quite nicely, but I can’t know that for sure yet.</p>
