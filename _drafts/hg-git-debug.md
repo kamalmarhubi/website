@@ -56,7 +56,7 @@ So here's what happens:
 2. hg-git goes to import that next commit whose sha1 is `cdcdcd`, and for this it needs the mercurial changeset id of the parent, `ababab`
 3. hg-git looks up the `ababab` in the git-sha1-to-hg-commit-id map, and finds `121212`
 4. hg-git then looks up this changeset id in the mercurial repo object
-5. the repo is filtering this revision out since its secret, so it results in that `FilteredRepoLookupErrro`
+5. the repo is filtering this revision out since its secret, so it results in that `FilteredRepoLookupError`
 6. boom
 
 Now hg-git has a couple of options related to phases: [`hggit.usephases`][usephases] and [`git.public`][public], but these affect other aspects of the import. Neither of them change either the phase of new commits, or the filter on the repo object.
