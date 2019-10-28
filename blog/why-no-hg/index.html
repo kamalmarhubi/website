@@ -1,0 +1,23 @@
+<meta charset="utf-8">
+<title>What happened to my hg advent series?</title>
+<h1>What happened to my hg advent series?</h1>
+<style>
+body {
+    max-width: 960px
+}
+</style>
+
+<p>Last December, I started a series called <code>hg advent</code>. It was meant to in the spirit of advent of code: 24 daily posts of me learning how to use mercurial. But it stopped at the forebodingly titled sixth post—<a href="/blog/hg-git-debug/">debugging hg-git</a>—which ended with a hopeful sounding sentence</p>
+<blockquote>
+<p>This means I can much more easily use mercurial day-to-day, so this series should hopefully get more grounded in real use.</p>
+</blockquote>
+<p>This is a short post about what went wrong!</p>
+<h2 id="git-interop-was-critical">git interop was critical</h2>
+<p>I don’t have time to start a green-field project just to learn a new version control system. I needed to be able to use mercurial on repos I work with regularly, which all use git. I decided the most likely way to succeed was to do this on my work repo.</p>
+<p>At the time, it looked like the only realistic option was <a href="https://hg-git.github.io/">hg-git</a>. hg-git works by cloning the git repo, then applying the commits to a mercurial repo. It does this in a way that lets it go from a git commit to the corresponding mercurial changeset and back again. You can then work locally using mercurial, and it’ll translate your work back to git commits whenever you push.</p>
+<h2 id="hg-git-just-didnt-work-for-me">hg-git just didn’t work for me</h2>
+<p>I ran into a few issues right off the bat with hg-git. <a href="https://bitbucket.org/durin42/hg-git/issues/266/hg-git-interacts-poorly-with-phasesnew">It didn’t play nice</a> with setting the default phase for new commits to <code>secret</code>. There’s an easy workaround that I decided I could live with: don’t do that. Instead either set the default phase to draft, or set it to public during a pull. This is annoying but easy to script or alias around.</p>
+<p>Much harder to work around was the import process just failing. The initial import was also really slow, much slower than I expected for running against a five your would repo with under a hundred thousand commits. I left it running overnight twice, and each time it failed after some unknown number of hours. At this point, I decided that I wasn’t likely to be able to rely on hg-git, and kind of gave up.</p>
+<h2 id="revisiting-mercurial-with-hgit">revisiting mercurial with hgit?</h2>
+<p>A few weeks ago, I came across an <a href="https://phab.mercurial-scm.org/D6734">RFC code submission</a> for mercurial to have an extension that works directly on git repositories. This gets around the slow and error prone import process in hg-git by simply not doing it. I don’t know anything about mercurial’s internals, so I have no idea where the realy hairy semantic issues are, but it’s promising at least.</p>
+<p>It clearly states it’s not production code, so for now I’ll check in on it occasionally, and who knows: maybe I’ll get to actually try out mercurial!</p>
