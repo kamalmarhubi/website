@@ -80,6 +80,6 @@ That's pretty much it. You can get a flat base image with a `Dockerfile`
 with these contents:
 
 ~~~
-FROM sratch
+FROM scratch
 ADD rethink-squashed.tar /
 ~~~
