@@ -5,7 +5,7 @@ date: 2016-02-29T14:26:27-05:00
 
 <small>_This post has been [translated into Russian][russian]._</small>
 
-[russian]: http://softdroid.net/moi-psevdonimy-v-git
+[russian]: https://web.archive.org/web/20180806091816/http://softdroid.net/moi-psevdonimy-v-git
 
 I have a few little aliases in [my `.gitconfig`][gitconfig] that I find useful
 and that I thought I'd share.
